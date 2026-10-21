@@ -1,0 +1,400 @@
+/* Test 16: libxenon's drivers/lwip/xenon/netif/enet.c (commit 7d75a30), linked in its place:
+ * this object defines enet_init, enet_poll and enet_quiesce, so the archive's enet.o is
+ * never pulled in (checked with the link map). It runs on a hardware thread of its own
+ * while the loader thread may print USB messages, and newlib's printf is not safe from two
+ * threads at once, so the changes are:
+ *
+ *  - no printf: the PHY reset and link wait times and the link state go to enet_reset_ms,
+ *    enet_link_ms and enet_link_up for the card (source/clock.c);
+ *  - the descriptor rings in a static 64 KB block instead of memalign (no newlib heap);
+ *  - the MDIO waits in phy_read/phy_write give up after PHY_WAIT_MS (libxenon waits
+ *    forever) and count the time-outs in enet_mdio_timeouts;
+ *  - DHCP host name "ibara360" (libxenon: "XeLL").
+ *
+ * Everything else, register values and order included, is libxenon's. Built with
+ * libxenon's own flags (Makefile), as usbfix/ohci_fix.c. */
+//#include "lwipopts.h"
+#include "lwip/opt.h"
+#include "lwip/def.h"
+#include "lwip/mem.h"
+#include "lwip/pbuf.h"
+#include "lwip/sys.h"
+#include "lwip/stats.h"
+#include "lwip/timers.h"
+#include "netif/etharp.h"
+
+#include <time/time.h>
+#include <xenon_nand/xenon_config.h>
+#include <ppc/cache.h>
+#include <ppc/timebase.h>
+#include <pci/io.h>
+#include <xenon_smc/xenon_gpio.h>
+
+#if !defined(BYTE_ORDER) || !defined(BIG_ENDIAN) || BYTE_ORDER != BIG_ENDIAN
+#error "lwIP must see BYTE_ORDER == BIG_ENDIAN, as libxenon builds it"
+#endif
+
+#define TX_DESCRIPTOR_NUM 0x10
+#define RX_DESCRIPTOR_NUM 0x10
+#define MTU 1528
+#define MEM(x) (0x80000000|(long)(x))
+#define PHY_WAIT_MS 100
+
+uint64_t tb_read(void); /* source/main.c */
+
+volatile unsigned enet_reset_ms, enet_link_ms, enet_mdio_timeouts;
+volatile int enet_link_up;
+
+static unsigned char ring_block[0x10000] __attribute__((aligned(0x10000)));
+
+struct enet_context
+{
+	volatile uint32_t *rx_descriptor_base;
+	void *rx_receive_base;
+	int rx_descriptor_rptr;
+
+	volatile uint32_t *tx_descriptor_base;
+	int tx_descriptor_wptr;
+	void *tx_buffer_base;
+
+	struct eth_addr *ethaddr;
+};
+
+static int enet_open(struct netif *ctx);
+static struct pbuf *enet_linkinput(struct enet_context *context);
+static err_t enet_linkoutput(struct netif *netif, struct pbuf *p);
+
+static unsigned ms_since(uint64_t t0)
+{
+	return (unsigned)((tb_read() - t0) / (PPC_TIMEBASE_FREQ / 1000));
+}
+
+static unsigned short phy_read(int addr)
+{
+	int n = 0;
+	write32n(0xea001444, __builtin_bswap32((addr << 11) | 0x50));
+	do {mdelay(1);} while ((__builtin_bswap32(read32n(0xea001444)) & 0x10) && ++n < PHY_WAIT_MS);
+	if (n >= PHY_WAIT_MS)
+		enet_mdio_timeouts++;
+	return __builtin_bswap32(read32n(0xea001444)) >> 16;
+}
+
+static void phy_write(int addr, unsigned short data)
+{
+	int n = 0;
+	write32n(0xea001444, __builtin_bswap32((addr << 11) | 0x70 | (data << 16)));
+	do {mdelay(1);} while ((__builtin_bswap32(read32n(0xea001444)) & 0x10) && ++n < PHY_WAIT_MS);
+	if (n >= PHY_WAIT_MS)
+		enet_mdio_timeouts++;
+}
+
+static void wait_empty_tx(struct enet_context *context)
+{
+	while (__builtin_bswap32(context->tx_descriptor_base[context->tx_descriptor_wptr * 4 + 1]) & 0x80000000); // busy
+}
+
+static inline int virt_to_phys(volatile void *ptr)
+{
+	return ((long)ptr) & 0x7FFFFFFF;
+}
+
+static void tx_data(struct enet_context *context, unsigned char *data, int len)
+{
+	wait_empty_tx(context);
+	int descnr = context->tx_descriptor_wptr;
+	volatile uint32_t *descr = context->tx_descriptor_base + descnr * 4;
+
+	descr[0] = __builtin_bswap32(len);
+	descr[2] = __builtin_bswap32(virt_to_phys(data));
+	descr[3] = __builtin_bswap32(len | ((descnr == TX_DESCRIPTOR_NUM - 1) ? 0x80000000 : 0));
+	descr[1] = __builtin_bswap32(0xc0230000); // ownership, ...
+
+	memdcbst((void*)descr, 0x10);
+
+	write32n(0xea001400, read32n(0xea001400) | __builtin_bswap32(0x10)); // Q0_START
+
+	context->tx_descriptor_wptr++;
+	context->tx_descriptor_wptr %= TX_DESCRIPTOR_NUM;
+
+	write32n(0xea001410, __builtin_bswap32(0x00101c11));	// enable RX
+}
+
+static void tx_init(struct enet_context *context, void *base)
+{
+	int i;
+
+	context->tx_descriptor_base = base;
+	context->tx_descriptor_wptr = 0;
+
+	for (i=0; i < TX_DESCRIPTOR_NUM; ++i)
+	{
+				/* tx descriptors */
+		context->tx_descriptor_base[i * 4 + 0] = 0;
+		context->tx_descriptor_base[i * 4 + 1] = 0;
+		context->tx_descriptor_base[i * 4 + 2] = 0;
+		if (i != TX_DESCRIPTOR_NUM - 1)
+			context->tx_descriptor_base[i * 4 + 3] = 0;
+		else
+			context->tx_descriptor_base[i * 4 + 3] = __builtin_bswap32(0x80000000);
+	}
+
+	memdcbst((void*)context->tx_descriptor_base, TX_DESCRIPTOR_NUM * 0x10);
+
+	context->tx_buffer_base = base + TX_DESCRIPTOR_NUM * 0x10;
+
+	write32n(0xea001400, __builtin_bswap32(0x00001c00));
+	write32n(0xea001404, __builtin_bswap32(virt_to_phys(context->tx_descriptor_base)));
+	write32n(0xea001400, __builtin_bswap32(0x00011c00));
+	write32n(0xea001404, __builtin_bswap32(virt_to_phys(context->tx_descriptor_base)));
+	write32n(0xea001400, __builtin_bswap32(0x00001c00));
+}
+
+
+static void rx_init(struct enet_context *context, void *base)
+{
+	int i;
+
+	context->rx_descriptor_base = base;
+	context->rx_receive_base = base + RX_DESCRIPTOR_NUM * 0x10;
+	context->rx_descriptor_rptr = 0;
+
+			/* setup rx descriptors */
+	for (i=0; i < RX_DESCRIPTOR_NUM; ++i)
+	{
+		context->rx_descriptor_base[i * 4 + 0] = __builtin_bswap32(0);
+		context->rx_descriptor_base[i * 4 + 1] = __builtin_bswap32(0xc0000000);
+		context->rx_descriptor_base[i * 4 + 2] = __builtin_bswap32(virt_to_phys(context->rx_receive_base + i * MTU));
+		context->rx_descriptor_base[i * 4 + 3] = __builtin_bswap32(MTU | ((i == RX_DESCRIPTOR_NUM - 1) ? 0x80000000 : 0));
+	}
+	memdcbst((void*)context->rx_descriptor_base, RX_DESCRIPTOR_NUM * 0x10);
+
+	write32n(0xea001414, __builtin_bswap32(virt_to_phys(context->rx_descriptor_base))); // RX queue start
+	write32n(0xea001440, 0x1100004);
+	write32n(0xea001450, 0);
+}
+
+err_t enet_init(struct netif *netif)
+{
+	struct enet_context * context;
+
+	context = (struct enet_context *)mem_malloc(sizeof(struct enet_context));
+	if(context == NULL) {
+		return ERR_MEM;
+	} else {
+		memset(context, 0, sizeof(struct enet_context));
+
+		// enet_write_mac_address(context, m);
+		xenon_config_get_mac_addr(&netif->hwaddr[0]);
+	}
+
+	netif->state = context;
+	netif->name[0] = 'e';
+	netif->name[1] = 'n';
+	netif->output = etharp_output; //enet_output; //lwip 1.3.0
+	netif->linkoutput = enet_linkoutput;
+	context->ethaddr = (struct eth_addr *)&(netif->hwaddr[0]);
+
+	netif->hwaddr_len = 6;
+	netif->mtu = 1500;
+	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP;
+
+#if LWIP_NETIF_HOSTNAME
+    netif->hostname = "ibara360";
+#endif
+
+	enet_open(netif);
+	etharp_init();
+	return ERR_OK;
+}
+
+
+static int enet_open(struct netif *netif)
+{
+	int tries=10;
+	uint64_t t0;
+
+	//printf("NIC reset\n");
+	write32n(0xea001424, 0); // disable interrupts
+	write32n(0xea001428, 0x01805508);
+	//printf("reset: %08x\n", read32n(0xea001428));
+    udelay(100);
+	write32n(0xea001428, 0x01005508);
+
+	write32n(0xea001444, __builtin_bswap32(4));
+    udelay(100);
+	write32n(0xea001444, __builtin_bswap32(0));
+	//printf("1478 before: %08x\n", read32n(0xea001478));
+		// Set MTU
+	write32n(0xea001478, 0xf2050000); //printf("1478: %08x\n", read32n(0xea001478));
+
+		// important
+	write32n(0xea001450, 0x60230000);
+
+		// mac 1+2
+	write32n(0xea001478, 0xF2050000 | (netif->hwaddr[0] << 8) | (netif->hwaddr[1] << 0));
+	write32n(0xea00147c, (netif->hwaddr[2] << 24) | (netif->hwaddr[3] << 16) | (netif->hwaddr[4] << 8) | (netif->hwaddr[5] << 0) );
+
+	write32n(0xea001460, 0x380e0000 | (netif->hwaddr[0] << 8) | (netif->hwaddr[1] << 0));
+	write32n(0xea001464, (netif->hwaddr[2] << 24) | (netif->hwaddr[3] << 16) | (netif->hwaddr[4] << 8) | (netif->hwaddr[5] << 0) );
+
+		// multicast hash
+	write32n(0xea001468, 0);
+	write32n(0xea00146c, 0);
+
+	write32n(0xea001400, 0x001c0000);
+	write32n(0xea001410, __builtin_bswap32(0x00101c00));
+
+	write32n(0xea001440, 0x01190004);
+
+	void *base = (void*)ring_block;
+
+	tx_init(netif->state, (void*)MEM(base));
+	rx_init(netif->state, (void*)MEM(base + 0x8000));
+
+	write32n(0xea001440, 0x01100004);
+
+	t0 = tb_read();
+	// get PHY out of reset state
+    xenon_gpio_control(0,0,0x10);
+    xenon_gpio_control(4,0,0x10);
+
+    phy_write(0, 0x9000);
+
+	while (phy_read(0) & 0x8000){
+		mdelay(500);
+		tries--;
+		if (tries<=0) break;
+	};
+	enet_reset_ms = ms_since(t0);
+
+	t0 = tb_read();
+	int linkstate = phy_read(1);
+	if (!(linkstate & 4))
+	{
+		tries=10;
+
+		while (!(phy_read(1) & 4)){
+			mdelay(500);
+			tries--;
+			if (tries<=0) break;
+		};
+	}
+	enet_link_ms = ms_since(t0);
+
+	if (phy_read(1) & 4) {
+		enet_link_up = 1;
+		netif_set_link_up(netif);
+	} else {
+		enet_link_up = 0;
+		netif_set_link_down(netif);
+	}
+
+	write32n(0xea001428, 0x01005508);
+	write32n(0xea001410, __builtin_bswap32(0x00101c11));	// enable RX
+	write32n(0xea001400, __builtin_bswap32(0x00001c01));	// enable TX
+
+	return 0;
+}
+
+static struct pbuf *enet_linkinput(struct enet_context *context)
+{
+	volatile uint32_t *d = context->rx_descriptor_base + context->rx_descriptor_rptr * 4;
+	memdcbf((void*)d, 0x10);
+	if (__builtin_bswap32(d[1]) & 0x80000000) /* check ownership */
+	{
+		return 0;
+	}
+
+	int size = __builtin_bswap32(d[0]) & 0xFFFF;
+	void *phys_addr = context->rx_receive_base + context->rx_descriptor_rptr * MTU;
+	memdcbf(phys_addr, size);
+
+	struct pbuf *p = pbuf_alloc(PBUF_RAW, size, PBUF_POOL), *q;
+
+	if (p != NULL) {
+		int rptr = 0;
+		/* We iterate over the pbuf chain until we have read the entire
+		 packet into the pbuf. */
+		for(q = p; q != NULL; q = q->next) {
+				/* Read enough bytes to fill this pbuf in the chain. The
+					 available data in the pbuf is given by the q->len
+					 variable. */
+			memcpy(q->payload, phys_addr + rptr, q->len);
+			rptr += q->len;
+		}
+#ifdef LINK_STATS
+		lwip_stats.link.recv++;
+#endif /* LINK_STATS */
+	} else {
+#ifdef LINK_STATS
+		lwip_stats.link.memerr++;
+		lwip_stats.link.drop++;
+#endif /* LINK_STATS */
+	}
+
+		/* reclaim descriptor */
+	d[2] = __builtin_bswap32(virt_to_phys(context->rx_receive_base + context->rx_descriptor_rptr * MTU));
+	d[3] = __builtin_bswap32(MTU | ((context->rx_descriptor_rptr == RX_DESCRIPTOR_NUM - 1) ? 0x80000000 : 0));
+	d[0] = __builtin_bswap32(0);
+	d[1] = __builtin_bswap32(0xc0000000);
+	memdcbst((void*)d, 0x10);
+
+	context->rx_descriptor_rptr++;
+	context->rx_descriptor_rptr %= RX_DESCRIPTOR_NUM;
+
+	return p;
+}
+
+static err_t enet_linkoutput(struct netif *netif, struct pbuf *p)
+{
+	struct pbuf *q;
+	struct enet_context *context = (struct enet_context *) netif->state;
+
+	void *dstptr = context->tx_buffer_base + context->tx_descriptor_wptr * MTU;
+	int offset = 0;
+
+	for(q = p; q != NULL; q = q->next) {
+		memcpy(dstptr + offset, q->payload, q->len);
+		offset += q->len;
+	}
+
+	memdcbst((void*)dstptr, p->tot_len);
+	tx_data(context, dstptr, p->tot_len);
+
+	return 0;
+}
+
+static void
+enet_input(struct netif *netif)
+{
+	struct enet_context *context = (struct enet_context *) netif->state;
+	struct pbuf *p;
+
+	p = enet_linkinput(context);
+
+	if (p == NULL)
+		return;
+
+#if LINK_STATS
+	lwip_stats.link.recv++;
+#endif /* LINK_STATS */
+
+	/* pass to network layer */
+	if (ethernet_input(p, netif) != ERR_OK) {
+		pbuf_free(p);
+		p = NULL;
+	}
+}
+
+void
+enet_poll(struct netif *netif)
+{
+	enet_input(netif);
+}
+
+
+void enet_quiesce(void)
+{
+	write32n(0xea001400, 0);
+	write32n(0xea001410, 0);
+}

@@ -1,0 +1,36 @@
+# ibara360: only what test 38 (the first release candidate) builds from.
+# Everything is ignored, then test 38's build inputs are let back in. Build:
+#   docker run --rm -v "C:\New folder\ibara360:/p" -w /p/host/xenon/test38 free60/libxenon sh build.sh
+# (list checked against the .d files of the build that made deploy/test38/xenon.elf)
+
+/*
+!/.gitignore
+!/README.md
+
+# runtime/: all of it except the includes only the PC census/reference builds use
+!/runtime/
+/runtime/blit_census.inc
+/runtime/pcb_ref.inc
+
+# gen/: sh3rec --drc output for the two games test 38 links (ibara, ibarablk with --prefix blk_)
+!/gen/
+/gen/*
+!/gen/ibara_drc/
+!/gen/ibarablk_drc/
+/gen/*/recomp_report.txt
+
+# host/xenon/test38: Makefile, build.sh, mksyms.awk and the four source folders
+# (source/profsyms.c is rewritten by every build.sh run but must exist for pass 1)
+!/host/
+/host/*
+!/host/xenon/
+/host/xenon/*
+!/host/xenon/test38/
+/host/xenon/test38/*
+!/host/xenon/test38/Makefile
+!/host/xenon/test38/build.sh
+!/host/xenon/test38/mksyms.awk
+!/host/xenon/test38/source/
+!/host/xenon/test38/usbfix/
+!/host/xenon/test38/excfix/
+!/host/xenon/test38/netfix/
