@@ -1,7 +1,10 @@
-# ibara360: only what test 38 (the first release candidate) builds from.
-# Everything is ignored, then test 38's build inputs are let back in. Build:
-#   docker run --rm -v "C:\New folder\ibara360:/p" -w /p/host/xenon/test38 free60/libxenon sh build.sh
-# (list checked against the .d files of the build that made deploy/test38/xenon.elf)
+# ibara360 0.82: only what test 82's four .xex files build from (ibara.xex, ibarablk.xex, ibaraarr.xex and the
+# launcher ibara360.xex). Everything is ignored, then those build inputs are let back in. Build (Git Bash on the PC):
+#   MSYS_NO_PATHCONV=1 docker run --rm --memory=5g -v xsdk-gcc:/opt/xsdk-gcc \
+#     -v "C:\New folder\ibara360:/p" -v "C:\New folder\xsdk-src\xsdk:/xsdk:ro" -v xsdk-t82:/b \
+#     xsdk-base:1 sh /p/host/xsdk/test82/build.sh ibara ibarablk ibaraarr ibara360
+# (list checked against the ninja deps of the builds that made test 82's three games and test 81's launcher; test 82's
+# launcher sources are test 81's unchanged). Test 38's libxenon ELF build is in the history (commit b30daea).
 
 /*
 !/.gitignore
@@ -12,25 +15,40 @@
 /runtime/blit_census.inc
 /runtime/pcb_ref.inc
 
-# gen/: sh3rec --drc output for the two games test 38 links (ibara, ibarablk with --prefix blk_)
+# gen/: sh3rec --drc output for the three programs (ibara, ibarablk with --prefix blk_, ibaraarr = ibara with the PS2
+# port's ARRANGE patched in) and the generated sources the .xex files link: ARRANGE's patch records, the GADGETS art,
+# ARRANGE's HUD and pictures, the launcher's art
 !/gen/
 /gen/*
 !/gen/ibara_drc/
 !/gen/ibarablk_drc/
+!/gen/ibaraarr_drc/
 /gen/*/recomp_report.txt
+!/gen/ibaraarr/
+/gen/ibaraarr/*
+!/gen/ibaraarr/arrange_patch.c
+!/gen/ibaraarr/arrange_patch.h
+!/gen/card/
+/gen/card/*
+!/gen/card/card_art.c
+!/gen/card/card_layout.h
+!/gen/arrhud/
+!/gen/arrgfx/
+!/gen/launcher/
+/gen/launcher/*
+!/gen/launcher/launch_art.c
+!/gen/launcher/launch_layout.h
 
-# host/xenon/test38: Makefile, build.sh, mksyms.awk and the four source folders
-# (source/profsyms.c is rewritten by every build.sh run but must exist for pass 1)
+# host/xsdk/test82: CMakeLists.txt, build.sh and the four source folders
 !/host/
 /host/*
-!/host/xenon/
-/host/xenon/*
-!/host/xenon/test38/
-/host/xenon/test38/*
-!/host/xenon/test38/Makefile
-!/host/xenon/test38/build.sh
-!/host/xenon/test38/mksyms.awk
-!/host/xenon/test38/source/
-!/host/xenon/test38/usbfix/
-!/host/xenon/test38/excfix/
-!/host/xenon/test38/netfix/
+!/host/xsdk/
+/host/xsdk/*
+!/host/xsdk/test82/
+/host/xsdk/test82/*
+!/host/xsdk/test82/CMakeLists.txt
+!/host/xsdk/test82/build.sh
+!/host/xsdk/test82/source/
+!/host/xsdk/test82/launcher/
+!/host/xsdk/test82/shaders/
+!/host/xsdk/test82/zlib/

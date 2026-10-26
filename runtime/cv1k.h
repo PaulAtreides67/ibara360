@@ -107,11 +107,27 @@ int ymz_decode_phrase(int phrase, s16 *out, int max, int *rate);
 extern int ymz_rate_mode;          /* 0 = MAME 0.289 (rate from each AMM block), 1 = fixed 16 kHz */
 extern void (*ymz_write_hook)(u64 sample, u8 reg, u8 data);
 extern u64 ymz770_writes, ymz_queue_full, ymz_samples, ymz_blocks, ymz_rate_changes;
+/* Test 68 (ibara360's sound page): with ymz_scaled the host's mix comes out in ymz_out (the sink's sample stays the
+ * chip's): each phrase's category and factor (Q8, 256 = as the game plays it), the categories' gains (Q15, 32768 = 1)
+ * for the board's chip and for the sound test's chip, fed by ymz_test_cmd (reg << 8 | data, YMZT_LOOP(seq) = loop
+ * that sequence once slot 0's has ended, YMZT_VOL0(v) = channel 0's volume v in place of what the sequences write, 0 =
+ * theirs, YMZT_RESET = all of it stopped); ymz_test_busy while it plays */
+enum { YMZ_CAT_MUSIC, YMZ_CAT_SFX, YMZ_CAT_VOICE, YMZ_CATS };
+#define YMZT_LOOP(seq) (0x10000u | (u32)(seq))
+#define YMZT_VOL0(v) (0x30000u | (u32)(v))
+#define YMZT_RESET 0x20000u
+extern u8 ymz_phrase_cat[256];
+extern u16 ymz_phrase_k[256];
+extern volatile s32 ymz_gain_main[YMZ_CATS], ymz_gain_test[YMZ_CATS];
+extern volatile int ymz_scaled, ymz_test_busy;
+extern s32 ymz_out;
+int ymz_test_cmd(u32 what);
 /* sndout.c: chip samples -> 48 kHz stereo s16, 800.8 frames per emulated frame */
 void snd_out_init(void);
 void snd_out_sink(s32 v, u32 rate, u64 time, void *u);     /* pass to ymz_run */
 int snd_out_take(s16 *dst, int max);                        /* drain at least every frame */
 extern u64 snd_out_frames, snd_out_clipped;
+extern double snd_out_per_frame;   /* 48 kHz frames per emulated frame (800.8), set before snd_out_init */
 
 /* ---- inputs (active low, MAME port layout) -------------------------------- */
 extern u8 in_port_c, in_port_d, in_port_l, in_port_f, in_dsw;
@@ -148,6 +164,10 @@ extern u64 blitter_band_ticks[BLIT_MAX_BANDS];
 extern u64 blitter_jobs, blitter_jobs_one_band;
 extern u64 blitter_pixels;          /* destination pixels of all draws (after the clip) */
 extern u64 blitter_phases;         /* phases beyond each list's first (bands meet between) */
+/* test 63: the last kicked job writes (or may write) VRAM inside the 320x240 window at the
+ * scroll it was kicked with; when it does not, a host may convert the screen before drawing */
+extern int blitter_job_win;
+extern u64 blitter_jobs_win;
 /* draw routines: 0 = MAME-style (blit_in.inc), 1-3 = blit_fast.inc (same pixels): 1 tables,
  * 2 tables without the transparency branch, 3 = 2 + prefetch; read at each kick */
 extern int blitter_fast;

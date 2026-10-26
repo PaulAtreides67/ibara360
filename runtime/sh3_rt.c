@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "cv1k.h"
+#include "state.h"
 
 sh3_t cpu;
 u64 frame_count;
@@ -66,6 +67,10 @@ void blk_prof(u32 at, s32 n)
 
 static u64 ev_time[EV_COUNT];
 static jmp_buf rt_jb;
+static int irq_depth;            /* test 69: inside an interrupt or trapa handler (the interrupted code's registers may
+                                  * be in a compiled function's locals: no state is taken there) */
+static int rt_loaded;            /* test 69: a state was loaded (rt_run's calls then finish the functions it left) */
+static int interp_quiet;         /* the next interp() is such a call: not a missed entry */
 int use_compiled = 1;            /* 0: interpreter only (differential testing) */
 static int image_checked;        /* a function has passed its check (logged once) */
 const recomp_game_t *rt_game;
@@ -316,7 +321,9 @@ static int take_interrupt(sh3_t *c)
 #ifdef CV1K_PCB
 	pcb_set_pc(c->vbr + 0x600);          /* MAME's exception entry stores the vector as pc */
 #endif
+	irq_depth++;
 	rt_call(c, c->vbr + 0x600);
+	irq_depth--;
 	if (c->pc != ret)
 		rt_resync(c);
 	PCB_PC(ret);                         /* rte: the return address, in the interrupted region */
@@ -390,7 +397,9 @@ void rt_trapa(sh3_t *c, u32 ret, u32 imm)
 #ifdef CV1K_PCB
 	pcb_set_pc(c->vbr + 0x100);
 #endif
+	irq_depth++;
 	rt_call(c, c->vbr + 0x100);
+	irq_depth--;
 	if (c->pc != ret)
 		rt_resync(c);
 	PCB_PC(ret);
@@ -406,8 +415,28 @@ void rt_sleep(sh3_t *c)
 	rt_fatal("sleep with nothing to wake it");
 }
 
+/* ---- test 69: save states (state.c) ------------------------------------------------------- */
+
+/* the CALL macro, after a static call returned: every guest register is in the context there (the callee's RET
+ * flushed them, the caller reloads them next) and pc is the caller's next instruction; outside a handler, the moment for
+ * a state a host asked for */
+void rt_state_point(sh3_t *c, u32 ret)
+{
+	if (c->pc == ret && !irq_depth)
+		rt_state_take();
+}
+
+/* after rt_state_load: rt_run goes on at the loaded pc */
+void rt_resume_loaded(void)
+{
+	rt_loaded = 1;
+	lookup_known = 0;
+	longjmp(rt_jb, 2);
+}
+
 /* ---- machine events ----------------------------------------------------------------- */
 static u64 vblank_origin;
+static u64 vbl_n;                /* test 69: vblanks of the machine (frame_count but for loads, which take it back) */
 
 /* MAME 0.289 cv1k: screen refresh HZ_TO_ATTOSECONDS(60.024) = 16660002665600426 as, and the
  * CPU's 102.4 MHz = 9765625000 as per cycle, so a frame is 1705984 + 2665600426/9765625000
@@ -436,11 +465,12 @@ static void fire(sh3_t *c, int ev, u64 t)
 #if defined(CV1K_PCB) && defined(PCB_PROBE)
 		pcb_probe_vblank(frame_count, t);
 #endif
-		ymz770_mark(rt_now(c));    /* the host may make sound up to here */
+		ymz770_mark(rt_now(c) + rt_epoch);    /* the host may make sound up to here */
 		host_vblank(c);
 		frame_count++;
+		vbl_n++;
 		intc_request(IRQ_IRL2);
-		rt_schedule(c, EV_VBLANK, vblank_at(frame_count));
+		rt_schedule(c, EV_VBLANK, vblank_at(vbl_n));
 		break;
 	case EV_TMU0:
 	case EV_TMU1:
@@ -483,6 +513,7 @@ void cv1k_reset(sh3_t *c)
 	rtc9701_reset();
 	blitter_reset();
 	frame_count = 0;
+	vbl_n = 0;
 	vblank_origin = 0;
 	ev_time[EV_VBLANK] = vblank_at(0);
 	ev_time[EV_RTC_SEC] = rt_scale_cyc(CPU_HZ);
@@ -492,8 +523,41 @@ void cv1k_reset(sh3_t *c)
 void rt_run(sh3_t *c)
 {
 	setjmp(rt_jb);
-	for (;;)
-		rt_call(c, c->pc);
+	irq_depth = 0;
+	for (;;) {
+		recomp_fn f;
+		u32 addr;
+		if (!rt_loaded) {
+			rt_call(c, c->pc);
+			continue;
+		}
+		/* test 69: after a load, the rest of each function that was running at the state's moment (its pc, then each
+		 * return address in turn) is interpreted; they are not missed entries */
+		PCB_RGN_TO(c->pc);
+		addr = PHYS(c->pc);
+		f = lookup(addr);
+		if (f) {
+			f(c);
+		} else {
+			interp_quiet = 1;
+			interp(c, addr);
+		}
+	}
+}
+
+/* test 69: the CPU, the scheduler and the interrupt controller in a state (not frame_count: the host's) */
+void rt_core_state(rt_sbuf *b)
+{
+	ST(b, cpu);
+	ST(b, ev_time);
+	ST(b, irq_req);
+	ST(b, irq_pri);
+	ST(b, onchip_intevt);
+	ST(b, onchip_intevt2);
+	ST(b, onchip_expevt);
+	ST(b, onchip_tra);
+	ST(b, vblank_origin);
+	ST(b, vbl_n);
 }
 
 /* ---- interpreter ------------------------------------------------------------------- */
@@ -630,8 +694,9 @@ void rt_write_missed(const char *path)
 static void interp(sh3_t *c, u32 addr)
 {
 	u32 pc = addr;
-	if (pc >= 0x0C000000u && use_compiled && !lookup_known)
+	if (pc >= 0x0C000000u && use_compiled && !lookup_known && !interp_quiet)
 		note_missed(pc);
+	interp_quiet = 0;
 	for (;;) {
 		u32 op = fetch16(pc), t, cond;
 		c->icount -= cyc_table[op];

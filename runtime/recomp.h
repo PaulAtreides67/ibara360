@@ -278,9 +278,14 @@ s32 rt_upd_event(sh3_t *c, u32 next, s32 ic, u32 r15);
 #define UPDI(next) do { IC = rt_upd_event(c, (next), IC, r15); } while (0)
 
 /* static call; the callee's rts leaves the return address in c->pc. Calls come back to the
- * caller's address region (pcb mode; rt_call sets the callee's from its target address). */
-#define CALL(fn, ret) do { PCB_RGN_SAVE; FLUSH; fn(c); RELOAD; PCB_RGN_RESTORE; \
-	if (UNLIKELY(c->pc != (ret))) rt_resync(c); } while (0)
+ * caller's address region (pcb mode; rt_call sets the callee's from its target address).
+ * Test 69: on the way back every guest register is in the context, the moment for a save
+ * state a host asked for (state.c; rt_state_want is 0 but for a moment after such a request) */
+extern int rt_state_want;
+void rt_state_point(sh3_t *c, u32 ret);
+#define CALL(fn, ret) do { PCB_RGN_SAVE; FLUSH; fn(c); PCB_RGN_RESTORE; \
+	if (UNLIKELY(rt_state_want)) { rt_state_point(c, (ret)); } \
+	RELOAD; if (UNLIKELY(c->pc != (ret))) rt_resync(c); } while (0)
 /* computed call */
 #define CALLD(t, ret) do { u32 mt__ = (t); FLUSH; rt_call(c, mt__); RELOAD; \
 	if (UNLIKELY(c->pc != (ret))) rt_resync(c); } while (0)

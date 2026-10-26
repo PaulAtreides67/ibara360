@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include "cv1k.h"
+#include "state.h"
 
 #define VRAM_W 0x2000
 #define VRAM_H 0x1000
@@ -34,6 +35,8 @@ void (*blitter_start)(int bands);
 void (*blitter_wait)(void);
 u64 blitter_jobs, blitter_jobs_one_band;
 u64 blitter_pixels;              /* destination pixels of all draws (after the clip), timing pass */
+int blitter_job_win;             /* test 63: the last kicked job writes (or may write) the shown window */
+u64 blitter_jobs_win;            /* jobs that do */
 
 static u16 *vram_alloc;
 static int pending;               /* a job was handed to blitter_start and not yet waited for */
@@ -298,6 +301,25 @@ static int hz_tiles_meet(box_t a, box_t b)
 	       (a.y0 >> HZ_TILE) <= (b.y1 >> HZ_TILE) && (b.y0 >> HZ_TILE) <= (a.y1 >> HZ_TILE);
 }
 
+/* test 63: the shown window (320x240 at the scroll the job was kicked with, wrapping as the
+ * screen's columns and rows do) and whether box b (inside VRAM) meets it */
+static u32 win_x, win_y;
+
+static int span_meets(int a0, int a1, int w0, int len, int size)
+{
+	const int w1 = w0 + len - 1;
+	if (w1 < size)
+		return a0 <= w1 && w0 <= a1;
+	return a1 >= w0 || a0 <= w1 - size;   /* [w0, size - 1] and [0, w1 - size] */
+}
+
+static void win_check(const box_t *b)
+{
+	if (!blitter_job_win && span_meets(b->x0, b->x1, (int)win_x, 320, VRAM_W) &&
+	    span_meets(b->y0, b->y1, (int)win_y, 240, VRAM_H))
+		blitter_job_win = 1;
+}
+
 /* the op at job word `at` (clip in effect: clip) reads rs (NULL: nothing) and writes ws */
 static void hz_op(u32 at, const rect_t *clip, const box_t *rs, const box_t *ws)
 {
@@ -345,6 +367,9 @@ static void hz_draw(u32 at, const rect_t *clip, u16 src_x, u16 src_y, u16 dst_x,
 	d.y1 = y + dimy - 1 < cy1 ? y + dimy - 1 : cy1;
 	if (d.x0 > d.x1 || d.y0 > d.y1)
 		return;                   /* fully clipped: reads and writes nothing */
+	if (rt_vsnap_on)              /* test 69: the blocks' pixels to the save states that lack them */
+		rt_vram_cow(d.x0, d.y0, d.x1, d.y1);
+	win_check(&d);
 
 	s.x0 = src_x & 0x1fff;
 	s.x1 = s.x0 + dimx - 1;       /* past 0x1fff the draw functions draw nothing */
@@ -360,16 +385,33 @@ static void hz_draw(u32 at, const rect_t *clip, u16 src_x, u16 src_y, u16 dst_x,
 static void hz_upload(u32 at, const rect_t *clip, u32 dx, u32 dy, u32 dimx, u32 dimy)
 {
 	box_t u;
+	if (rt_vsnap_on) {            /* test 69: as hz_draw; a spill writes whole rows (the guard rows are never read) */
+		const u32 last = dy + dimy - 1 + (dx + dimx - 1) / VRAM_W;
+		const int y1 = last > VRAM_H - 1 ? VRAM_H - 1 : (int)last;
+		if (dy <= VRAM_H - 1) {
+			if (dx + dimx > VRAM_W)
+				rt_vram_cow(0, (int)dy, VRAM_W - 1, y1);
+			else
+				rt_vram_cow((int)dx, (int)dy, (int)(dx + dimx - 1), y1);
+		}
+	}
 	if (dx + dimx > VRAM_W) {
 		if (!hz_bad)
 			blitter_one_band_why[0]++;
 		hz_bad = 1;               /* rows spill into the next row: not split by row */
+		blitter_job_win = 1;      /* (and taken as writing the window) */
 		return;
 	}
 	u.x0 = (int)dx;
 	u.x1 = (int)(dx + dimx - 1);
 	u.y0 = (int)dy;
 	u.y1 = (int)(dy + dimy - 1);
+	{
+		box_t w = u;              /* rows past VRAM's end go to the guard rows, never shown */
+		if (w.y1 > VRAM_H - 1)
+			w.y1 = VRAM_H - 1;
+		win_check(&w);
+	}
 	hz_op(at, clip, NULL, &u);
 }
 
@@ -787,7 +829,13 @@ static void exec(sh3_t *c)
 	job_n = 0;
 	upload_bytes = 0;
 	hz_reset();
+	win_x = scroll_x & (VRAM_W - 1);
+	win_y = scroll_y & (VRAM_H - 1);
+	blitter_job_win = 0;
 	timing_pass(gfx_addr & 0x1fffffff);
+	if (blitter_job_win && blitter_jobs_win++ < 3)
+		rt_log("blitter: list %llu (frame %llu) writes the shown window at %u,%u\n",
+			(unsigned long long)blitter_jobs, (unsigned long long)frame_count, (unsigned)win_x, (unsigned)win_y);
 	delay_ns += (delay_ns / H_LINE_PERIOD_NS) * H_LINE_DURATION_NS;
 	busy = 1;
 	cycles = ((u64)delay_ns * CPU_HZ + 999999999ull) / 1000000000ull;
@@ -829,6 +877,21 @@ static void exec(sh3_t *c)
 		if (blitter_clock)
 			blitter_draw_ticks += blitter_clock() - t0;
 	}
+}
+
+/* test 69: the registers in a save state (state.h; it is taken and loaded with no job drawing) */
+void blitter_state(rt_sbuf *b)
+{
+	ST(b, gfx_addr);
+	ST(b, scroll_x);
+	ST(b, scroll_y);
+	ST(b, clip_x);
+	ST(b, clip_y);
+	ST(b, clip_x_sh);
+	ST(b, clip_y_sh);
+	ST(b, busy);
+	ST(b, delay_ns);
+	ST(b, idle_op_bytes);
 }
 
 void blitter_done(sh3_t *c)

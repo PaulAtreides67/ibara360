@@ -1,6 +1,52 @@
 #include "recomp.h"
 #include "blk_recomp_funcs.h"
 
+void blk_f_0C0715D0(sh3_t *c)
+{
+	LOCALS;
+L_0C0715D0: BLKS(0x0C0715D0u);
+	{ u32 v_ = r14; r15 -= 4; W32(r15, v_); } UPD(0x0C0715D2u, 1);  /* 0C0715D0 mov.l Rm,@-Rn */
+	r0 = 0x0u;  /* 0C0715D2 mov #imm,Rn */
+	r2 = 0xC3CA708u; UPD(0x0C0715D6u, 2);  /* 0C0715D4 mov.l @(disp,pc),Rn */
+	r14 = r15;  /* 0C0715D6 mov Rm,Rn */
+	r3 = 0xFFu; UPD(0x0C0715DAu, 2);  /* 0C0715D8 mov.w @(disp,pc),Rn */
+	IF(0x0C0715DAu); ;  /* 0C0715DA nop */
+	UPD(0x0C0715DCu, 1);
+L_0C0715DC: BLKS(0x0C0715DCu);
+	r7 = R32(r2); UPD(0x0C0715DEu, 1);  /* 0C0715DC mov.l @Rm,Rn */
+	T = (r7 & r7) == 0;  /* 0C0715DE tst Rm,Rn */
+	if (T) { UPD(0x0C0715EAu, 4); goto L_0C0715EA; }  /* 0C0715E0 bt */
+L_0C0715E2: BLKS(0x0C0715E2u);
+	r0 += 0x1u;  /* 0C0715E2 add #imm,Rn */
+	T = (s32)r0 > (s32)r3;  /* 0C0715E4 cmp/gt Rm,Rn */
+	{ u32 c_ = !T; r2 += 0x1Cu; /* slot add #imm,Rn */ if (c_) { UPD(0x0C0715DCu, 5); goto L_0C0715DC; } UPD(0x0C0715EAu, 1); goto L_0C0715EA; }  /* 0C0715E6 bf/s */
+L_0C0715EA: BLKS(0x0C0715EAu);
+	r3 = 0x100u; UPD(0x0C0715ECu, 1);  /* 0C0715EA mov.w @(disp,pc),Rn */
+	T = r0 == r3;  /* 0C0715EC cmp/eq Rm,Rn */
+	{ u32 c_ = T; r1 = 0xFFFFFFFFu; /* slot mov #imm,Rn */ if (c_) { UPD(0x0C071612u, 4); goto L_0C071612; } goto L_0C0715F2; }  /* 0C0715EE bt/s */
+L_0C0715F2: BLKS(0x0C0715F2u);
+	r7 = 0x1u;  /* 0C0715F2 mov #imm,Rn */
+	W32(r2, r7); UPD(0x0C0715F6u, 3);  /* 0C0715F4 mov.l Rm,@Rn */
+	r3 = 0x2Fu;  /* 0C0715F6 mov #imm,Rn */
+	W32(r2 + 0x8u, r5); UPD(0x0C0715FAu, 2);  /* 0C0715F8 mov.l Rm,@(disp,Rn) */
+	r7 = 0x4Fu;  /* 0C0715FA mov #imm,Rn */
+	W32(r2 + 0x4u, r4); UPD(0x0C0715FEu, 2);  /* 0C0715FC mov.l Rm,@(disp,Rn) */
+	r5 = 0x0u;  /* 0C0715FE mov #imm,Rn */
+	W32(r2 + 0xCu, r3); UPD(0x0C071602u, 2);  /* 0C071600 mov.l Rm,@(disp,Rn) */
+	r1 = r0;  /* 0C071602 mov Rm,Rn */
+	W32(r2 + 0x10u, r7); UPD(0x0C071606u, 2);  /* 0C071604 mov.l Rm,@(disp,Rn) */
+	W32(r2 + 0x14u, r6); UPD(0x0C071608u, 1);  /* 0C071606 mov.l Rm,@(disp,Rn) */
+	W32(r2 + 0x18u, r5); UPD(0x0C07160Au, 1);  /* 0C071608 mov.l Rm,@(disp,Rn) */
+	r4 = 0xC3CA704u; UPD(0x0C07160Cu, 1);  /* 0C07160A mov.l @(disp,pc),Rn */
+	r2 = R32(r4); UPD(0x0C07160Eu, 1);  /* 0C07160C mov.l @Rm,Rn */
+	r2 += 0x1u;  /* 0C07160E add #imm,Rn */
+	W32(r4, r2); UPD(0x0C071612u, 2);  /* 0C071610 mov.l Rm,@Rn */
+L_0C071612: BLKS(0x0C071612u);
+	r0 = r1;  /* 0C071612 mov Rm,Rn */
+	r15 = r14;  /* 0C071614 mov Rm,Rn */
+	IF(0x0C071616u); { u32 t_ = PR; { u32 v_ = R32(r15); r15 += 4; r14 = v_; } /* slot mov.l @Rm+,Rn */ UPD(t_, 5); RET(t_); }  /* 0C071616 rts */
+}
+
 /* FUN_0c071630 */
 void blk_f_0C071630(sh3_t *c)
 {
@@ -1488,6 +1534,79 @@ L_0C0726C6: BLKS(0x0C0726C6u);
 	{ r0 = 0x1u; /* slot mov #imm,Rn */ UPD(0x0C0726B6u, 3); goto L_0C0726B6; }  /* 0C0726C6 bra */
 }
 
+void blk_f_0C0726E0(sh3_t *c)
+{
+	LOCALS;
+L_0C0726E0: BLKS(0x0C0726E0u);
+	{ u32 v_ = r14; r15 -= 4; W32(r15, v_); } UPD(0x0C0726E2u, 1);  /* 0C0726E0 mov.l Rm,@-Rn */
+	r0 = 0xC0A71E0u; UPD(0x0C0726E4u, 1);  /* 0C0726E2 mov.l @(disp,pc),Rn */
+	IF(0x0C0726E4u); r15 -= 4; W32(r15, PR); UPD(0x0C0726E6u, 1);  /* 0C0726E4 sts.l pr,@-Rn */
+	IF(0x0C0726E6u); { u32 t_ = r0; PR = 0x0C0726EAu; r14 = r15; /* slot mov Rm,Rn */ UPD(t_, 2); CALLP(t_, blk_f_0C0A71E0, 0x0C0A71E0u, 0x0C0726EAu); }  /* 0C0726E6 jsr @Rn */
+L_0C0726EA: BLKS(0x0C0726EAu);
+	T = (r0 & r0) == 0;  /* 0C0726EA tst Rm,Rn */
+	{ u32 c_ = !T; r0 = 0x0u; /* slot mov #imm,Rn */ if (c_) { UPD(0x0C072700u, 4); goto L_0C072700; } UPD(0x0C0726F0u, 1); goto L_0C0726F0; }  /* 0C0726EC bf/s */
+L_0C0726F0: BLKS(0x0C0726F0u);
+	r15 = r14;  /* 0C0726F0 mov Rm,Rn */
+	IF(0x0C0726F2u); PR = R32(r15); r15 += 4; UPD(0x0C0726F4u, 2);  /* 0C0726F2 lds.l @Rn+,pr */
+	IF(0x0C0726F4u); { u32 t_ = PR; { u32 v_ = R32(r15); r15 += 4; r14 = v_; } /* slot mov.l @Rm+,Rn */ UPD(t_, 3); RET(t_); }  /* 0C0726F4 rts */
+L_0C072700: BLKS(0x0C072700u);
+	r0 = 0xC060078u; UPD(0x0C072702u, 1);  /* 0C072700 mov.l @(disp,pc),Rn */
+	r4 = 0x0u;  /* 0C072702 mov #imm,Rn */
+	IF(0x0C072704u); { u32 t_ = r0; PR = 0x0C072708u; r5 = 0x10u; /* slot mov #imm,Rn */ UPD(t_, 3); CALLP(t_, blk_f_0C060078, 0x0C060078u, 0x0C072708u); }  /* 0C072704 jsr @Rn */
+L_0C072708: BLKS(0x0C072708u);
+	r3 = 0xC3C4164u; UPD(0x0C07270Au, 1);  /* 0C072708 mov.l @(disp,pc),Rn */
+	r1 = 0x0u;  /* 0C07270A mov #imm,Rn */
+	r0 = (u32)(s32)(s8)R8(r3); UPD(0x0C07270Eu, 2);  /* 0C07270C mov.b @Rm,Rn */
+	r4 = 0xC175800u; UPD(0x0C072710u, 1);  /* 0C07270E mov.l @(disp,pc),Rn */
+	r0 &= 0x1u;  /* 0C072710 and #imm,r0 */
+	IF(0x0C072712u); r0 <<= 2;  /* 0C072712 shll2 Rn */
+	IF(0x0C072714u); r3 = R32(r0 + r4); UPD(0x0C072716u, 3);  /* 0C072714 mov.l @(r0,Rm),Rn */
+	r0 = 0xC23E0A6u; UPD(0x0C072718u, 1);  /* 0C072716 mov.l @(disp,pc),Rn */
+	r5 = 0xC3CA6F4u; UPD(0x0C07271Au, 1);  /* 0C072718 mov.l @(disp,pc),Rn */
+	r2 = (u32)(s32)(s8)R8(r0); UPD(0x0C07271Cu, 1);  /* 0C07271A mov.b @Rm,Rn */
+	W32(r5, r1); UPD(0x0C07271Eu, 1);  /* 0C07271C mov.l Rm,@Rn */
+	r0 = r2 & 0xFF;  /* 0C07271E extu.b Rm,Rn */
+	IF(0x0C072720u); r4 = (u32)(s32)(s8)R8(r0 + r3); UPD(0x0C072722u, 2);  /* 0C072720 mov.b @(r0,Rm),Rn */
+	r0 = 0xC0C2110u; UPD(0x0C072724u, 1);  /* 0C072722 mov.l @(disp,pc),Rn */
+	IF(0x0C072724u); { u32 t_ = r0; PR = 0x0C072728u; IF(0x0C072726u); ; /* slot nop */ UPD(t_, 2); CALLP(t_, blk_f_0C0C2110, 0x0C0C2110u, 0x0C072728u); }  /* 0C072724 jsr @Rn */
+L_0C072728: BLKS(0x0C072728u);
+	{ r0 = 0x1u; /* slot mov #imm,Rn */ UPD(0x0C0726F0u, 3); goto L_0C0726F0; }  /* 0C072728 bra */
+}
+
+void blk_f_0C072750(sh3_t *c)
+{
+	LOCALS;
+L_0C072750: BLKS(0x0C072750u);
+	{ u32 v_ = r14; r15 -= 4; W32(r15, v_); } UPD(0x0C072752u, 1);  /* 0C072750 mov.l Rm,@-Rn */
+	r0 = 0xC0A7330u; UPD(0x0C072754u, 1);  /* 0C072752 mov.l @(disp,pc),Rn */
+	IF(0x0C072754u); r15 -= 4; W32(r15, PR); UPD(0x0C072756u, 1);  /* 0C072754 sts.l pr,@-Rn */
+	IF(0x0C072756u); { u32 t_ = r0; PR = 0x0C07275Au; r14 = r15; /* slot mov Rm,Rn */ UPD(t_, 2); CALLP(t_, blk_f_0C0A7330, 0x0C0A7330u, 0x0C07275Au); }  /* 0C072756 jsr @Rn */
+L_0C07275A: BLKS(0x0C07275Au);
+	T = (r0 & r0) == 0;  /* 0C07275A tst Rm,Rn */
+	{ u32 c_ = !T; r0 = 0x0u; /* slot mov #imm,Rn */ if (c_) { UPD(0x0C072770u, 4); goto L_0C072770; } UPD(0x0C072760u, 1); goto L_0C072760; }  /* 0C07275C bf/s */
+L_0C072760: BLKS(0x0C072760u);
+	r15 = r14;  /* 0C072760 mov Rm,Rn */
+	IF(0x0C072762u); PR = R32(r15); r15 += 4; UPD(0x0C072764u, 2);  /* 0C072762 lds.l @Rn+,pr */
+	IF(0x0C072764u); { u32 t_ = PR; { u32 v_ = R32(r15); r15 += 4; r14 = v_; } /* slot mov.l @Rm+,Rn */ UPD(t_, 3); RET(t_); }  /* 0C072764 rts */
+L_0C072770: BLKS(0x0C072770u);
+	r0 = 0xC060078u; UPD(0x0C072772u, 1);  /* 0C072770 mov.l @(disp,pc),Rn */
+	r4 = 0x0u;  /* 0C072772 mov #imm,Rn */
+	IF(0x0C072774u); { u32 t_ = r0; PR = 0x0C072778u; r5 = 0x10u; /* slot mov #imm,Rn */ UPD(t_, 3); CALLP(t_, blk_f_0C060078, 0x0C060078u, 0x0C072778u); }  /* 0C072774 jsr @Rn */
+L_0C072778: BLKS(0x0C072778u);
+	r0 = 0xC23E0A6u; UPD(0x0C07277Au, 1);  /* 0C072778 mov.l @(disp,pc),Rn */
+	r1 = 0x0u;  /* 0C07277A mov #imm,Rn */
+	r2 = (u32)(s32)(s8)R8(r0); UPD(0x0C07277Eu, 2);  /* 0C07277C mov.b @Rm,Rn */
+	r3 = 0xC175808u; UPD(0x0C072780u, 1);  /* 0C07277E mov.l @(disp,pc),Rn */
+	r0 = r2 & 0xFF;  /* 0C072780 extu.b Rm,Rn */
+	IF(0x0C072782u); r2 = (u32)(s32)(s8)R8(r0 + r3); UPD(0x0C072784u, 2);  /* 0C072782 mov.b @(r0,Rm),Rn */
+	r4 = 0xC3CA6F4u; UPD(0x0C072786u, 1);  /* 0C072784 mov.l @(disp,pc),Rn */
+	r0 = 0xC0C2110u; UPD(0x0C072788u, 1);  /* 0C072786 mov.l @(disp,pc),Rn */
+	W32(r4, r1); UPD(0x0C07278Au, 1);  /* 0C072788 mov.l Rm,@Rn */
+	IF(0x0C07278Au); { u32 t_ = r0; PR = 0x0C07278Eu; r4 = r2 & 0xFF; /* slot extu.b Rm,Rn */ UPD(t_, 2); CALLP(t_, blk_f_0C0C2110, 0x0C0C2110u, 0x0C07278Eu); }  /* 0C07278A jsr @Rn */
+L_0C07278E: BLKS(0x0C07278Eu);
+	{ r0 = 0x1u; /* slot mov #imm,Rn */ UPD(0x0C072760u, 3); goto L_0C072760; }  /* 0C07278E bra */
+}
+
 void blk_f_0C0727B0(sh3_t *c)
 {
 	LOCALS;
@@ -1741,89 +1860,5 @@ L_0C0729E8: BLKS(0x0C0729E8u);
 	r0 = 0x1u;  /* 0C0729E8 mov #imm,Rn */
 	r15 = r14;  /* 0C0729EA mov Rm,Rn */
 	IF(0x0C0729ECu); { u32 t_ = PR; { u32 v_ = R32(r15); r15 += 4; r14 = v_; } /* slot mov.l @Rm+,Rn */ UPD(t_, 6); RET(t_); }  /* 0C0729EC rts */
-}
-
-void blk_f_0C072A00(sh3_t *c)
-{
-	LOCALS;
-L_0C072A00: BLKS(0x0C072A00u);
-	{ u32 v_ = r8; r15 -= 4; W32(r15, v_); } UPD(0x0C072A02u, 1);  /* 0C072A00 mov.l Rm,@-Rn */
-	{ u32 v_ = r9; r15 -= 4; W32(r15, v_); } UPD(0x0C072A04u, 1);  /* 0C072A02 mov.l Rm,@-Rn */
-	r8 = 0x0u;  /* 0C072A04 mov #imm,Rn */
-	{ u32 v_ = r10; r15 -= 4; W32(r15, v_); } UPD(0x0C072A08u, 2);  /* 0C072A06 mov.l Rm,@-Rn */
-	{ u32 v_ = r14; r15 -= 4; W32(r15, v_); } UPD(0x0C072A0Au, 1);  /* 0C072A08 mov.l Rm,@-Rn */
-	r9 = 0xC286318u; UPD(0x0C072A0Cu, 1);  /* 0C072A0A mov.l @(disp,pc),Rn */
-	IF(0x0C072A0Cu); r15 -= 4; W32(r15, PR); UPD(0x0C072A0Eu, 1);  /* 0C072A0C sts.l pr,@-Rn */
-	r10 = 0xC06A290u; UPD(0x0C072A10u, 1);  /* 0C072A0E mov.l @(disp,pc),Rn */
-	r14 = r15;  /* 0C072A10 mov Rm,Rn */
-	IF(0x0C072A12u); ;  /* 0C072A12 nop */
-	UPD(0x0C072A14u, 2);
-L_0C072A14: BLKS(0x0C072A14u);
-	r0 = 0x4Cu;  /* 0C072A14 mov #imm,Rn */
-	IF(0x0C072A16u); MACL = r8 * r0;  /* 0C072A16 mul.l Rm,Rn */
-	IF(0x0C072A18u); r2 = MACL;  /* 0C072A18 sts macl,Rn */
-	r2 += r9;  /* 0C072A1A add Rm,Rn */
-	r0 = R32(r2); UPD(0x0C072A1Eu, 6);  /* 0C072A1C mov.l @Rm,Rn */
-	T = (r0 & r0) == 0;  /* 0C072A1E tst Rm,Rn */
-	{ u32 c_ = !T; r4 = r8; /* slot mov Rm,Rn */ if (c_) { UPD(0x0C072A40u, 4); goto L_0C072A40; } UPD(0x0C072A24u, 1); goto L_0C072A24; }  /* 0C072A20 bf/s */
-L_0C072A24: BLKS(0x0C072A24u);
-	r3 = r8;  /* 0C072A24 mov Rm,Rn */
-	r3 += 0x1u;  /* 0C072A26 add #imm,Rn */
-	r8 = r3 & 0xFF;  /* 0C072A28 extu.b Rm,Rn */
-	r2 = 0x7u;  /* 0C072A2A mov #imm,Rn */
-	T = r8 > r2;  /* 0C072A2C cmp/hi Rm,Rn */
-	{ u32 c_ = !T; r0 = 0x1u; /* slot mov #imm,Rn */ if (c_) { UPD(0x0C072A14u, 8); goto L_0C072A14; } UPD(0x0C072A32u, 1); goto L_0C072A32; }  /* 0C072A2E bf/s */
-L_0C072A32: BLKS(0x0C072A32u);
-	r15 = r14;  /* 0C072A32 mov Rm,Rn */
-	IF(0x0C072A34u); PR = R32(r15); r15 += 4; UPD(0x0C072A36u, 2);  /* 0C072A34 lds.l @Rn+,pr */
-	{ u32 v_ = R32(r15); r15 += 4; r14 = v_; } UPD(0x0C072A38u, 1);  /* 0C072A36 mov.l @Rm+,Rn */
-	{ u32 v_ = R32(r15); r15 += 4; r10 = v_; } UPD(0x0C072A3Au, 1);  /* 0C072A38 mov.l @Rm+,Rn */
-	{ u32 v_ = R32(r15); r15 += 4; r9 = v_; } UPD(0x0C072A3Cu, 1);  /* 0C072A3A mov.l @Rm+,Rn */
-	IF(0x0C072A3Cu); { u32 t_ = PR; { u32 v_ = R32(r15); r15 += 4; r8 = v_; } /* slot mov.l @Rm+,Rn */ UPD(t_, 3); RET(t_); }  /* 0C072A3C rts */
-L_0C072A40: BLKS(0x0C072A40u);
-	r4 += 0x8u;  /* 0C072A40 add #imm,Rn */
-	IF(0x0C072A42u); { u32 t_ = r10; PR = 0x0C072A46u; r5 = R32(r2 + 0x30u); /* slot mov.l @(disp,Rm),Rn */ UPD(t_, 3); CALLP(t_, blk_f_0C06A290, 0x0C06A290u, 0x0C072A46u); }  /* 0C072A42 jsr @Rn */
-L_0C072A46: BLKS(0x0C072A46u);
-	T = (r0 & r0) == 0;  /* 0C072A46 tst Rm,Rn */
-	{ u32 c_ = !T; r0 = 0x0u; /* slot mov #imm,Rn */ if (c_) { UPD(0x0C072A24u, 4); goto L_0C072A24; } goto L_0C072A4C; }  /* 0C072A48 bf/s */
-L_0C072A4C: BLKS(0x0C072A4Cu);
-	{ IF(0x0C072A4Eu); ; /* slot nop */ UPD(0x0C072A32u, 4); goto L_0C072A32; }  /* 0C072A4C bra */
-}
-
-void blk_f_0C072A60(sh3_t *c)
-{
-	LOCALS;
-L_0C072A60: BLKS(0x0C072A60u);
-	{ u32 v_ = r14; r15 -= 4; W32(r15, v_); } UPD(0x0C072A62u, 1);  /* 0C072A60 mov.l Rm,@-Rn */
-	r0 = 0xC2ABAA4u; UPD(0x0C072A64u, 1);  /* 0C072A62 mov.l @(disp,pc),Rn */
-	r14 = r15;  /* 0C072A64 mov Rm,Rn */
-	r4 = R32(r0); UPD(0x0C072A68u, 2);  /* 0C072A66 mov.l @Rm,Rn */
-	{ u32 v_ = (u32)(s32)(s16)R16(r4); r4 += 2; r3 = v_; } UPD(0x0C072A6Au, 1);  /* 0C072A68 mov.w @Rm+,Rn */
-	r1 = 0xC23945Cu; UPD(0x0C072A6Cu, 1);  /* 0C072A6A mov.l @(disp,pc),Rn */
-	IF(0x0C072A6Cu); r3 <<= 8;  /* 0C072A6C shll8 Rn */
-	W32(r0, r4); UPD(0x0C072A70u, 2);  /* 0C072A6E mov.l Rm,@Rn */
-	W32(r1, r3); UPD(0x0C072A72u, 1);  /* 0C072A70 mov.l Rm,@Rn */
-	r0 = 0x1u;  /* 0C072A72 mov #imm,Rn */
-	r15 = r14;  /* 0C072A74 mov Rm,Rn */
-	IF(0x0C072A76u); { u32 t_ = PR; { u32 v_ = R32(r15); r15 += 4; r14 = v_; } /* slot mov.l @Rm+,Rn */ UPD(t_, 5); RET(t_); }  /* 0C072A76 rts */
-}
-
-/* FUN_0c072a90 */
-void blk_f_0C072A90(sh3_t *c)
-{
-	LOCALS;
-L_0C072A90: BLKS(0x0C072A90u);
-	{ u32 v_ = r14; r15 -= 4; W32(r15, v_); } UPD(0x0C072A92u, 1);  /* 0C072A90 mov.l Rm,@-Rn */
-	r2 = (u32)(s32)(s16)r4;  /* 0C072A92 exts.w Rm,Rn */
-	r0 = 0xC22E2A4u; UPD(0x0C072A96u, 2);  /* 0C072A94 mov.l @(disp,pc),Rn */
-	IF(0x0C072A96u); r2 <<= 8;  /* 0C072A96 shll8 Rn */
-	W32(r0, r2); UPD(0x0C072A9Au, 2);  /* 0C072A98 mov.l Rm,@Rn */
-	r1 = (u32)(s32)(s16)r5;  /* 0C072A9A exts.w Rm,Rn */
-	r0 = 0xC239454u; UPD(0x0C072A9Eu, 2);  /* 0C072A9C mov.l @(disp,pc),Rn */
-	IF(0x0C072A9Eu); r1 <<= 8;  /* 0C072A9E shll8 Rn */
-	W32(r0, r1); UPD(0x0C072AA2u, 2);  /* 0C072AA0 mov.l Rm,@Rn */
-	r14 = r15;  /* 0C072AA2 mov Rm,Rn */
-	r15 = r14;  /* 0C072AA4 mov Rm,Rn */
-	IF(0x0C072AA6u); { u32 t_ = PR; { u32 v_ = R32(r15); r15 += 4; r14 = v_; } /* slot mov.l @Rm+,Rn */ UPD(t_, 5); RET(t_); }  /* 0C072AA6 rts */
 }
 

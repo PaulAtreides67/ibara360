@@ -1,0 +1,2335 @@
+/* GADGETS (test 58's info card, renamed in test 59; gadgets.h). The background is gen/card's 1280x720 picture (Baffo's
+ * artwork, tools/card/mkcard.py) drawn under the game picture; over it, quads from gen/card's atlas (the plates, the
+ * artwork's sticks, buttons, digits, items and medals, the game's font, a white square for bars) tinted and faded by
+ * their corner colour (shaders/card.vert, card.frag). The values come from game RAM, read on the game thread at each
+ * emulated vblank (gadgets_frame); the quads are built in present() into one of GD_SLOTS blocks of GPU memory, each
+ * written again only once the frame that drew with it has been shown.
+ *
+ * Test 60: a view (GV_*) is a canvas the quads are placed in, turned into the front buffer by xf(): 1280x720 (16:9,
+ * tate off; test 58's), 960x720 (4:3, tate off: a 420x720 panel at its right, the game at its left) and 720x1280
+ * (tate on a 16:9 display, upright as the player sees it: two 720x160 bands at its top and bottom, the game between;
+ * turned a quarter to the TV's top edge, left or right). Kuro BL has its own background (its title logo) and RAM
+ * (map_blk).
+ *
+ * Test 61 (user 2026-10-24): the score in the artwork's large digits; MUSIC under BOSS on 16:9; ibara on 16:9 only:
+ * FORMATION (the special formation streak and the formation the options fly in) and RAPID (AUTO SHOT's rate, the
+ * presses the game reads); the controls 5% smaller, the side last touched at the left whichever side it is.
+ *
+ * Test 62 (user 2026-10-24): every boss's time counts down: frames until it withdraws by timeout from bossclock.c,
+ * shown from the start of its fight (tiers 1-2, or tier 3 while the boss music plays).
+ *
+ * Test 64 (user 2026-10-25, "GADGETS update" list): every plate is its own sprite (mkcard.py), drawn at its place in
+ * the view with its gadget (gadgets_mask: the options' M3 GADGETS page turns each on or off); every plate 2.5% smaller
+ * (CARD_KS): the values keep test 63's 16:9 coordinates ("design" pixels) and tx_*() maps them onto their plate's
+ * place; WEAPON 8 rows on 16:9: HADOU under BOMB, LIVES (was SHIPS), RAPID at its bottom (its own plate is gone);
+ * ibara's SHOT row with the full-power secret; Kuro BL's options as a three-row box of its seven weapons, the owned
+ * ones lit; STAGES (each stage's score, a bar per stage) above MUSIC; the boss's HP at the bar's left, no "LEFT"; the
+ * rank's 100% (two digits showed 00). ibara's 16:9 background with FORMATION on has its logo moved down (mkcard.py).
+ *
+ * Test 65 (user 2026-10-25, test 64's report): STAGES followed MUSIC's switch (a GD_STAGES define, the stage count,
+ * hid the gadget's id: now ST_N); STATUS above WEAPON (the ship, type and mode, bombs, lives, EXT and the frames of
+ * invincibility left, all out of WEAPON, which keeps SHOT, the options, HADOU and RAPID); SECRET FORMATION (was
+ * FORMATION); a stage where a continue was used has its score red in STAGES (a continue = the score falling); tate on
+ * 16:9: 2 x 2 short plates per band (SCORE RANK / STATUS STAGES above, BOSS NEXT MEDAL / ITEMS NEXT DROP below);
+ * 4:3 with tate off: every plate and its values at CARD_X43 (75%) of their width, STATUS above WEAPON, NEXT MEDAL
+ * beside BOSS; the boss's time with three decimals (game frames / 60), a little to the left; the logos may be buried
+ * (one ibara background; mkcard.py paints the right panel's plates out without leftovers).
+ *
+ * Test 67 (user 2026-10-25): ITEMS COLLECTED gone ("secret formation does the same job"), NEXT DROP in its place,
+ * BULLETS (the enemy bullets on screen, the artwork's large digits) and MEDALS (was NEXT MEDAL: the next medal and its
+ * value), each as long as its name's tab, side by side in NEXT DROP's old place at their own scale; HADOU and
+ * RAPID without switches of their own (WEAPON's rows); CONTROLS as the stick and buttons or as text on a slim plate at
+ * the bottom left, each input lit while the game reads it pressed (gd_input.ctl_text).
+ *
+ * Test 71 (user 2026-10-25): co-op ("co-op gadgets, to be a separate toggle in the gadgets menu": rank, p1/p2 scores,
+ * status, weapon, secret formation "unless the system is universally shared between the two players ... keep it on P1
+ * side" (it is: one streak row for both, work/g61/re/REPORT.md A1), controls; "remove next drop, stages score breakdown,
+ * music"): while both sides have played in the run (pl[].in, their ship seen in play) and M3 GADGETS' CO-OP is on, the
+ * 16:9 view has 1P's column at the left as before and RANK, then 2P's SCORE, STATUS, WEAPON and CONTROLS at the right
+ * (mirrored), the 4:3 view 1P's column and RANK + 2P's; each player's values from its own record (struct gd_pl; the
+ * plates draw P's, the controls CS's). 4:3 reworked (user: "try to place everything (minus the stick controls, text
+ * controls only) at your discretion"): two columns of every gadget at the panel's right (mkcard.py's CARD_F43X x
+ * CARD_F43Y sprites, stacked: a gadget turned off leaves its room to the artwork), over the run's pilot's panel (Bond's
+ * or Dyne's, gd_input.pilot). The BOSS: a part that becomes the boss while one is shown must stay the boss BOSS_SETTLE
+ * vblanks first (user: "when a boss reaches 0% health, the gadget briefly displays 100% health again for a couple
+ * frames": test 70's rec0012, the stage 1 boss at 3/229, then for one vblank part 24 at 21/21; Kuro BL's stage 2 tank
+ * the same at a turret's death): the one shown meanwhile at its hit points, 0 once destroyed. SPECIAL FORMATIONS empty
+ * outside a run and in the attract's demos (user). CONTROLS' style and CO-OP from gadgets_style at each draw (the
+ * pause's M3 GADGETS changes them at once; test 70 read the style with the game's values, frozen in a pause).
+ *
+ * Ibara's RAM (big-endian bytes, as the SH-3 sees them), found on the PC (PLAN.md "Test 58"):
+ *   rank      u32 0C27DFF8: (1 - v / 2^24) = the rank's share, 0 easiest .. 1 hardest (pinkswts' label, ported);
+ *             0 at the hardest (test 64: Kuro BL's test 62 run, work/g64/rank)
+ *   score     u32 0C283A04 (1P), +0x280 (2P)
+ *   next drop u8  0C275DC8: the place in the 25-item drop cycle; item counts u8 0C21CC8C + i + 8 * u8 0C21CA15
+ *             (i = 0..3, the first non-zero kind is the one being collected); next medal u8 0C392D78 (0..18 = 100 ..
+ *             10000): the MAME artwork's script (Olifante), its addresses less 0x30 for this program ('06. 3. 7 ver.)
+ *   music     u8  0C3929B0: the YMZ770 sequence the sound driver plays (each track an intro and a loop sequence)
+ *   enemies   0C26CD40: 100 parts of 0xB4 bytes: +0 flags (bit 31 alive, 0x8000 boss class, 0x4000 a child part,
+ *             0x03000100 active), +08 / +10 its type record, +3C u16 hit points, +40 u32 score value, +50 / +8C its
+ *             behaviour's elapsed-time counters (game frames), +9F its phase
+ *   ship      u8  0C28379B (1P; 2P +0x280): side * 4 + type; mode u8 0C286752: normal, harder, extended
+ *   stage     u8  0C392B08: 2-7 = stages 1-6, 8-13 = the extended mode's second loop (test 63's run; 8 = the ending
+ *             after one loop)
+ *   player    0C283794 + side * 0x280 (the code's own stride): +253 ships in reserve, +254 shot level, +255 small P
+ *             toward the next (level k takes k + 1), +256 full bombs, +257 bomb fragments (40 = a full bomb), +262..264
+ *             the left / right / rear slot's formation code (5 of a kind, then an option: 1 search, 2 wide, 3 / 4
+ *             rolling, 5 back), +265..267 the slots' options (weapon * 2 + side, test 61: the weapon 0 rocket, 1
+ *             burner, 2 gatling, 3 homing, 4 napalm, 5 machine gun, 6 5way; 0xFF empty), +274 u32 the next extend's
+ *             score; test 61: a slot's option flies while its pod's u32 0C27DC84 + side * 0x90 + slot * 0x30 is not 0
+ *             (a hit frees the pods, the slot bytes and codes stay until the respawn clears them)
+ *   streaks   (test 61, work/g61/re/REPORT.md) u8 0C21CC8C + kind + 8 * u8 0C21CA15 (the attract demo's flag: the demo
+ *             counts in its own row): kinds 0 small P, 1 option, 2 bomb fragment, 3 medal, 4 large P, 5 full bomb, 6
+ *             1UP, 7 score item; a pickup of kinds 0-5 clears the others and counts its own, no cap (u8); an option
+ *             picked up with exactly 5 fragments / options / medals / small P before it sets search / wide / rolling /
+ *             back on all three slots (wide: the 6th option in a row), unless the slots that fly options have it
+ *   invincible (test 65, work/g65/inv) the player's u8 +269: 240 at a respawn, less one a game frame, hit only at 0
+ * Kuro BL's: map_blk (work/card/blk/REPORT.md); its weapon stock u32[7] 0C22E028 + weapon * 4 (not 0 = owned, both
+ * sides' own), the current weapon the player's +26F; test 65: its invincibility u8 +288, the ship select's flag u32
+ * 0C3C86AC.
+ *
+ * Test 76, Kuro BL's XTC (Xtreme Terror Counter; this session's research, PLAN.md "Test 76", read in its code): the
+ * graze test 0C06EF50 runs for one player a frame (the other the next), for each enemy bullet (+0 & 0x10000000) inside
+ * the player's graze box while it can be hit (+0 & 0x04000000), A has been held 5 frames or more (+270) and its option
+ * pods are out (+289): score + 10, the counter's quarters (+280) + 1 up to 39996 (shown >> 2 = 0..9999), and every
+ * shown step its timer (+284) 128; the timer counts down each frame (0C071110) and wipes the counter at 0, as a bomb
+ * does 16 frames after it starts. The box is not a circle: |bullet - player| < 14 + e + 1 along the game's x (the
+ * player's up) and < 19 + e + 1 along its y, e = ((((2^24 - rank) >> 3) * A frames) >> 3) / 2^16 = 4 n share pixels:
+ * 40 x 30 as the player sees it at the easiest rank, 104 x 94 at the hardest with A held 8 frames. The game's sphere
+ * (its ring sprite) shows while A is held with the pods out, its opacity +277 (+16 a graze, -2 a frame, 0..0xC0), its
+ * tint blue (easiest) -> green (half) -> red (hardest). */
+#include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "xsdk/gpu.h"
+#include "xsdk/shader.h"
+#include "xsdk/texture.h"
+
+#include "ibara360_shaders.h"
+
+#include "card.h"
+#include "bossclock.h"
+#include "card_layout.h"
+#include "cv1k.h"
+#include "gadgets.h"
+#include "zlib.h"
+#ifdef IB_ARRANGE
+#include "arrange_patch.h" /* test 79: ARRANGE's state in work RAM (ARRANGE_FORM, ...) */
+#define ARR 1
+#else
+#define ARR 0
+#endif
+
+#define GD_SLOTS 4           /* vertex blocks used in turn */
+#define GD_MAX_QUADS 1024    /* per frame (test 64: 768 before the plates and STAGES) */
+#define GD_VF 8              /* floats per corner: x y, r g b a, u v */
+#define GD_INPUT_SHOW 600    /* vblanks a side's controls stay after its last change (the artwork's script) */
+#define GD_INPUT_FADE 60     /* then fade out over this many */
+#define GD_RANK_SPAN 60      /* the rank's change is shown over this many emulated frames */
+#define GD_RANK_HOLD 180     /* a fall of 1% or more (a death) stays this long */
+#define ST_N 12              /* test 64: stage scores kept (two loops of six); test 65: was GD_STAGES, which hid
+                              * the gadget's id (ON(GD_STAGES) read MUSIC's bit) */
+#define BOSS_SETTLE 6        /* test 71: vblanks another part must be the boss before it is shown */
+
+struct gd_stats gd_stats;
+
+/* test 70 (user): SECRET FORMATION = SPECIAL FORMATIONS, STAGES = SCORE BREAKDOWN (their ini keys stay) */
+const char *const gadgets_names[GD_N] = {"SCORE", "STATUS", "WEAPON", "SPECIAL FORMATIONS", "CONTROLS", "RANK",
+                                         "NEXT DROP", "MEDALS", "BULLETS", "BOSS", "SCORE BREAKDOWN", "MUSIC", "XTC"};
+const char *const gadgets_keys[GD_N] = {"score", "status", "weapon", "formation", "controls", "rank", "next_drop",
+                                        "next_medal", "bullets", "boss", "stages", "music", "xtc"};
+
+int gadgets_ibara_only(int g)
+{
+	return g == GD_FORMATION;
+}
+
+int gadgets_in_game(int g, int blk)
+{
+	return blk ? g != GD_FORMATION : g != GD_XTC;
+}
+
+static unsigned gd_on = GD_ALL; /* test 64: the gadgets shown (gadgets_mask) */
+#define ON(g) ((gd_on >> (g)) & 1u)
+static int gd_ctl_text, gd_coop = 1; /* test 71: gadgets_style's */
+
+void gadgets_mask(unsigned mask)
+{
+	gd_on = mask;
+}
+
+void gadgets_style(int ctl_text, int coop)
+{
+	gd_ctl_text = ctl_text;
+	gd_coop = coop;
+}
+
+static const XsdkVertexElement gd_layout[] = {
+	{.usage = XSDK_USAGE_POSITION, .format = XSDK_VERTEX_FLOAT2, .offset_bytes = 0},
+	{.usage = XSDK_USAGE_COLOR, .format = XSDK_VERTEX_FLOAT4, .offset_bytes = 8},
+	{.usage = XSDK_USAGE_TEXCOORD, .format = XSDK_VERTEX_FLOAT2, .offset_bytes = 24},
+};
+
+static XsdkShader gd_vs, gd_ps;
+static XsdkTexture gd_bg, gd_atlas, gd_p43[2], gd_tate; /* test 71: the 4:3 panel per pilot */
+static XsdkSamplerState gd_point, gd_linear;
+static XsdkBlendState gd_alpha, gd_none;
+static volatile uint32_t *gd_vmem;       /* GD_SLOTS blocks of GD_MAX_QUADS quads */
+static uint32_t gd_used[GD_SLOTS];       /* frames_queued once the frame drawn with each block is queued */
+static float gd_q[GD_MAX_QUADS][6][GD_VF];
+static unsigned gd_nq;
+static int gd_fbw = 1280, gd_fbh = 720;
+static int gd_view = GV_WIDE;            /* the canvas quad() places in */
+static int gd_v = CPV_WIDE;              /* test 64: its column in card_plates */
+
+/* ---- each game's RAM and rules (test 60) ---------------------------------------------------------------------- */
+
+struct gd_map {
+	uint32_t rank, score, p2, drop, pickups, consec, medal, bgm, game_on, ship, mode, enemy, enemy_size, stage;
+	uint32_t player;          /* + side * p2 */
+	unsigned enemies;
+	uint32_t lives, shot, shot_p, bombs, frags, form, opts, extend; /* offsets in the player's record */
+	uint32_t ext_none;        /* the next extend's score at or above this: no more extends */
+	int options;              /* ibara's L / R / B option slots and their formations */
+	uint32_t pods;            /* test 61: the slots' pods (+ side * 0x90 + slot * 0x30; u32 not 0 = flying) */
+	uint32_t stock, weapon;   /* test 64, Kuro BL: the weapon stock (u32[7]), the current weapon (player offset) */
+	uint32_t shots;           /* test 64: the shot table (+ side * 0x2800 + slot * 0x50, 128 slots; the Hadou's) */
+	unsigned shot_top;        /* test 64: the last shot level small P raise (ibara 4: 5 is its normal top, 6 the
+	                           * secret's; Kuro BL 5) */
+	int secret;               /* test 64, ibara: the 6th small P in a row = full power (work/g64/secret) */
+	uint32_t inv;             /* test 65: the invincibility counter (u8, player offset; work/g65/inv) */
+	uint32_t inv_frozen;      /* test 65, Kuro BL: the ship select's flag (u32; 0 = none) */
+	uint32_t bullets, camera; /* test 67: the enemy bullet pool (256 x 0x54) and the camera's s32 (work/g67/bullets) */
+	int modes;                /* normal / harder / extended (mode) */
+	const char *(*bgm_name)(unsigned seq);
+	int (*boss_music)(unsigned seq);
+	int clock;                /* test 62: bossclock.c's game (BC_IBARA, BC_BLK) */
+	const char *composer;
+	unsigned side_bit;        /* the ship byte's Bond / Dyne bit */
+	unsigned kind_bit;        /* its straight / spread ship bit (Kuro BL; 0 = none) */
+	int run_stage;            /* a run also needs a stage (the stage byte not 0) */
+	int own_plates;           /* test 61: FORMATION and RAPID (ibara's, user's choice) */
+	int xtc;                  /* test 76: the XTC (Kuro BL's; XTC_* in the player's record) */
+};
+
+/* test 81: ibara's RAPID row is WEAPON's (its last row, or CONTROLS' text plate's), but not in ARRANGE, whose WEAPON has
+ * the stored sub weapons' box there */
+#define RAPID_ON_WEAPON (M->own_plates && !ARR)
+
+/* test 76, Kuro BL's XTC: offsets in the player's record (the header's notes) */
+#define XTC_HOLD 0x270u           /* u8: frames A has been held, 0..8 (0 at its release); the box tested from 5 */
+#define XTC_GLOW 0x277u           /* u8: the sphere's opacity, 0..0xC0 */
+#define XTC_RAW 0x280u            /* s32: the counter in quarters (shown >> 2) */
+#define XTC_LEFT 0x284u           /* u16: frames until it is wiped */
+#define XTC_OPTS 0x289u           /* u8: the option pods out (3) or not (0) */
+#define XTC_TIMER 128             /* the timer at each shown step */
+static const struct gd_map *M;
+
+static uint32_t be32(uint32_t a)
+{
+	const uint8_t *p = RAMP(a);
+	return (uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 | (uint32_t)p[2] << 8 | p[3];
+}
+
+static unsigned be16(uint32_t a)
+{
+	const uint8_t *p = RAMP(a);
+	return (unsigned)p[0] << 8 | p[1];
+}
+
+/* ibara's music: the sequence the driver plays -> the name in the game's own sound list (0C1F5CD4: its sound test
+ * plays bgm 0-15 as sequences 15 17 19 21 23 25 2 9 7 6 4 27 29 31 33 0, each its intro, then the next one looping;
+ * bgm 15, sequence 0, has no name; sequences 11/12 are not in the list) */
+static const char *bgm_name_ib(unsigned seq)
+{
+	switch (seq) {
+	case 29: case 30: return "The Family's Work";
+	case 31: case 32: return "Air Pollution";
+	case 2: case 3: return "Ending";
+	case 4: case 5: return "Ranking";
+	case 6: return "Game Over";
+	case 7: case 8: return "Rose of Zeal";
+	case 9: case 10: return "Guardian Angel";
+	case 15: case 16: return "Show Time";
+	case 17: case 18: return "Sky High";
+	case 19: case 20: return "Like a Rolling Stone";
+	case 21: case 22: return "Endress Train";
+	case 23: case 24: return "Robot No28";
+	case 25: case 26: return "Rose Garden";
+	case 27: case 28: return "Bonds of Steel";
+	case 33: return "Mother Teresa";
+	default: return NULL;
+	}
+}
+
+static int boss_music_ib(unsigned seq)
+{
+	return seq == 7 || seq == 8 || seq == 9 || seq == 10 || seq == 33;
+}
+
+static const struct gd_map map_ib = {
+	.rank = 0x0C27DFF8u, .score = 0x0C283A04u, .p2 = 0x280u, .drop = 0x0C275DC8u, .pickups = 0x0C21CC8Cu,
+	.consec = 0x0C21CA15u, .medal = 0x0C392D78u, .bgm = 0x0C3929B0u, .game_on = 0x0C28530Cu, .ship = 0x0C28379Bu,
+	.mode = 0x0C286752u, .enemy = 0x0C26CD40u, .enemy_size = 0xB4u, .stage = 0x0C392B08u, .player = 0x0C283794u,
+	.enemies = 100, .lives = 0x253u, .shot = 0x254u, .shot_p = 0x255u, .bombs = 0x256u, .frags = 0x257u,
+	.form = 0x262u, .opts = 0x265u, .extend = 0x274u, .ext_none = 1000000000u, .options = 1, .pods = 0x0C27DC84u,
+	.shots = 0x0C217A04u, .shot_top = 4, .secret = 1, .inv = 0x269u, .bullets = 0x0C27E0FCu, .camera = 0x0C3929E0u, .modes = 1, .bgm_name = bgm_name_ib, .boss_music = boss_music_ib, .clock = BC_IBARA, .composer = "SHINJI HOSOE",
+	.side_bit = 4, .kind_bit = 0, .run_stage = 0, .own_plates = 1,
+};
+
+/* Kuro BL (work/card/blk/REPORT.md, from its replays): ibara's systems at its own addresses; its sound list is ibara's
+ * less Show Time (15/16); its bosses follow ibara's tier rule (their clocks: bossclock.c); no modes; a run is game-on
+ * 1..2 with a stage (0 = the attract); the ship byte is side * 8 + ship * 4 + type (the ship: 0 straight, 1 spread); a
+ * weapon stock in place of ibara's L / R / B options (test 64: shown as a box of the seven) */
+static const char *bgm_name_blk(unsigned seq)
+{
+	return seq == 15 || seq == 16 ? NULL : bgm_name_ib(seq);
+}
+
+static const struct gd_map map_blk = {
+	.rank = 0x0C297A3Cu, .score = 0x0C29D468u, .p2 = 0x2A0u, .drop = 0x0C28F608u, .pickups = 0x0C22E2ACu,
+	.consec = 0x0C22E015u, .medal = 0x0C3C53E0u, .bgm = 0x0C3C4018u, .game_on = 0x0C2A6D90u, .ship = 0x0C29D1DFu,
+	.mode = 0x0C2B1A5Au, .enemy = 0x0C286578u, .enemy_size = 0xB4u, .stage = 0x0C3C4170u, .player = 0x0C29D1D8u,
+	.enemies = 100, .lives = 0x25Au, .shot = 0x25Bu, .shot_p = 0x25Cu, .bombs = 0x25Du, .frags = 0x25Eu,
+	.form = 0x269u, .opts = 0x26Cu, .extend = 0x294u, .ext_none = 1000000000u, .options = 0, .stock = 0x0C22E028u,
+	.weapon = 0x26Fu, .shots = 0x0C229004u, .shot_top = 5, .secret = 0, .inv = 0x288u, .inv_frozen = 0x0C3C86ACu,
+	.bullets = 0x0C297B40u, .camera = 0x0C3C4048u,
+	.modes = 0, .bgm_name = bgm_name_blk, .boss_music = boss_music_ib, .clock = BC_BLK,
+	.composer = "SHINJI HOSOE", .side_bit = 8, .kind_bit = 4, .run_stage = 1, .xtc = 1,
+};
+
+/* ---- what gadgets_frame read ------------------------------------------------------------------------------ */
+
+static struct {
+	int valid;
+	uint32_t rank;            /* the game's word */
+	int rank_pct;             /* rank in 1/10000 % (0 .. 1000000) */
+	int rank_hist[GD_RANK_SPAN];
+	unsigned rank_n;
+	int fall, fall_left;      /* the last fall of 1% or more, and how long it stays */
+	int side;                 /* the player shown: 0 = 1P, 1 = 2P (test 71: one player's layout) */
+	unsigned drop, medal, kind, count;
+	unsigned streak;          /* test 61: the kind's count as the game has it (count stops at 6) */
+	unsigned bgm;
+	int run, mode;
+	int demo;                 /* test 71: the attract's demo plays (M->consec, the demo flag) */
+	unsigned p_streak;        /* test 64, ibara: small P picked up in a row (the secret's counter; both sides' one) */
+	unsigned bullets;         /* test 67: the enemy bullets on screen (bullets_read) */
+	int pilot;                /* test 71: gd_input.pilot */
+	int cand;                 /* test 71: the part that would be the boss (-1 none), not shown yet */
+	uint32_t cand_val;
+	unsigned cand_n;          /* vblanks it has been */
+	int boss, boss_hp, boss_max; /* boss: an enemy part's index (-1 = none) */
+	int boss_tier;            /* boss_find's tier (3 = not fighting yet) */
+	uint32_t boss_val;
+	int boss_left;            /* game frames until it withdraws (-1 = not known for this boss; test 62: bossclock.c) */
+	int boss_on;              /* the boss music plays */
+	uint8_t port[2];
+	uint8_t port_c;           /* test 79: port C (ARRANGE's aim lock, lock_down) */
+	unsigned shown[2];        /* vblanks left before a side's controls fade */
+	uint32_t pad[2], af_bit;
+	int af_hz[2];             /* test 71: per side (its pad's) */
+	char keys[2][GD_KEYS][16];
+	int ctl;                  /* test 61: the side whose controls are drawn and whose shots RAPID counts (one player) */
+	unsigned shot_logic;      /* the logic frame sampled last */
+} s;
+
+/* test 71: each side's player (co-op draws both; one player's layout the side shown); P = the player the plates being
+ * drawn show, CS = the side whose controls (and RAPID) they show */
+struct gd_pl {
+	int side;
+	int in;                   /* the side has played in this run (its ship seen in play since the run's start) */
+	uint32_t score, extend;
+	int ship;
+	unsigned lives, shot, shot_p, bombs, frags;
+	uint8_t form[3], opt[3];
+	uint8_t flies[3];         /* test 61: the slot has an option and its pod */
+	unsigned weapon;          /* test 64, Kuro BL: the current weapon (0xFF none) */
+	uint8_t owned[7];         /* and the stock (both sides' one) */
+	int hd_phase;             /* test 64: the side's Hadou (HD_*) */
+	int hd_left;              /* exploding: game frames left (the target surviving) */
+	unsigned hd_count;        /* exploding Hadous (a second can be fired while the first explodes) */
+	int inv;                  /* test 65: the side's frames of invincibility left (0 = can be hit) */
+	int inv_max;              /* and its value when it last went up (the bar's full length) */
+	uint8_t shot_hist[60];    /* test 61: the shot button's presses (1 = went down) in the last 60 logic frames */
+	unsigned shot_i, shot_n;  /* the next slot; their sum = presses per 60 logic frames (Hz at the game's 60) */
+	int shot_down;
+	unsigned shot_max;        /* test 82: CONTROLS' MANUAL, the highest shot_n while alive since the last death */
+	unsigned state;           /* test 82: the ship's state, its +0's top byte last vblank (DC alive, E0 hit, A0 waiting) */
+	int xtc;                  /* test 76, Kuro BL: the XTC as shown (0..9999) */
+	unsigned xtc_left, xtc_hold, xtc_glow, xtc_opts; /* XTC_LEFT, XTC_HOLD, XTC_GLOW, XTC_OPTS */
+	int xtc_hit;              /* it can be hit (the graze is tested with the hit) */
+};
+static struct gd_pl pl[2] = {{.side = 0}, {.side = 1}};
+static const struct gd_pl *P = &pl[0];
+static int CS;
+static int coop_now; /* test 71: this draw is the co-op layout */
+
+/* test 64: STAGES: the points the shown side scored in each stage (the stage being played: so far) */
+#define GD_RUN_GAP 60         /* vblanks out of a run that end it (ibara's game byte is 0 for one at a stage start) */
+static struct {
+	int idx;                  /* the stage being played (0 .. GD_STAGES - 1; -1 none yet) */
+	uint32_t start;           /* the score its points count from */
+	uint32_t base;            /* its points before a continue (the score starts again from the continue count) */
+	uint32_t score[ST_N];
+	uint8_t played[ST_N];
+	uint8_t cont[ST_N];       /* test 65: a continue was used in it (its score red) */
+	uint32_t last;            /* test 65: the score at the last vblank (a fall = a continue) */
+	unsigned out;             /* vblanks out of a run */
+} st = {.idx = -1};
+
+/* test 69 (main.c's pause menu: "restart stage (turn the score red on the score gadget and stages score gadget red as
+ * well)", "full restart (same thing)"): STAGES as it was when each save state was taken, put back with it; a restart
+ * in this run makes the score red until a new run */
+static __typeof__(st) st_slot[GD_STATE_SLOTS];
+static int restarted;
+static int dip_red; /* test 81: gd_input's dip_changed (the SCORE red) */
+
+/* The boss: of the enemy parts alive, boss class (0x8000), not a child part (0x4000), with hit points, the first
+ * tier that has one, the most valuable there, the lowest index on a tie: 1 = worth 100000+ and active (0x03000100),
+ * 2 = 50000+ and active (midbosses, stage 2's tank), 3 = 100000+ not active yet (a boss allocated at full strength
+ * before its fight; stage 5's never shows the active bits). The game keeps no maximum: the most hit points seen
+ * since it became the boss (tier 3 sees the 100000 ones whole). Checked on every stage of the test 18 run. */
+static void boss_find(void)
+{
+	unsigned k;
+	int best = -1, tier = 4;
+	uint32_t bv = 0;
+
+	for (k = 0; k < M->enemies; k++) {
+		const uint32_t a = M->enemy + k * M->enemy_size;
+		const uint32_t fl = be32(a), v = be32(a + 0x40);
+		int t;
+		if ((fl & 0x8000C000u) != 0x80008000u || !be16(a + 0x3C))
+			continue;
+		t = fl & 0x03000100u ? (v >= 100000 ? 1 : v >= 50000 ? 2 : 4) : v >= 100000 ? 3 : 4;
+		if (t < tier || (t == tier && v > bv)) {
+			tier = t;
+			bv = v;
+			best = (int)k;
+		}
+	}
+	if (best >= 0 && tier > 3)
+		best = -1;
+	if (!(best >= 0 && best == s.boss && bv == s.boss_val)) {
+		/* test 71: another part (or none) than the one shown: shown once it has been the boss BOSS_SETTLE vblanks; the
+		 * one shown meanwhile at its hit points as they are (0 once destroyed), its time as it was. A boss after none
+		 * at once (test 70: rec0012's stage 1 boss at 3/229 gave part 24, 21/21, for one vblank: 100%) */
+		if (best == s.cand && (best < 0 || bv == s.cand_val)) {
+			s.cand_n++;
+		} else {
+			s.cand = best;
+			s.cand_val = bv;
+			s.cand_n = 1;
+		}
+		if (s.boss >= 0 && s.cand_n < BOSS_SETTLE) {
+			const uint32_t a = M->enemy + (uint32_t)s.boss * M->enemy_size;
+			const int alive = (be32(a) & 0x8000C000u) == 0x80008000u && be32(a + 0x40) == s.boss_val;
+			const int hp = alive ? (int)be16(a + 0x3C) : 0;
+			s.boss_hp = hp < s.boss_max ? hp : s.boss_max;
+			return;
+		}
+		s.cand_n = 0;
+		if (best < 0) {
+			s.boss = -1;
+			s.boss_left = -1;
+			return;
+		}
+	}
+	{
+		const uint32_t a = M->enemy + (uint32_t)best * M->enemy_size;
+		const int hp = (int)be16(a + 0x3C);
+		const int same = best == s.boss && bv == s.boss_val;
+		int64_t left;
+		s.boss_tier = tier;
+		s.cand_n = 0;
+		if (!same) {
+			s.boss = best;
+			s.boss_val = bv;
+			s.boss_max = hp;
+		} else if (hp > s.boss_max) {
+			s.boss_max = hp;
+		}
+		s.boss_hp = hp;
+		left = bossclock(M->clock, a);
+		/* test 62: never upward for the same boss (a rank change can lengthen the stage 3 midboss's timers by a few
+		 * frames): it holds until the count comes down to it */
+		if (same && left >= 0 && s.boss_left >= 0 && left > s.boss_left)
+			left = s.boss_left;
+		s.boss_left = left < -1 ? 0 : left > 99 * 3600 ? 99 * 3600 : (int)left;
+	}
+}
+
+/* test 64: the shown side's Hadou (the bomb held 16 frames with a full bomb, released: work/g64/hadou/REPORT.md, the
+ * same code in both games): its shot record (type side + 1, phase 1 charging / flying, 3 exploding) in the side's shot
+ * table. An explosion's frames left from its step a (+C), tick t (+48) and loops c (+49), while stuck (0x4000) to a
+ * part still alive (+4C its index): 512 game frames in all; it is cut short when that part dies (the count drops
+ * then). Of two exploding, the one with the most left. */
+enum { HD_NONE, HD_CHARGING, HD_FLYING, HD_EXPLODING };
+#define HD_TOTAL 512
+
+static void hadou_read(struct gd_pl *q)
+{
+	const uint32_t table = M->shots + (uint32_t)q->side * 0x2800u;
+	unsigned k;
+
+	q->hd_phase = HD_NONE;
+	q->hd_left = 0;
+	q->hd_count = 0;
+	for (k = 0; k < 128; k++) {
+		const uint32_t r = table + k * 0x50u, fl = be32(r), ph = be32(r + 8);
+		if (!fl || be32(r + 4) != (uint32_t)q->side + 1)
+			continue;
+		if (ph == 1 && q->hd_phase < HD_EXPLODING) {
+			q->hd_phase = fl & 0x0C000000u ? HD_FLYING : HD_CHARGING;
+		} else if (ph == 3) {
+			const uint32_t a = be32(r + 0xC), part = M->enemy + be16(r + 0x4C) * M->enemy_size;
+			const unsigned t = *RAMP(r + 0x48), c = *RAMP(r + 0x49);
+			const int stuck = (fl & 0x4000u) && be16(r + 0x4C) < M->enemies && be32(part) && be16(part + 0x3C);
+			int steps, left;
+			if (a >= 0x18)
+				steps = 0x20 - (int)a;
+			else
+				steps = (0x17 - (int)a) + 9 + (stuck ? 16 * (int)((c - 1) & 0xFF) : 0);
+			left = (t & 1 ? 1 : 2) + 2 * (steps - 1);
+			if (left < 0 || a > 0x20)
+				left = 0;
+			q->hd_count++;
+			if (q->hd_phase < HD_EXPLODING || left > q->hd_left)
+				q->hd_left = left;
+			q->hd_phase = HD_EXPLODING;
+		}
+	}
+}
+
+/* test 65: the shown side's frames of invincibility left (work/g65/inv/REPORT.txt, both games the same code): the
+ * player's u8 M->inv, set to 240 by the respawn (game start, continue, 2P join and every respawn go through it), less
+ * one each game frame before that frame's collisions, which hit only at 0: a counter c seen at a vblank protects the
+ * next c - 1 game frames. Only while the ship is in play (+0 & CC000000 = CC000000: alive or flying in); hit, waiting
+ * (the counter then counts the wait up) or out: 0. Kuro BL's ship select (u32 M->inv_frozen not 0) holds it at 240:
+ * 0 then. Bombs and the Hadou give none (checked on the replays: deaths soon after both). */
+static void inv_read(struct gd_pl *q)
+{
+	const uint32_t r = M->player + (uint32_t)q->side * M->p2;
+	const unsigned c = *RAMP(r + M->inv);
+	int v = 0;
+
+	if ((be32(r) & 0xCC000000u) == 0xCC000000u && c && !(M->inv_frozen && be32(M->inv_frozen)))
+		v = (int)c - 1;
+	if (v > q->inv)
+		q->inv_max = v;
+	q->inv = v;
+}
+
+/* test 67: the enemy bullets on screen (work/g67/bullets, the same code in both games): one pool of 256 records of
+ * 0x54 bytes holds every enemy bullet, a long bullet's segments and the erase animations bullets turn into; counted =
+ * a bullet or a long bullet's head (+0 & 0x10004000 = 0x10000000: it can hit the player; segments have 0x4000, erase
+ * animations no 0x10000000; the 3-frame spawn flash counts) with its centre on the screen (x = +28 >> 16 in 0..319,
+ * y = (+2C - the camera) >> 16 in 0..239; bullets live 8-64 pixels past the edges). Only in a run (ibara's pool is
+ * the boot's garbage until the game first clears it). A full pool drops new bullets: 256 at most (Kuro BL reaches it
+ * at its stage 1 boss; ibara's run peaked at 189); Kuro BL's cancel after a boss erases them all (0) */
+static unsigned bullets_read(void)
+{
+	const int32_t cam = (int32_t)be32(M->camera);
+	unsigned k, n = 0;
+
+	if (!s.run)
+		return 0;
+	for (k = 0; k < 256; k++) {
+		const uint32_t a = M->bullets + k * 0x54u;
+		int32_t x, y;
+		if ((be32(a) & 0x10004000u) != 0x10000000u)
+			continue;
+		x = (int32_t)be32(a + 0x28) >> 16;
+		y = ((int32_t)be32(a + 0x2C) - cam) >> 16;
+		n += x >= 0 && x < 320 && y >= 0 && y < 240;
+	}
+	return n;
+}
+
+/* test 64: the stage being played from the stage byte (ibara: 2-7 = stages 1-6, 8-13 the extended mode's second loop;
+ * Kuro BL: 2-7; anything else, as the ending's 8 after one loop, is no stage). A new table when a run starts after
+ * GD_RUN_GAP vblanks out of one, or the stage goes back. A continue starts the score again from the continue count
+ * (test 63's run: 9 continues, scores ending in 9): a fall of the score inside a run keeps the stage's points so far
+ * and counts on from the new score. Test 65: the fall is against the last vblank's score (test 64 compared with the
+ * stage's starting score, so a continue in a stage begun at 0 dropped its points), and marks the stage (cont). */
+static void stages_frame(void)
+{
+	const unsigned b = *RAMP(M->stage);
+	const uint32_t sc = pl[s.side].score; /* test 71: the side shown's */
+	int i = b >= 2 && b < 8 ? (int)b - 2 : -1;
+
+	if (b >= 8 && b < 14 && M->modes && s.mode == 2)
+		i = (int)b - 2;
+	if (!s.run) {
+		if (st.out < GD_RUN_GAP)
+			st.out++;
+		else
+			pl[0].in = pl[1].in = 0; /* test 71: the run is over (co-op until then) */
+		return;
+	}
+	if (i < 0)
+		return;
+	if (i < st.idx || (st.out >= GD_RUN_GAP && st.idx >= 0)) {
+		memset(st.score, 0, sizeof(st.score));
+		memset(st.played, 0, sizeof(st.played));
+		memset(st.cont, 0, sizeof(st.cont));
+		st.idx = -1;
+		restarted = 0; /* test 69: a new run */
+	}
+	st.out = 0;
+	if (i != st.idx) {
+		st.idx = i;
+		st.start = sc;
+		st.base = 0;
+		st.played[i] = 1;
+	} else if (sc < st.last) { /* a continue */
+		st.base = st.score[i];
+		st.start = sc;
+		st.cont[i] = 1;
+	}
+	st.last = sc;
+	st.score[i] = st.base + (sc - st.start);
+}
+
+void gadgets_state_save(int slot)
+{
+	if (slot >= 0 && slot < GD_STATE_SLOTS)
+		st_slot[slot] = st;
+}
+
+void gadgets_state_load(int slot, int restart)
+{
+	if (slot < 0 || slot >= GD_STATE_SLOTS)
+		return;
+	st = st_slot[slot];
+	restarted = restart;
+	if (restart && st.idx >= 0)
+		st.cont[st.idx] = 1;  /* the stage played again: red as a continue's */
+	s.rank_n = 0;             /* the rank's change starts again (no fall from the jump) */
+	s.fall_left = 0;
+	for (int k = 0; k < 2; k++) { /* test 71: both sides; who plays is seen again from the slot's moment */
+		pl[k].shot_n = 0;
+		memset(pl[k].shot_hist, 0, sizeof(pl[k].shot_hist));
+		pl[k].shot_max = 0; /* test 82 */
+		pl[k].state = 0;
+		pl[k].in = 0;
+	}
+	s.boss = -1;
+	s.boss_left = -1;
+	s.cand = -1;
+	s.cand_n = 0;
+	bossclock_reset();
+}
+
+/* test 79: ARRANGE's AIM LOCK held on side p (port C bit 6 / 7 low; main.c's A_LOCK) */
+static int lock_down(int p)
+{
+	return ARR && !(s.port_c & (0x40u << p));
+}
+
+void gadgets_frame(const struct gd_input *in)
+{
+	unsigned k, cons;
+	int p;
+
+	if (!cv1k_ram || !M)
+		return;
+	dip_red = in->dip_changed;
+	s.rank = be32(M->rank);
+	s.rank_pct = s.rank >= 0x1000000u ? 0 : (int)(((uint64_t)(0x1000000u - s.rank) * 1000000u) >> 24);
+	{
+		const int have = s.rank_n >= GD_RANK_SPAN;
+		const int d = have ? s.rank_pct - s.rank_hist[(s.rank_n + GD_RANK_SPAN - 1) % GD_RANK_SPAN] : 0;
+		if (d <= -10000) { /* a fall of 1% or more in one frame (a death) */
+			s.fall = d;
+			s.fall_left = GD_RANK_HOLD;
+		} else if (s.fall_left) {
+			s.fall_left--;
+		}
+		s.rank_hist[s.rank_n % GD_RANK_SPAN] = s.rank_pct;
+		s.rank_n++;
+	}
+	/* the side shown: 2P when its score is ahead (a game on the 2P side alone), else 1P */
+	s.side = be32(M->score + M->p2) > be32(M->score);
+	s.demo = *RAMP(M->consec) == 1;
+	/* test 82 (user's todo list: "the status gadget turns on and off occasionally during attract screens"): never in a
+	 * demo. ibara's 4th demo (the PC harness's attract, EMU 10241-12611) has M->game_on (0C28530C: the stage script's
+	 * call depth, 0C061550 pushes it) at 1 for 10415-10530 and 10680-10810 with the stage byte 0, which lit STATUS,
+	 * WEAPON and BULLETS twice; Kuro BL's 4th demo does the same, but its run also needs the stage byte */
+	s.run = *RAMP(M->game_on) != 0 && *RAMP(M->game_on) < 3 && (!M->run_stage || *RAMP(M->stage) != 0) && !s.demo;
+	for (p = 0; p < 2; p++) { /* test 71: both sides' players */
+		struct gd_pl *q = &pl[p];
+		const uint32_t r = M->player + (uint32_t)p * M->p2;
+		q->score = be32(M->score + (uint32_t)p * M->p2);
+		q->extend = be32(r + M->extend);
+		q->lives = *RAMP(r + M->lives);
+		q->shot = *RAMP(r + M->shot);
+		q->shot_p = *RAMP(r + M->shot_p);
+		q->bombs = *RAMP(r + M->bombs);
+		q->frags = *RAMP(r + M->frags);
+		q->ship = *RAMP(M->ship + (uint32_t)p * M->p2);
+		for (k = 0; k < 3 && M->options; k++) {
+			q->form[k] = *RAMP(r + M->form + k);
+			q->opt[k] = *RAMP(r + M->opts + k);
+			q->flies[k] = q->opt[k] != 0xFF && be32(M->pods + (uint32_t)p * 0x90 + k * 0x30) != 0;
+		}
+		if (M->stock) {
+			q->weapon = *RAMP(r + M->weapon);
+			for (k = 0; k < 7; k++)
+				q->owned[k] = be32(M->stock + k * 4) != 0;
+		}
+#ifdef IB_ARRANGE
+		if (ARR) { /* test 81: ARRANGE's stored sub weapons and the current one (arrange/items.c arr_owned, arr_sub) */
+			q->weapon = *RAMP(ARRANGE_SUB + (uint32_t)p);
+			for (k = 0; k < 7; k++)
+				q->owned[k] = *RAMP(ARRANGE_OWNED + (uint32_t)p * 7 + k) != 0;
+		}
+#endif
+		if (M->xtc) { /* test 76 */
+			q->xtc = (int32_t)be32(r + XTC_RAW) >> 2;
+			q->xtc_left = be16(r + XTC_LEFT);
+			q->xtc_hold = *RAMP(r + XTC_HOLD);
+			q->xtc_glow = *RAMP(r + XTC_GLOW);
+			q->xtc_opts = *RAMP(r + XTC_OPTS);
+			q->xtc_hit = (be32(r) & 0x04000000u) != 0;
+		}
+		/* in the run: its ship seen in play (alive or flying in: work/g65/inv) outside a demo; until the run ends */
+		if (s.run && !s.demo && (be32(r) & 0xCC000000u) == 0xCC000000u)
+			q->in = 1;
+		/* test 82 (user: "reset it to 0 after a death"): the ship hit (work/g65/inv: +0 DC000000 alive -> E0000000 hit,
+		 * Kuro BL's for one game frame, then A0000000 waiting): MANUAL and the presses it counts start again */
+		{
+			const unsigned st = be32(r) >> 24;
+			if (q->state == 0xDC && (st == 0xE0 || st == 0xA0)) {
+				q->shot_max = 0;
+				q->shot_n = 0;
+				memset(q->shot_hist, 0, sizeof(q->shot_hist));
+			}
+			q->state = st;
+		}
+		hadou_read(q);
+		inv_read(q);
+	}
+	s.drop = *RAMP(M->drop) % 25;
+	s.medal = *RAMP(M->medal);
+	cons = *RAMP(M->consec) & 7;
+	s.kind = 0;
+	s.count = 0;
+	s.streak = 0;
+	for (k = 0; k < 4; k++) {
+		const unsigned c = *RAMP(M->pickups + k + 8 * cons);
+		if (c) {
+			s.kind = k + 1;
+			s.count = c > 5 ? 6 : c;
+			s.streak = c;
+			break;
+		}
+	}
+	s.p_streak = *RAMP(M->pickups + 8 * cons); /* kind 0, small P (test 64: the secret's count) */
+	s.bgm = *RAMP(M->bgm);
+	s.mode = M->modes ? *RAMP(M->mode) : -1;
+	s.pilot = in->pilot & 1;
+	boss_find();
+	stages_frame();
+	s.bullets = bullets_read();
+	s.boss_on = M->boss_music(s.bgm);
+	s.port[0] = in->port_d;
+	s.port[1] = in->port_l;
+	s.port_c = in->port_c;
+	for (p = 0; p < 2; p++) {
+		static unsigned last[2] = {0xFF, 0xFF};
+		const unsigned now = s.port[p] | (unsigned)lock_down(p) << 8; /* test 79: ARRANGE's aim lock too */
+		if (now != last[p]) {
+			last[p] = now;
+			s.shown[p] = GD_INPUT_SHOW + GD_INPUT_FADE;
+			s.ctl = p; /* test 61: the side last touched (two players at once: a co-op card later, user) */
+		} else if (s.shown[p]) {
+			s.shown[p]--;
+		}
+		s.pad[p] = in->pad[p];
+	}
+	/* test 61: the shot button (button 1) as the game read it, once per logic frame: its presses over the last 60 logic
+	 * frames (a second of the game's time, slowdown or not: AUTO SHOT's rate is counted the same way); test 71: each
+	 * side's (test 61-70: the side last touched's) */
+	if (in->logic != s.shot_logic) {
+		s.shot_logic = in->logic;
+		for (p = 0; p < 2; p++) {
+			struct gd_pl *q = &pl[p];
+			/* test 82: a press counts only with the ship alive in a run (the harness: A mashed through a death came
+			 * back as MANUAL 3HZ 30 frames after the respawn) */
+			const int down = !(s.port[p] & 0x10), press = down && !q->shot_down && s.run && q->state == 0xDC;
+			q->shot_down = down;
+			q->shot_n += (unsigned)press - q->shot_hist[q->shot_i];
+			q->shot_hist[q->shot_i] = (uint8_t)press;
+			q->shot_i = (q->shot_i + 1) % 60;
+			/* test 82 (user: "fix it to stay at the maximum rate it has reached (either by manually mashing or using the
+			 * auto fire button)"): AUTO SHOT's presses are the game's button 1 too; only in a run, the ship alive */
+			if (s.run && q->state == 0xDC && q->shot_n > q->shot_max)
+				q->shot_max = q->shot_n;
+		}
+	}
+	s.af_bit = in->af_bit;
+	for (p = 0; p < 2; p++) {
+		s.af_hz[p] = in->af_hz[p];
+		for (k = 0; k < GD_KEYS; k++)
+			snprintf(s.keys[p][k], sizeof(s.keys[p][k]), "%s", in->keys[p][k] ? in->keys[p][k] : "");
+	}
+	s.valid = 1;
+}
+
+/* ---- quads ---------------------------------------------------------------------------------------------------- */
+
+typedef struct { float r, g, b, a; } col_t;
+static const col_t WHITE = {1, 1, 1, 1}, YELLOW = {1, 1, 0.38f, 1}, CYAN = {0.38f, 1, 1, 1}, GREY = {0.67f, 0.67f, 0.67f, 1},
+                   RED = {1, 0.32f, 0.32f, 1}, GREEN = {0.4f, 1, 0.4f, 1}, MAGENTA = {1, 0.45f, 1, 1},
+                   DARK = {0.25f, 0.22f, 0.25f, 1}, GOLD = {0.95f, 0.78f, 0.15f, 1}, DIM = {0.4f, 0.37f, 0.4f, 1};
+
+static col_t fade(col_t c, float a)
+{
+	c.a *= a;
+	return c;
+}
+
+/* test 64: design pixels (test 63's 16:9 places, where the values' coordinates are) -> the view's canvas: a plate's
+ * design origin onto its place in the view, scaled by CARD_KS (tx_plate); tx_none = the canvas itself. Test 65: x and
+ * y scaled apart (4:3: x by CARD_X43 more) */
+static float t_ox, t_oy, t_nx, t_ny, t_kx = 1, t_ky = 1;
+
+static void tx_set(float ox, float oy, float nx, float ny, float kx, float ky)
+{
+	t_ox = ox;
+	t_oy = oy;
+	t_nx = nx;
+	t_ny = ny;
+	t_kx = kx;
+	t_ky = ky;
+}
+
+static void tx_none(void)
+{
+	tx_set(0, 0, 0, 0, 1, 1);
+}
+
+/* test 60: a point of the view's canvas -> clip space (the front buffer's size drops out: each canvas covers it) */
+static void xf(float x, float y, float *cx, float *cy)
+{
+	switch (gd_view) {
+	case GV_43: /* 960x720 */
+		*cx = x / 480 - 1;
+		*cy = 1 - y / 360;
+		break;
+	case GV_TATE_L: /* 720x1280, its top at the front buffer's right edge (the raster as it is) */
+		*cx = 1 - y / 640;
+		*cy = 1 - x / 360;
+		break;
+	case GV_TATE_R: /* its top at the left edge (the raster turned half a turn) */
+		*cx = y / 640 - 1;
+		*cy = x / 360 - 1;
+		break;
+	default: /* 1280x720 */
+		*cx = x / 640 - 1;
+		*cy = 1 - y / 360;
+		break;
+	}
+}
+
+/* x0, y0 .. x1, y1 (design pixels through tx_*) -> clip space; uv in the texture's 0..1 */
+static void quad(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1, col_t c)
+{
+	float (*q)[GD_VF];
+	float cx[4][4];
+	static const int order[6] = {0, 1, 2, 2, 1, 3};
+	int i;
+
+	if (gd_nq >= GD_MAX_QUADS || c.a <= 0)
+		return;
+	x0 = t_nx + (x0 - t_ox) * t_kx;
+	x1 = t_nx + (x1 - t_ox) * t_kx;
+	y0 = t_ny + (y0 - t_oy) * t_ky;
+	y1 = t_ny + (y1 - t_oy) * t_ky;
+	cx[0][0] = x0, cx[0][1] = y0, cx[0][2] = u0, cx[0][3] = v0;
+	cx[1][0] = x1, cx[1][1] = y0, cx[1][2] = u1, cx[1][3] = v0;
+	cx[2][0] = x0, cx[2][1] = y1, cx[2][2] = u0, cx[2][3] = v1;
+	cx[3][0] = x1, cx[3][1] = y1, cx[3][2] = u1, cx[3][3] = v1;
+	q = gd_q[gd_nq++];
+	for (i = 0; i < 6; i++) {
+		const float *k = cx[order[i]];
+		xf(k[0], k[1], &q[i][0], &q[i][1]);
+		q[i][2] = c.r;
+		q[i][3] = c.g;
+		q[i][4] = c.b;
+		q[i][5] = c.a;
+		q[i][6] = k[2];
+		q[i][7] = k[3];
+	}
+}
+
+/* sprite id at x, y, w x h (0 = its own size) */
+static void spr(int id, float x, float y, float w, float h, col_t c)
+{
+	const struct card_rect *r = &card_sprites[id];
+
+	if (w <= 0)
+		w = r->w;
+	if (h <= 0)
+		h = r->h;
+	quad(x, y, x + w, y + h, (float)r->x / CARD_ATLAS_W, (float)r->y / CARD_ATLAS_H, (float)(r->x + r->w) / CARD_ATLAS_W,
+	     (float)(r->y + r->h) / CARD_ATLAS_H, c);
+}
+
+/* a filled box (the white square's middle, stretched) */
+static void box(float x, float y, float w, float h, col_t c)
+{
+	const struct card_rect *r = &card_sprites[CS_WHITE];
+	const float u = (r->x + 2.0f) / CARD_ATLAS_W, v = (r->y + 2.0f) / CARD_ATLAS_H;
+
+	if (w > 0 && h > 0)
+		quad(x, y, x + w, y + h, u, v, u, v, c);
+}
+
+/* test 64: a box's outline, t pixels thick */
+static void frame(float x, float y, float w, float h, float t, col_t c)
+{
+	box(x, y, w, t, c);
+	box(x, y + h - t, w, t, c);
+	box(x, y + t, t, h - 2 * t, c);
+	box(x + w - t, y + t, t, h - 2 * t, c);
+}
+
+/* the game's font at k x 8 pixels, advance pixels apart; returns the width (test 65: k 1.5 for the short plates) */
+static float text(float x, float y, const char *t, col_t c, float k, float advance)
+{
+	const float x0 = x;
+
+	for (; *t; t++, x += advance) {
+		const unsigned ch = (unsigned char)*t;
+		if (ch > 0x20 && ch < 0x80)
+			spr(CS_FONT_00 + (int)ch, x, y, 8.0f * k, 8.0f * k, c);
+	}
+	return x - x0;
+}
+
+#define TEXT2(x, y, t, c) text(x, y, t, c, 2, 14)
+
+/* the artwork's digits (sprite base + 0..9) of the number n, right-aligned to x1, at least min digits */
+static void digits(int base, float x1, float y, uint32_t n, int min, float advance, col_t c)
+{
+	int i = 0;
+
+	do {
+		x1 -= advance;
+		spr(base + (int)(n % 10), x1, y, 0, 0, c);
+		n /= 10;
+	} while (++i < min || n);
+}
+
+/* test 64: plate cp at its place in this view, one atlas pixel per canvas pixel, and the transform for its values;
+ * 0 = not in this view. Test 65: 4:3 draws it at CARD_X43 of its width, and for Kuro BL (WEAPON one row there,
+ * ibara's three) the plates under WEAPON CARD_SHIFT43 higher (test 71: 4:3 has its own columns, plate_at). Test 66: no
+ * backing under the plates (test 65's BACK_SIL
+ * was the silhouettes painted out: with MUSIC off it showed in their place) */
+static float plate_dy; /* test 70: added to the next plates' places (SPECIAL FORMATIONS under a 4-row WEAPON) */
+
+static int plate(int cp)
+{
+	const struct card_plate *p = &card_plates[cp];
+	const struct card_rect *r = &card_sprites[p->sprite];
+	const float y = p->y[gd_v] + plate_dy;
+
+	if (p->x[gd_v] == -32768)
+		return 0;
+	tx_none();
+	spr(p->sprite, p->x[gd_v], y, r->w, r->h, WHITE);
+	tx_set(p->ox, p->oy, p->x[gd_v], y, p->k, p->k); /* test 67: each plate's own scale (CARD_KS, the pair's less) */
+	return 1;
+}
+
+/* test 71: plate cp with its top right at xr, y (canvas pixels): on 4:3 its 4:3 sprite (CARD_F43X x CARD_F43Y of its
+ * 16:9 size; the atlas holds it in front buffer pixels, 4 / 3 of the canvas's), else its 16:9 one; the transform for
+ * its values; returns its height */
+static float plate_at(int cp, float xr, float y)
+{
+	const struct card_plate *p = &card_plates[cp];
+	const int v43 = gd_v == CPV_43 && p->sprite43 >= 0;
+	const struct card_rect *r = &card_sprites[v43 ? p->sprite43 : p->sprite];
+	const float w = v43 ? r->w * 0.75f : r->w, x = xr - w;
+
+	tx_none();
+	spr(v43 ? p->sprite43 : p->sprite, x, y, w, r->h, WHITE);
+	if (v43)
+		tx_set(p->ox, p->oy, x, y, p->k * CARD_F43X, p->k * CARD_F43Y);
+	else
+		tx_set(p->ox, p->oy, x, y, p->k, p->k);
+	return r->h;
+}
+
+/* ---- the plates' values ---------------------------------------------------------------------------------------- */
+
+/* what a view shows besides its plates (test 60) */
+struct gd_lay {
+	int bars;                 /* the rank's and the boss's bars (tate: the numbers alone) */
+	int change_in;            /* the rank's change inside its window (else under it, as on 16:9) */
+	int wide;                 /* 16:9: STATUS's 4 rows, WEAPON's 5, the 16:9-only gadgets (test 71: 4:3 too) */
+	int v43;                  /* test 71: 4:3's columns (CONTROLS as text always) */
+};
+static const struct gd_lay lay_wide = {1, 0, 1, 0}, lay_43 = {1, 1, 1, 1}, lay_tate = {0, 1, 0, 0};
+
+static void draw_rank(const struct gd_lay *L)
+{
+	const int pct = s.rank_pct, whole = pct / 10000, frac = pct % 10000;
+	const float bw = CL_RANK_WIN_W - 4.0f;
+	int d = 0;
+
+	if (L->bars)
+		box(CL_RANK_WIN_X + 2, CL_RANK_WIN_Y + 5, bw * pct / 1000000.0f, CL_RANK_WIN_H - 10, (col_t){0.9f, 0.08f, 0.08f, 1});
+	/* 18.7500%: the whole digits large, the rest small, as the artwork's script places them; test 64: 100% with its
+	 * three (the word is 0 there; two digits showed 00) */
+	if (whole >= 100)
+		spr(CS_DIGIT_L0 + 1, 1114, 29, 0, 0, WHITE);
+	spr(CS_DIGIT_L0 + (whole / 10) % 10, 1133, 29, 0, 0, WHITE);
+	spr(CS_DIGIT_L0 + whole % 10, 1152, 29, 0, 0, WHITE);
+	text(1170, 52, ".", WHITE, 1, 8);
+	spr(CS_DIGIT_S0 + frac / 1000, 1175, 40, 0, 0, WHITE);
+	spr(CS_DIGIT_S0 + frac / 100 % 10, 1187, 40, 0, 0, WHITE);
+	spr(CS_DIGIT_S0 + frac / 10 % 10, 1199, 40, 0, 0, WHITE);
+	spr(CS_DIGIT_S0 + frac % 10, 1211, 40, 0, 0, WHITE);
+	text(1228, 49, "%", WHITE, 2, 14);
+	/* its change over the last second (up = harder, red), or a fall of 1% or more (a death) for 3 s */
+	if (s.fall_left)
+		d = s.fall;
+	else if (s.rank_n > GD_RANK_SPAN)
+		d = s.rank_pct - s.rank_hist[s.rank_n % GD_RANK_SPAN];
+	if (d) {
+		char t[24];
+		const int a = d < 0 ? -d : d;
+		float w;
+		snprintf(t, sizeof(t), "%c%d.%04d", d < 0 ? '-' : '+', a / 10000, a % 10000);
+		w = 14.0f * (float)strlen(t);
+		if (L->change_in) { /* test 60: in the window's right end, on black where the bar runs under it */
+			const float x = CL_RANK_WIN_X + CL_RANK_WIN_W - w - 6, y = CL_RANK_WIN_Y + 5;
+			if (L->bars)
+				box(x - 4, y - 3, w + 6, 22, (col_t){0, 0, 0, 0.85f});
+			TEXT2(x, y, t, d > 0 ? RED : GREEN);
+		} else {
+			TEXT2(CL_RANK_WIN_X + CL_RANK_WIN_W - w - 4, CL_RANK_WIN_Y + CL_RANK_WIN_H + 8, t, d > 0 ? RED : GREEN);
+		}
+	}
+}
+
+/* the 25-item drop cycle (the INH booklet's, as the MAME artwork's script): shot, medal, shot, medal, option x 4,
+ * then shot, medal, shot, medal, a large shot */
+static int drop_sprite(unsigned i)
+{
+	static const unsigned char cyc[5] = {CS_DROP_SHOT, CS_DROP_MEDAL, CS_DROP_SHOT, CS_DROP_MEDAL, CS_DROP_OPTION};
+	return i == 24 ? CS_DROP_SHOT_LARGE : cyc[i % 5];
+}
+
+/* test 81: the weapon ARRANGE's next option item brings (arrange/items.c, the PS2's item setup 0x1308A0): the first one
+ * not stored in the offer order M.G., 3WAY, GATLING, ROCKET, BURNER, NAPALM, HOMING; -1 = all seven stored (then a
+ * random one, and every kill drops an item) */
+static const char *const arr_wname[7];
+
+static int arr_offer(void)
+{
+	static const unsigned char offer[7] = {5, 6, 2, 0, 1, 4, 3};
+	int k;
+
+	for (k = 0; k < 7; k++)
+		if (!P->owned[offer[k]])
+			return offer[k];
+	return -1;
+}
+
+static void draw_drop(void)
+{
+	unsigned k;
+
+	for (k = 0; k < 6; k++) {
+		const int id = drop_sprite((s.drop + k) % 25);
+		const struct card_rect *r = &card_sprites[id];
+		spr(id, 1008 + 40.0f * k + (33 - r->w) / 2.0f, 283 + (33 - r->h) / 2.0f, 0, 0, WHITE);
+	}
+	if (ARR && s.run && !s.demo) { /* test 81: under the items, what ARRANGE's option item brings */
+		const int w = arr_offer();
+		if (w >= 0) {
+			text(1008, 320, "OPTION:", CYAN, 1.5f, 10.5f);
+			text(1008 + 10.5f * 8, 320, arr_wname[w], WHITE, 1.5f, 10.5f);
+		} else {
+			text(1008, 320, "ALL 7 STORED: EVERY KILL", YELLOW, 1.5f, 10.5f);
+		}
+	}
+}
+
+static const unsigned short medal_value[19] = {100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
+                                               2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000};
+
+/* test 67 (user: "rename it to just medals and put the name above it"): the MEDALS plate (its name in a tab, as
+ * BULLETS beside it): the next medal fitted to the window's height at its left, its value in the score's digits at the
+ * right (test 66: the artwork's NEXT MEDAL piece, the medal alone) */
+static void draw_medal(void)
+{
+	const float h = CL_MEDALS_WIN_H - 4.0f;
+
+	if (s.medal >= 19)
+		return;
+	spr(CS_MEDAL_100 + (int)s.medal, CL_MEDALS_WIN_X + 4, CL_MEDALS_WIN_Y + 2, h, h, WHITE);
+	digits(CS_DIGIT_M0, CL_MEDALS_WIN_X + CL_MEDALS_WIN_W - 8.0f, CL_MEDALS_WIN_Y + (CL_MEDALS_WIN_H - 27) / 2.0f,
+	       medal_value[s.medal], 1, 15, WHITE);
+}
+
+/* ---- test 65: STATUS (16:9: 4 rows; 4:3: 3 rows; tate: the short plate) ----------------------------------------- */
+
+static const char *const mode_names[3] = {"NORMAL", "HARDER", "EXTENDED"};
+
+static unsigned ext_left(void)
+{
+	return P->extend > P->score ? P->extend - P->score : 0;
+}
+
+static int has_ext(void)
+{
+	return P->extend && P->extend < M->ext_none;
+}
+
+/* the pilot (yellow), the type, the mode (Kuro BL: the ship, straight or spread, where ibara has its mode); compact =
+ * the type's letter alone (4:3); returns the right end */
+static float status_ship(float x, float y, float k, float adv, int compact)
+{
+	char t[16];
+	const char *m = s.mode >= 0 ? (s.mode < 3 ? mode_names[s.mode] : "")
+	                : M->kind_bit ? ((P->ship & M->kind_bit) ? "SPREAD" : "STRAIGHT") : "";
+
+	x += text(x, y, (P->ship & M->side_bit) ? "DYNE" : "BOND", YELLOW, k, adv) + adv;
+	snprintf(t, sizeof(t), compact ? "%c" : "TYPE %c", 'A' + (P->ship & 3));
+	x += text(x, y, t, WHITE, k, adv) + adv;
+	return x + text(x, y, m, GREY, k, adv);
+}
+
+/* the full bombs as a count, the fragments as 40 bars (40 = one more) */
+static void status_bombs(float x, float y)
+{
+	char t[8];
+	unsigned k;
+
+	TEXT2(x, y, "BOMB", CYAN);
+	snprintf(t, sizeof(t), "%u", P->bombs);
+	TEXT2(x + 14 * 5, y, t, WHITE);
+	for (k = 0; k < 40; k++)
+		box(x + 14 * 7 + 4.0f * k + (k >= 20 ? 4 : 0), y + 2, 3, 12, k < P->frags ? GOLD : DARK);
+}
+
+/* the lives, the points left to the next extend (test 72, user: "rename "ext" to "extend"": EXTEND 6 pixels nearer
+ * the lives, its value at x + 200, so 8 digits (Kuro BL's 10000000 at the start) end inside the 321-pixel window) */
+static void status_lives(float x, float y)
+{
+	char t[16];
+
+	TEXT2(x, y, "LIVES", CYAN);
+	snprintf(t, sizeof(t), "%u", P->lives);
+	TEXT2(x + 14 * 6, y, t, WHITE);
+	if (has_ext()) {
+		TEXT2(x + 106, y, "EXTEND", CYAN);
+		snprintf(t, sizeof(t), "%u", ext_left());
+		TEXT2(x + 200, y, t, WHITE);
+	}
+}
+
+/* the frames of invincibility left (game frames, as the game counts them) as a number, "-" when it can be hit */
+static void inv_text(char *t, size_t n)
+{
+	if (P->inv > 0)
+		snprintf(t, n, "%d", P->inv > 999 ? 999 : P->inv);
+	else
+		snprintf(t, n, "-");
+}
+
+static void draw_status(const struct gd_lay *L)
+{
+	const float x = CL_STATUS_WIN_X + 6;
+	const float y = CL_STATUS_WIN_Y + 6;
+	char t[8];
+
+	if (!s.run)
+		return;
+	inv_text(t, sizeof(t));
+	if (L->wide) { /* 16:9: INVINCIBLE, the frames left and a bar of them (full = its value when it last went up) */
+		status_ship(x, y, 2, 14, 0);
+		status_bombs(x, y + 20);
+		status_lives(x, y + 40);
+		TEXT2(x, y + 60, "INVINCIBLE", CYAN);
+		TEXT2(x + 14 * 11, y + 60, t, P->inv > 0 ? YELLOW : GREY);
+		if (P->inv > 0 && P->inv_max > 0) {
+			box(x + 14 * 15, y + 62, 108, 12, DARK);
+			box(x + 14 * 15, y + 62, 108.0f * (float)(P->inv < P->inv_max ? P->inv : P->inv_max) / (float)P->inv_max, 12,
+			    CYAN);
+		}
+	} else { /* 4:3 (three rows): INV after the ship */
+		status_ship(x, y, 2, 14, 1);
+		TEXT2(x + 218, y, "INV", CYAN);
+		TEXT2(x + 266, y, t, P->inv > 0 ? YELLOW : GREY);
+		status_bombs(x, y + 20);
+		status_lives(x, y + 40);
+	}
+}
+
+/* ---- test 65: the short plates (tate's 2 x 2 bands; SCORE on 4:3): RANK's shape, a 30-pixel window, more beside
+ * the tab (from CL_<plate>_TAB_END to SHORT_R); their design place is RANK's ------------------------------------- */
+
+#define SHORT_R 1268.0f   /* the right end of their values */
+#define SHORT_TY 40.0f    /* the row beside the tab (2x text) */
+#define TEXT15(x, y, t, c) text(x, y, t, c, 1.5f, 10.5f) /* 1.5x: two rows in a short window */
+
+static void draw_score_s(void)
+{
+	digits(CS_DIGIT_M0, CL_SCORE_S_WIN_X + CL_SCORE_S_WIN_W - 8.0f, CL_SCORE_S_WIN_Y + (CL_SCORE_S_WIN_H - 27) / 2.0f,
+	       P->score, 1, 15, restarted || dip_red ? RED : WHITE);
+}
+
+/* beside the tab: EXTEND (test 72: it and its value at 1.25x, as the 143 pixels from the tab's end hold EXTEND and 8
+ * digits only at that size); the window: the ship row, then BOMB, LIVES, INV (1.5x) */
+static void draw_status_s(void)
+{
+	const float x = CL_STATUS_S_WIN_X + 5, y = CL_STATUS_S_WIN_Y + 2;
+	char t[16];
+	float w;
+
+	if (!s.run)
+		return;
+	if (has_ext()) {
+		snprintf(t, sizeof(t), "%u", ext_left());
+		w = 8.75f * (float)(strlen(t) - 1) + 10.0f;
+		text(SHORT_R - w, SHORT_TY + 4, t, WHITE, 1.25f, 8.75f);
+		text(SHORT_R - w - 5 - (8.75f * 5 + 10.0f), SHORT_TY + 4, "EXTEND", CYAN, 1.25f, 8.75f);
+	}
+	status_ship(x, y, 1.5f, 10.5f, 0);
+	TEXT15(x, y + 14, "BOMB", CYAN);
+	snprintf(t, sizeof(t), "%u", P->bombs);
+	TEXT15(x + 10.5f * 5, y + 14, t, WHITE);
+	TEXT15(x + 10.5f * 7, y + 14, "LIVES", CYAN);
+	snprintf(t, sizeof(t), "%u", P->lives);
+	TEXT15(x + 10.5f * 13, y + 14, t, WHITE);
+	TEXT15(x + 10.5f * 15, y + 14, "INV", CYAN);
+	inv_text(t, sizeof(t));
+	TEXT15(x + 10.5f * 19, y + 14, t, P->inv > 0 ? YELLOW : GREY);
+}
+
+/* the window's first row: each stage's number and a bar of its score's share of the best (red = a continue was used
+ * there); its second: the stage being played and its score (red after a continue in it), 2ND in the second loop (test
+ * 70: SCORE BREAKDOWN's tab leaves no room beside it, where test 65 had them) */
+static void draw_stages_s(void)
+{
+	const int loop = st.idx >= 6;
+	const float y = CL_STAGES_S_WIN_Y + 2;
+	uint32_t top = 1;
+	char t[16];
+	int k;
+
+	for (k = 0; k < 6; k++)
+		if (st.played[loop * 6 + k] && st.score[loop * 6 + k] > top)
+			top = st.score[loop * 6 + k];
+	if (st.idx >= 0) {
+		snprintf(t, sizeof(t), "STAGE %d%s", st.idx % 6 + 1, loop ? " 2ND" : "");
+		TEXT15(CL_STAGES_S_WIN_X + 5, y + 14, t, loop ? MAGENTA : CYAN);
+		snprintf(t, sizeof(t), "%u", (unsigned)st.score[st.idx]);
+		TEXT15(CL_STAGES_S_WIN_X + CL_STAGES_S_WIN_W - 5 - 10.5f * (float)strlen(t), y + 14, t,
+		       st.cont[st.idx] ? RED : YELLOW);
+	}
+	for (k = 0; k < 6; k++) {
+		const int i = loop * 6 + k;
+		const float x = CL_STAGES_S_WIN_X + 5 + 44.0f * k;
+		const col_t c = !st.played[i] ? GREY : st.cont[i] ? RED : i == st.idx ? YELLOW : CYAN;
+		snprintf(t, sizeof(t), "%d", k + 1);
+		TEXT15(x, y, t, c);
+		if (st.played[i])
+			box(x + 12, y + 2, 28.0f * (float)st.score[i] / (float)top, 8,
+			    st.cont[i] ? (col_t){0.75f, 0.12f, 0.12f, 1} : (col_t){0.45f, 0.32f, 0.06f, 1});
+	}
+}
+
+/* test 67: the enemy bullets on screen in the score's digits, at the window's right */
+static void draw_bullets_s(void)
+{
+	if (!s.run)
+		return;
+	digits(CS_DIGIT_M0, CL_BULLETS_S_WIN_X + CL_BULLETS_S_WIN_W - 8.0f,
+	       CL_BULLETS_S_WIN_Y + (CL_BULLETS_S_WIN_H - 27) / 2.0f, s.bullets, 1, 15, WHITE);
+}
+
+/* the next six drops, each fitted into a 26-pixel slot */
+static void draw_drop_s(void)
+{
+	unsigned k;
+
+	for (k = 0; k < 6; k++) {
+		const int id = drop_sprite((s.drop + k) % 25);
+		const struct card_rect *r = &card_sprites[id];
+		const float f = 26.0f / (float)(r->w > r->h ? r->w : r->h), w = r->w * f, h = r->h * f;
+		const float x = CL_DROP_S_WIN_X + 8 + 43.0f * k, y = CL_DROP_S_WIN_Y + 2;
+		spr(id, x + (26 - w) / 2, y + (26 - h) / 2, w, h, WHITE);
+	}
+}
+
+/* the next medal and its value */
+static void draw_medal_s(void)
+{
+	char t[8];
+
+	if (s.medal >= 19)
+		return;
+	spr(CS_MEDAL_100 + (int)s.medal, CL_MEDAL_S_WIN_X + 8, CL_MEDAL_S_WIN_Y + 1, 28, 28, WHITE);
+	snprintf(t, sizeof(t), "%u", medal_value[s.medal]);
+	TEXT2(CL_MEDAL_S_WIN_X + 46, CL_MEDAL_S_WIN_Y + 7, t, WHITE);
+}
+
+/* test 61: the artwork's large digits (the rank's whole ones, 19 pixels apart) in the taller window */
+static void draw_score(void)
+{
+	digits(CS_DIGIT_L0, CL_SCORE_WIN_X + CL_SCORE_WIN_W - 10.0f, CL_SCORE_WIN_Y + (CL_SCORE_WIN_H - 40) / 2.0f, P->score,
+	       1, 19, restarted || dip_red ? RED : WHITE); /* test 69: red after a restart in this run; test 81: or with a
+	                                         * DIP SWITCHES setting not its default */
+}
+
+/* test 67 (user: "a new bullet counter gadget with large number font"): the enemy bullets on screen in the score's
+ * large digits */
+static void draw_bullets(void)
+{
+	if (!s.run)
+		return;
+	digits(CS_DIGIT_L0, CL_BULLETS_WIN_X + CL_BULLETS_WIN_W - 10.0f, CL_BULLETS_WIN_Y + (CL_BULLETS_WIN_H - 40) / 2.0f,
+	       s.bullets, 1, 19, WHITE);
+}
+
+/* an option slot's name (the names the game prints at a pickup; MACHINE GUN shortened) */
+static const char *opt_name(unsigned v)
+{
+	static const char *const n[7] = {"ROCKET", "BURNER", "GATLING", "HOMING", "NAPALM", "M.GUN", "5WAY"};
+	return v >> 1 < 7 ? n[v >> 1] : "-"; /* test 61: weapon * 2 + side (test 60 read 2P's as none) */
+}
+
+/* the special formation (5 of a kind, then an option): the first slot flying an option with a code (test 61: an
+ * empty slot's code is stale, the next option there clears it) */
+static const char *form_name(void)
+{
+	int k;
+
+	for (k = 0; k < 3; k++)
+		switch (P->flies[k] ? P->form[k] : 0) {
+		case 1: return "SEARCH";
+		case 2: return "WIDE";
+		case 3: case 4: return "ROLLING";
+		case 5: return "BACK";
+		default: break;
+		}
+	return NULL;
+}
+
+/* test 81: ARRANGE's sub weapons by the PS2's names (its plates: M.G., 3WAY, GATLING, ROCKET, BURNER, NAPALM, HOMING) */
+static const char *const arr_wname[7] = {"ROCKET", "BURNER", "GATLING", "HOMING", "NAPALM", "M.G.", "3WAY"};
+
+/* test 64 (Kuro BL): its seven weapons in three rows, in its HUD's order (M.G, 5WAY, GATLING / ROCKET, BURNAR,
+ * NAPALM / HOMING; work/card/blk/REPORT.md section 3), in a box: owned ones lit, the current one yellow on gold.
+ * Test 81: ARRANGE's stored sub weapons the same way (the PS2's offer order is Kuro BL's HUD order) */
+static void draw_stock(float x, float y)
+{
+	static const unsigned char order[7] = {5, 6, 2, 0, 1, 4, 3};
+	int k;
+
+	frame(x - 3, y - 3, 14 * 21 + 6, 3 * 20 + 2, 1, GREY);
+	for (k = 0; k < 7; k++) {
+		const unsigned w = order[k];
+		const float cx = x + 14 * 7.0f * (k % 3), cy = y + 20.0f * (k / 3);
+		const char *n = ARR ? arr_wname[w] : opt_name(w * 2);
+		if (w == P->weapon && P->owned[w])
+			box(cx - 2, cy - 2, 14.0f * (float)strlen(n) + 4, 20, (col_t){0.45f, 0.32f, 0.06f, 1});
+		TEXT2(cx, cy, n, w == P->weapon && P->owned[w] ? YELLOW : P->owned[w] ? WHITE : DIM);
+	}
+}
+
+/* test 64 (16:9, under BOMB; user: "hadou gun duration gadget below the bomb gadget (by frame numbers)", the
+ * explosion's): CHARGE while the bomb is held, FLYING once fired, then its explosion's game frames left (a bar under
+ * BOMB's fragments, the number after it; x2 while two explode) */
+static void draw_hadou(float x, float y)
+{
+	char t[16];
+
+	TEXT2(x, y, "HADOU", CYAN);
+	switch (P->hd_phase) {
+	case HD_EXPLODING:
+		box(x + 14 * 7, y + 2, 140, 12, DARK);
+		box(x + 14 * 7, y + 2, 140.0f * (float)(P->hd_left > HD_TOTAL ? HD_TOTAL : P->hd_left) / HD_TOTAL, 12,
+		    (col_t){1, 0.35f, 0.1f, 1});
+		snprintf(t, sizeof(t), "%d", P->hd_left);
+		TEXT2(x + 14 * 7 + 148, y, t, YELLOW);
+		if (P->hd_count > 1)
+			TEXT2(x + 14 * 7 + 148 + 14 * 3 + 4, y, "X2", WHITE);
+		break;
+	case HD_FLYING:
+		TEXT2(x + 14 * 7, y, "FLYING", WHITE);
+		break;
+	case HD_CHARGING:
+		TEXT2(x + 14 * 7, y, "CHARGE", GREY);
+		break;
+	default:
+		TEXT2(x + 14 * 7, y, "-", GREY);
+		break;
+	}
+}
+
+/* test 61's RAPID (ibara): AUTO = AUTO SHOT's rate (the controls' AUTOFIRE), lit while its button is held, OFF when no
+ * button has it; NOW = the presses of the shot button the game read in its last 60 logic frames; test 82 (user:
+ * "rename "now" to "manual"", "stay at the maximum rate it has reached ... reset it to 0 after a death"): MANUAL = the
+ * highest of those since the ship's last death (shot_max), its value 3 columns further (the plate's 327 pixels hold
+ * "AUTO 30HZ  MANUAL 30HZ") */
+static void draw_auto(float x, float y)
+{
+	char t[16];
+
+	TEXT2(x, y, "AUTO", CYAN);
+	if (s.keys[CS][2][0]) {
+		snprintf(t, sizeof(t), "%dHZ", s.af_hz[CS]);
+		TEXT2(x + 14 * 5, y, t, s.pad[CS] & s.af_bit ? YELLOW : WHITE);
+	} else {
+		TEXT2(x + 14 * 5, y, "OFF", GREY);
+	}
+}
+
+static void draw_rapid(float x, float y)
+{
+	char t[16];
+
+	draw_auto(x, y);
+	TEXT2(x + 14 * 11, y, "MANUAL", CYAN);
+	snprintf(t, sizeof(t), "%uHZ", pl[CS].shot_max);
+	TEXT2(x + 14 * 18, y, t, pl[CS].shot_max ? WHITE : GREY);
+}
+
+/* test 69: CONTROLS' slim text plate is drawn (16:9); test 71: 4:3's always (no stick there) */
+static int ctl_text_shown(const struct gd_lay *L)
+{
+	return ON(GD_CONTROLS) && (L->v43 || (L->wide && gd_ctl_text));
+}
+
+/* rows of 20 pixels: the shot's level (boxes) and the small P toward the next; ibara: the left and right options, the
+ * rear one and the formation; Kuro BL (test 64, 16:9): its weapon box; test 64, 16:9: HADOU; test 64, ibara on 16:9:
+ * RAPID (test 61's plate). Test 65: the ship, the bombs and the lives went to STATUS (16:9: 5 rows; 4:3: ibara's 3,
+ * Kuro BL's SHOT alone) */
+static void draw_weapon(const struct gd_lay *L)
+{
+	const float x = CL_WEAPON5_WIN_X + 6;
+	float y = CL_WEAPON5_WIN_Y + 6;
+	char t[40];
+	unsigned k;
+
+	if (!s.run)
+		return;
+	/* shot: 7 boxes (level 0 = the first), then the small P toward the next level (level k takes k + 1; test 64: only
+	 * up to M->shot_top, ibara's small P give points from 5); test 64, ibara (user: "shot gadget to include level 6
+	 * power up's secret condition"): the small P picked up in a row, of 5 (work/g64/secret: the 6th in a row gives
+	 * level 6; another kind's item restarts it, items lost do nothing): MAX = the next small P gives it, "-" = the row
+	 * went past 5 */
+	TEXT2(x, y, "SHOT", CYAN);
+	for (k = 0; k < 7; k++)
+		box(x + 14 * 5 + 15.0f * k, y + 2, 12, 12, k <= P->shot ? GOLD : DARK);
+	if (P->shot <= M->shot_top) {
+		snprintf(t, sizeof(t), "+%u/%u", P->shot_p, P->shot + 1);
+		TEXT2(x + 14 * 5 + 15 * 7 + 6, y, t, WHITE);
+	}
+	if (M->secret && P->shot != 6) {
+		const float sx = x + 14 * 5 + 15 * 7 + 6 + 14 * 5;
+		spr(CS_POWERUP_1, sx, y, 16, 16, s.p_streak <= 5 ? WHITE : fade(WHITE, 0.4f));
+		if (s.p_streak == 5) {
+			TEXT2(sx + 18, y, "MAX", YELLOW);
+		} else if (s.p_streak < 5) {
+			snprintf(t, sizeof(t), "%u/5", s.p_streak);
+			TEXT2(sx + 18, y, t, WHITE);
+		} else {
+			TEXT2(sx + 18, y, "-", GREY);
+		}
+	}
+	if (ARR) { /* test 81: ARRANGE's stored sub weapons (16:9: Kuro BL's box; else the current one and how many) */
+		if (L->wide) {
+			draw_stock(x + 3, y + 23);
+			y += 60;
+		} else {
+			const int cur = P->weapon < 7 && P->owned[P->weapon];
+			int n = 0;
+			for (k = 0; k < 7; k++)
+				n += P->owned[k];
+			y += 20;
+			TEXT2(x, y, "SUB", CYAN);
+			TEXT2(x + 14 * 4, y, cur ? arr_wname[P->weapon] : "-", cur ? YELLOW : GREY);
+			snprintf(t, sizeof(t), "%d/7", n);
+			TEXT2(x + 14 * 13, y, t, n ? WHITE : GREY);
+			y += 20;
+			TEXT2(x, y, "FORM", CYAN);
+#ifdef IB_ARRANGE
+			{
+				static const char *const fn[5] = {"NORMAL", "BACK", "WIDE", "ROLLING", "SEARCH"};
+				const unsigned f = *RAMP(ARRANGE_FORM + (uint32_t)P->side);
+				TEXT2(x + 14 * 5, y, f < 5 ? fn[f] : "-", f ? MAGENTA : WHITE);
+			}
+#endif
+		}
+	} else if (M->options) { /* ibara's options */
+		const char *f = form_name();
+		y += 20;
+		/* test 61: a slot's option while it flies (after a hit until the respawn: none) */
+		TEXT2(x, y, "L", CYAN);
+		TEXT2(x + 14 * 2, y, P->flies[0] ? opt_name(P->opt[0]) : "-", P->flies[0] ? WHITE : GREY);
+		TEXT2(x + 14 * 11, y, "R", CYAN);
+		TEXT2(x + 14 * 13, y, P->flies[1] ? opt_name(P->opt[1]) : "-", P->flies[1] ? WHITE : GREY);
+		y += 20;
+		TEXT2(x, y, "B", CYAN);
+		TEXT2(x + 14 * 2, y, P->flies[2] ? opt_name(P->opt[2]) : "-", P->flies[2] ? WHITE : GREY);
+		/* test 61: FORMATION's plate has it where it is drawn; test 71: in co-op 2P's own (its plate is 1P's) */
+		if (f && !(L->wide && ON(GD_FORMATION) && !(coop_now && P->side)))
+			TEXT2(x + 14 * 11, y, f, MAGENTA);
+	} else if (M->stock && L->wide) { /* test 64: Kuro BL's weapon box (16:9), three rows */
+		draw_stock(x + 3, y + 23);
+		y += 60;
+	}
+	if (!L->wide)
+		return;
+	/* test 64: the Hadou's row; test 67: always (no switch of its own) */
+	y += 20;
+	draw_hadou(x, y);
+	/* test 61's RAPID (ibara, 16:9); test 67: always (no switch of its own); test 69: on CONTROLS' text plate when that
+	 * is shown (user: "move the auto shot - auto / now shot frequencies gadgets to the bottom row of it") */
+	if (RAPID_ON_WEAPON && !ctl_text_shown(L))
+		draw_rapid(x, y + 20);
+}
+
+/* test 79 (user: "no 'missed' state for special formation gadget in arrange"): ARRANGE has no streak at all (an option
+ * item brings a weapon, arrange/items.c arr_item1 as the PS2's: no combination formations), FORMATION CHANGE picks the
+ * formation (NORMAL, BACK, WIDE, ROLLING, SEARCH = arr_form 0-4). So its rows: the formation, how its options fly (the
+ * PS2's rules, work/ps2arr/REPORT.md), lit on gold while it is the one chosen; ON and its slots while they fly it */
+static void draw_formation_arr(const char *const names[4], const uint8_t codes[4][3])
+{
+#ifdef IB_ARRANGE
+	static const char *const how[4] = {"TRACKING", "SIDEWAYS", "CIRCLING", "REARWARD"};
+	static const uint8_t index[4] = {4, 2, 3, 1}; /* arr_form's value for SEARCH, WIDE, ROLLING, BACK */
+	static const char slot[3][2] = {"L", "R", "B"};
+	const float x = CL_FORM_WIN_X + 6;
+	const unsigned cur = *RAMP(ARRANGE_FORM + (uint32_t)P->side);
+	int i, k;
+
+	for (i = 0; i < 4; i++) {
+		const float y = CL_FORM_WIN_Y + 4 + 20.0f * i;
+		const int lit = cur == index[i];
+		int on = 0;
+		for (k = 0; k < 3; k++)
+			on |= codes[i][k] && P->flies[k] && P->form[k] == codes[i][k];
+		if (lit)
+			box(x - 3, y - 2, CL_FORM_WIN_W - 6, 20, (col_t){0.45f, 0.32f, 0.06f, 1});
+		TEXT2(x, y, names[i], lit ? YELLOW : on ? MAGENTA : WHITE);
+		TEXT2(x + 112, y, how[i], lit ? WHITE : DIM);
+		if (on) {
+			TEXT2(x + 231, y, "ON", MAGENTA);
+			for (k = 0; k < 3; k++)
+				if (codes[i][k])
+					TEXT2(x + 231 + 35 + 14.0f * k, y, slot[k], P->flies[k] && P->form[k] == codes[i][k] ? WHITE : DIM);
+		}
+	}
+#else
+	(void)names;
+	(void)codes;
+#endif
+}
+
+/* test 61 (ibara, 16:9): the special formations (shmups.wiki's "Special Option Formations", work/g61/re/REPORT.md):
+ * row 1 = the streak being collected (its item, its count of 5, the formation it makes): at 5 the next option makes
+ * it (+OPTION; ALREADY when all three slots fly it, the game then does nothing), past 5 it is missed until another
+ * kind starts a streak; row 2 = the formation the options fly in (ON, its name, the slots flying it) */
+static void draw_formation(void)
+{
+	/* test 70 (user: "rework the special formations gadget by providing the full list of formations on the gadget
+	 * itself, with their conditions to achieve it, similar to shot level 6; when a special formation is on its way to
+	 * being activated, highlight it"): a row per formation, its condition as SHOT's secret shows its own (the item and
+	 * its count of 5 in a row, then an option): SEARCH 5 fragments, WIDE 5 options (the 6th makes it), ROLLING 5 medals,
+	 * BACK 5 small P. The kind being collected (1-5 in a row): its row lit on gold, at 5 +OPTION (ALREADY when all three
+	 * slots fly it, the game then does nothing); past 5 MISSED until another kind starts a streak; a formation the options
+	 * fly: ON and its slots (test 61's second row). The list shows outside a run too (the counts only in one). */
+	static const char *const names[4] = {"SEARCH", "WIDE", "ROLLING", "BACK"};
+	static const uint8_t kinds[4] = {2, 1, 3, 0}; /* their items: fragment, option, medal, small P (pickup kinds) */
+	static const uint8_t codes[4][3] = {{1, 1, 1}, {2, 2, 0}, {3, 4, 0}, {5, 5, 5}};
+	static const char slot[3][2] = {"L", "R", "B"};
+	const float x = CL_FORM_WIN_X + 6;
+	int i, k;
+
+	/* test 71 (user: "special formations gadget should be empty while in attract"): nothing outside a run or in a demo */
+	if (!s.run || s.demo)
+		return;
+	if (ARR) {
+		draw_formation_arr(names, codes);
+		return;
+	}
+	for (i = 0; i < 4; i++) {
+		const float y = CL_FORM_WIN_Y + 4 + 20.0f * i;
+		const uint8_t *want = codes[i];
+		const int mine = s.kind == kinds[i] + 1u; /* this formation's item is being collected (both sides' streak) */
+		const int lit = mine && s.streak >= 1 && s.streak <= 5;
+		const int already = P->flies[0] && P->flies[1] && P->flies[2] && P->form[0] == want[0] &&
+		                    P->form[1] == want[1] && P->form[2] == want[2];
+		int on = 0, sides[2] = {0, 0};
+		char t[8];
+		for (k = 0; k < 3; k++)
+			for (int q = 0; q < 2; q++)
+				sides[q] |= want[k] && pl[q].flies[k] && pl[q].form[k] == want[k];
+		on = coop_now ? sides[0] | sides[1] : sides[P->side];
+		if (lit)
+			box(x - 3, y - 2, CL_FORM_WIN_W - 6, 20, (col_t){0.45f, 0.32f, 0.06f, 1});
+		TEXT2(x, y, names[i], lit ? YELLOW : on ? MAGENTA : WHITE);
+		spr(CS_POWERUP_1 + kinds[i], x + 104, y - 1, 18, 18, lit ? WHITE : fade(WHITE, 0.55f));
+		if (mine && s.streak > 5)
+			snprintf(t, sizeof(t), "-");
+		else
+			snprintf(t, sizeof(t), "%u/5", mine ? s.streak : 0u);
+		TEXT2(x + 126, y, t, lit ? (s.streak == 5 ? YELLOW : WHITE) : DIM);
+		TEXT2(x + 175, y, "+", lit ? WHITE : DIM);
+		spr(CS_POWERUP_2, x + 191, y - 1, 18, 18, lit ? WHITE : fade(WHITE, 0.55f)); /* the option that makes it */
+		if (mine && s.streak == 5) {
+			TEXT2(x + 217, y, already ? "ALREADY" : "+OPTION", already ? GREY : YELLOW);
+		} else if (mine && s.streak > 5) {
+			TEXT2(x + 217, y, "MISSED", RED);
+		} else if (on && coop_now) { /* test 71: the sides flying it */
+			TEXT2(x + 217, y, "ON", MAGENTA);
+			TEXT2(x + 217 + 35, y, "1P", sides[0] ? WHITE : DIM);
+			TEXT2(x + 217 + 35 + 14 * 3, y, "2P", sides[1] ? WHITE : DIM);
+		} else if (on) {
+			TEXT2(x + 217, y, "ON", MAGENTA);
+			for (k = 0; k < 3; k++)
+				if (want[k])
+					TEXT2(x + 217 + 35 + 14.0f * k, y, slot[k], P->flies[k] && P->form[k] == want[k] ? WHITE : DIM);
+		}
+	}
+}
+
+/* test 76, Kuro BL's XTC: the graze window's half sizes in game pixels as the player sees it (hw across, hh up and down)
+ * with A held n frames at the rank now (the header's box: 19 + 1 and 14 + 1, each + e) */
+static void xtc_half(unsigned n, float *hw, float *hh)
+{
+	const uint32_t inv = s.rank < 0x1000000u ? 0x1000000u - s.rank : 0;
+	const float e = (float)(((inv >> 3) * n) >> 3) / 65536.0f;
+
+	*hw = 20 + e;
+	*hh = 15 + e;
+}
+
+/* the game's tint of its sphere at the rank now (0C071110: q = ((0xFFFFFF - rank) >> 16) * 2, blue -> green -> red) */
+static col_t xtc_tint(void)
+{
+	const unsigned q = s.rank < 0xFFFFFFu ? ((0xFFFFFFu - s.rank) >> 16) * 2 : 0;
+	const unsigned r = q > 255 ? q - 255 : 0, g = q <= 255 ? q : 510 - q, b = q < 255 ? 255 - q : 0;
+
+	return (col_t){r / 255.0f, g / 255.0f, b / 255.0f, 1};
+}
+
+/* Test 76 (user: "the value that increases when you shoot while grazing bullets, as well as the size of the increasing
+ * graze window, in both a graph representing the ship, and the pixel number"). At the left the graph: the game's own
+ * ship (the run's pilot and ship, work/card/blk/ships) and the graze window around it, both at XTC_G canvas pixels a
+ * game pixel (the largest window, 104 x 94, fits), the window in the sphere's tint, lit by the sphere's opacity (a
+ * graze); while the window is tested (A held 5 frames or more, the pods out, the ship hittable) it has its size now,
+ * else (dim) the size holding A gives at this rank. At the right the counter in the large digits (the game's popup
+ * green), a bar of the frames until it is wiped, the window's size in game pixels (across x up and down) and what the
+ * window is doing. Nothing outside a run or in a demo, as SPECIAL FORMATIONS. */
+#define XTC_G 0.85f
+static void draw_xtc(void)
+{
+	static const col_t XTC_GREEN = {0x30 / 255.0f, 0xF0 / 255.0f, 0x60 / 255.0f, 1}; /* the game's "+XTC" popup */
+	const float wx = CL_XTC_WIN_X, wy = CL_XTC_WIN_Y, ww = CL_XTC_WIN_W, wh = CL_XTC_WIN_H;
+	const float gx = wx + 54, gy = wy + wh / 2, tx = wx + 112; /* the graph's centre, the text's left */
+	const int active = P->xtc_hit && P->xtc_opts && P->xtc_hold > 4;
+	const int id = (P->ship & M->side_bit ? CS_SHIP_DYNE_ST : CS_SHIP_BOND_ST) + (P->ship & M->kind_bit ? 1 : 0);
+	const struct card_rect *sh = &card_sprites[id];
+	const col_t c = xtc_tint();
+	const char *st;
+	col_t sc = DIM;
+	float hw, hh;
+	char t[16];
+
+	if (!s.run || s.demo)
+		return;
+	xtc_half(active ? P->xtc_hold : 8, &hw, &hh);
+	if (P->xtc_glow)
+		box(gx - hw * XTC_G, gy - hh * XTC_G, 2 * hw * XTC_G, 2 * hh * XTC_G,
+		    fade(c, 0.45f * (P->xtc_glow > 0xC0 ? 1.0f : P->xtc_glow / 192.0f)));
+	/* the ship's centre is its picture's 20, 16 (the player's place) */
+	spr(id, gx - 20 * XTC_G, gy - 16 * XTC_G, sh->w * XTC_G, sh->h * XTC_G, P->xtc_hit ? WHITE : fade(WHITE, 0.5f));
+	frame(gx - hw * XTC_G, gy - hh * XTC_G, 2 * hw * XTC_G, 2 * hh * XTC_G, 2, active ? c : fade(c, 0.4f));
+	digits(CS_DIGIT_L0, wx + ww - 10, wy + 2, (uint32_t)(P->xtc > 0 ? P->xtc : 0), 1, 19, P->xtc > 0 ? XTC_GREEN : DIM);
+	if (P->xtc > 0)
+		box(tx, wy + 43, (ww - 10 - (tx - wx)) * (P->xtc_left >= XTC_TIMER ? 1.0f : P->xtc_left / (float)XTC_TIMER), 3,
+		    XTC_GREEN);
+	snprintf(t, sizeof(t), "%dX%d", (int)lroundf(2 * hw), (int)lroundf(2 * hh));
+	TEXT2(tx, wy + 49, "SIZE", CYAN);
+	{
+		const float w = TEXT2(tx + 14 * 5, wy + 49, t, active ? WHITE : GREY); /* "SIZE 104X94 PX" ends at 310 */
+		TEXT2(tx + 14 * 6 + w, wy + 49, "PX", GREY);
+	}
+	if (!P->xtc_hit) {
+		st = "-";
+	} else if (!P->xtc_opts) {
+		st = "NO OPTIONS";
+	} else if (P->xtc_hold <= 4) {
+		st = "HOLD SHOT";
+	} else if (P->xtc_glow) {
+		st = "SCRATCHING";
+		sc = c;
+	} else {
+		st = "READY";
+		sc = WHITE;
+	}
+	TEXT2(tx, wy + 69, st, sc);
+}
+
+static void draw_music(void)
+{
+	const char *n = M->bgm_name(s.bgm);
+	const float x = CL_MUSIC_WIN_X + 6, y = CL_MUSIC_WIN_Y + 5;
+
+	if (!n)
+		return;
+	TEXT2(x, y, "$", MAGENTA); /* the font's 0x24 is the game's note */
+	TEXT2(x + 14, y, n, MAGENTA);
+	if (M->composer)
+		TEXT2(x, y + 22, M->composer, GREY);
+}
+
+/* test 64: STAGES: the six stages of the loop being played in two columns, each its number, a bar (its score's share
+ * of the best stage shown) and its score (the one being played yellow, so far); the second loop says so beside the
+ * plate's tab. Test 65 (user: "when using a continue, turn that stage's score red"): a stage with a continue in it has
+ * its number and score red */
+static void draw_stages(void)
+{
+	const float x0 = CL_STAGES_WIN_X + 4, y0 = CL_STAGES_WIN_Y + 4;
+	const int loop = st.idx >= 6;
+	uint32_t top = 1;
+	char t[16];
+	int k;
+
+	for (k = 0; k < 6; k++)
+		if (st.played[loop * 6 + k] && st.score[loop * 6 + k] > top)
+			top = st.score[loop * 6 + k];
+	for (k = 0; k < 6; k++) {
+		const int i = loop * 6 + k;
+		const float x = x0 + 154.0f * (k / 3), y = y0 + 20.0f * (k % 3);
+		const float bx = loop ? 46.0f : 18.0f; /* test 70: the second loop's stages called 2-1 .. 2-6 */
+		snprintf(t, sizeof(t), loop ? "2-%d" : "%d", k + 1);
+		TEXT2(x, y, t, !st.played[i] ? GREY : st.cont[i] ? RED : loop ? MAGENTA : CYAN);
+		if (!st.played[i]) {
+			TEXT2(x + 14 * 9, y, "-", GREY);
+			continue;
+		}
+		box(x + bx, y + 1, (140.0f - bx) * (float)st.score[i] / (float)top, 14, (col_t){0.45f, 0.32f, 0.06f, 1});
+		snprintf(t, sizeof(t), "%u", (unsigned)st.score[i]);
+		TEXT2(x + 14 * 10 - 14.0f * (float)strlen(t), y, t, st.cont[i] ? RED : i == st.idx ? YELLOW : WHITE);
+	}
+	/* test 70: no 2ND LOOP beside the tab (SCORE BREAKDOWN's reaches the plate's end): the stages' names say it */
+}
+
+static void draw_boss(const struct gd_lay *L)
+{
+	const col_t tc = s.boss_left >= 0 && s.boss_left < 30 * 60 ? RED : WHITE;
+
+	if (s.boss >= 0 && s.boss_max > 0 && (s.boss_tier < 3 || s.boss_on)) { /* tier 3: not fighting yet */
+		const int pct = (s.boss_hp * 100 + s.boss_max - 1) / s.boss_max;
+		const float bx = CL_BOSS_WIN_X + 4 + 14 * 4 + 6; /* test 64: the bar after the number */
+		char t[8];
+		snprintf(t, sizeof(t), "%d%%", pct);
+		TEXT2(CL_BOSS_WIN_X + 4 + 14 * 4 - 14.0f * (float)strlen(t), CL_BOSS_WIN_Y + 5, t, WHITE);
+		if (L->bars)
+			box(bx, CL_BOSS_WIN_Y + 5, (CL_BOSS_WIN_X + CL_BOSS_WIN_W - 2 - bx) * (float)s.boss_hp / (float)s.boss_max,
+			    CL_BOSS_WIN_H - 10, GOLD);
+	}
+	/* test 62: the time until it withdraws by timeout (bossclock.c), from the start of its fight as the bar; in game
+	 * frames, 60 a second (slowdown stretches it as it does the game); 00:00 = its time is up (it leaves at the end of
+	 * the attack it is in, or is leaving); test 64: without "LEFT" after it (user). Test 65 (user: "add three decimals
+	 * to the boss timer and move it slightly to the left"): MM:SS.mmm of the frames left / 60 (whole seconds no longer
+	 * rounded up), the thousandths in the rank's small digits, 20 pixels left of test 64's place */
+	if (s.boss >= 0 && s.boss_left >= 0 && (s.boss_tier < 3 || s.boss_on)) {
+		const unsigned ms = (unsigned)((uint64_t)(unsigned)s.boss_left * 1000 / 60);
+		const unsigned sec = ms / 1000, frac = ms % 1000;
+		const float x = 1115;
+		digits(CS_DIGIT_M0, x + 28, 450, sec / 60 % 100, 2, 14, tc);
+		TEXT2(x + 28, 458, ":", WHITE);
+		digits(CS_DIGIT_M0, x + 28 + 12 + 28, 450, sec % 60, 2, 14, tc);
+		TEXT2(x + 28 + 12 + 28 - 2, 458, ".", WHITE); /* 2x: the rank's 1x point was too small to see */
+		digits(CS_DIGIT_S0, x + 28 + 12 + 28 + 7 + 36, 452, frac, 3, 12, tc);
+	}
+}
+
+static int stick_sprite(unsigned dirs)
+{
+	switch (dirs) { /* 1 up, 2 down, 4 left, 8 right (the artwork's script's states) */
+	case 1: return CS_STICK_N;
+	case 2: return CS_STICK_S;
+	case 4: return CS_STICK_W;
+	case 8: return CS_STICK_E;
+	case 5: return CS_STICK_NW;
+	case 6: return CS_STICK_SW;
+	case 9: return CS_STICK_NE;
+	case 10: return CS_STICK_SE;
+	default: return CS_STICK_C;
+	}
+}
+
+/* test 61: the controls 5% smaller, from the artwork's P1 places toward its bottom-left corner (13, 699); test 64: then
+ * CARD_KS toward the same corner (tx_set), the sprites at that size in the atlas, each at a whole canvas pixel. Test 79
+ * (user: "for stick, make it 20% smaller to fit in the new buttons"): ARRANGE's at 0.8 of that (its own sprites,
+ * mkcard.py's *_A) */
+#define CTL_K (ARR ? 0.95f * 0.8f : 0.95f)
+#define CTL_X(x) (13 + ((x) - 13) * CTL_K)
+#define CTL_Y(y) (699 + ((y) - 699) * CTL_K)
+#define CTL_DX2 971.0f /* test 71: co-op's 2P controls this far right (the group's 13-296 to 984-1267) */
+static float ctl_dx;
+
+static void ctl_spr(int id, float x, float y, col_t c)
+{
+	tx_none();
+	spr(id, floorf(13 + ctl_dx + (CTL_X(x) - 13) * CARD_KS + 0.5f), floorf(699 + (CTL_Y(y) - 699) * CARD_KS + 0.5f), 0,
+	    0, c);
+	tx_set(13, 699, 13 + ctl_dx, 699, CARD_KS, CARD_KS);
+}
+
+/* test 61: one side's controls (s.ctl, the side last touched), at the left whichever side it plays. AUTO SHOT's lamp
+ * only where RAPID does not show it (Kuro BL; user: rapid fire is ibara's) */
+static void draw_controls(int rapid)
+{
+	const int p = CS;
+	const unsigned v = (unsigned)~s.port[p] & 0xFF;
+	const float a = coop_now ? 1.0f : s.shown[p] >= GD_INPUT_FADE ? 1.0f : (float)s.shown[p] / GD_INPUT_FADE;
+	const int ks = ARR ? CS_STICK_C_A - CS_STICK_C : 0, kb = ARR ? CS_BUTTON_A_A - CS_BUTTON_A : 0;
+
+	if (a <= 0)
+		return;
+	tx_set(13, 699, 13 + ctl_dx, 699, CARD_KS, CARD_KS);
+	ctl_spr(stick_sprite(v & 0x0F) + ks, 13, 533, fade(WHITE, a));
+	ctl_spr((v & 0x10 ? CS_BUTTON_A_PRESSED : CS_BUTTON_A) + kb, 217, 572, fade(WHITE, a));
+	ctl_spr((v & 0x20 ? CS_BUTTON_B_PRESSED : CS_BUTTON_B) + kb, 142, 599, fade(WHITE, a));
+	/* the pad buttons set to shot and bomb over their buttons, AUTO SHOT's lamp */
+	TEXT2(CTL_X(217 + 50) - 7.0f * (float)strlen(s.keys[p][0]), CTL_Y(576), s.keys[p][0], fade(YELLOW, a));
+	TEXT2(CTL_X(142 + 50) - 7.0f * (float)strlen(s.keys[p][1]), CTL_Y(603), s.keys[p][1], fade(YELLOW, a));
+	if (ARR) { /* test 79: SUB WEAPON CHANGE (button 3), FORMATION CHANGE (button 4), AIM LOCK in a row above them */
+		static const struct { int id; float x; int key; } more[3] = {
+			{CS_BUTTON_SUB_A, 184, GD_KEY_SUB}, {CS_BUTTON_FORM_A, 276, GD_KEY_FORM}, {CS_BUTTON_LOCK_A, 368, GD_KEY_LOCK}};
+		const int down[3] = {(v & 0x40) != 0, (v & 0x80) != 0, lock_down(p)};
+		for (int k = 0; k < 3; k++) {
+			const char *key = s.keys[p][more[k].key];
+			ctl_spr(more[k].id + down[k], more[k].x, 468, fade(WHITE, a)); /* its PRESSED sprite next */
+			TEXT2(CTL_X(more[k].x + 50) - 7.0f * (float)strlen(key), CTL_Y(472), key, fade(YELLOW, a));
+		}
+	}
+	if (s.keys[p][2][0] && !rapid) {
+		char t[40];
+		snprintf(t, sizeof(t), "%s AUTO %dHZ", s.keys[p][2], s.af_hz[p]);
+		TEXT2(CTL_X(217 + 100) - 14.0f * (float)strlen(t), CTL_Y(548), t, fade(s.pad[p] & s.af_bit ? YELLOW : GREY, a));
+	}
+}
+
+/* test 67 (user: "a new slimmer option toggle between classic joystick (the current one) and text inputs that light up
+ * when pressed down"): the side's inputs as the game reads them this frame, on CONTROLS' slim plate (mkcard.py ctltext):
+ * the four directions in the game font's arrows and SHOT, BOMB; then RAPID (button 3), button 4 (ibara's unused B4,
+ * Kuro BL's WEAPON) and AUTO (AUTO SHOT's button held); each yellow while down, dim while up. Test 69 (user: "remove
+ * rapid shot and button 4 from ibara's controls gadget prompt"; ibara reads neither, test 68's work/g68/btn4): ibara's
+ * second row is WEAPON's AUTO / NOW row */
+static void draw_ctl_text(void)
+{
+	static const struct { unsigned char bit, glyph; } dirs[4] = {{4, 0x1D}, {1, 0x1E}, {2, 0x1F}, {8, 0x1C}}; /* < ^ v > */
+	const unsigned v = (unsigned)~s.port[CS] & 0xFF;
+	const float x = CL_CTLTEXT_WIN_X + 6, y = CL_CTLTEXT_WIN_Y + 6;
+	int k;
+
+	for (k = 0; k < 4; k++)
+		spr(CS_FONT_00 + dirs[k].glyph, x + 20.0f * k, y, 16, 16, v & dirs[k].bit ? YELLOW : DIM);
+	TEXT2(x + 98, y, "SHOT", v & 0x10 ? YELLOW : DIM);
+	TEXT2(x + 98 + 14 * 5, y, "BOMB", v & 0x20 ? YELLOW : DIM);
+	if (ARR) { /* test 79 (user: "for text, add the formation, option and aim lock weapon buttons"): SUB WEAPON CHANGE
+	            * after BOMB; FORMATION CHANGE, AIM LOCK and AUTO SHOT's rate on the second row (no NOW: in ARRANGE
+	            * SHOT held fires by itself) */
+		TEXT2(x + 98 + 14 * 10, y, "SUB", v & 0x40 ? YELLOW : DIM);
+		TEXT2(x, y + 20, "FORM", v & 0x80 ? YELLOW : DIM);
+		TEXT2(x + 14 * 5, y + 20, "LOCK", lock_down(CS) ? YELLOW : DIM);
+		draw_auto(x + 14 * 10, y + 20);
+		return;
+	}
+	if (M->own_plates) {
+		draw_rapid(x, y + 20);
+		return;
+	}
+	TEXT2(x, y + 20, "RAPID", v & 0x40 ? YELLOW : DIM);
+	TEXT2(x + 98, y + 20, M->stock ? "WEAPON" : "B4", v & 0x80 ? YELLOW : DIM);
+	if (s.keys[CS][2][0])
+		TEXT2(x + 98 + 14 * 7, y + 20, "AUTO", s.pad[CS] & s.af_bit ? YELLOW : DIM);
+}
+
+/* ---- textures, shaders, drawing ------------------------------------------------------------------------------ */
+
+/* zlib data of w x h pixels as bytes A R G B into t (0xAARRGGBB words) */
+static int unpack(XsdkTexture *t, const unsigned char *z, unsigned zn, unsigned w, unsigned h)
+{
+	z_stream st;
+	unsigned char *raw = malloc((size_t)w * h * 4);
+	unsigned x, y;
+	int r;
+
+	if (!raw)
+		return -1;
+	memset(&st, 0, sizeof(st));
+	st.next_in = (unsigned char *)z;
+	st.avail_in = zn;
+	st.next_out = raw;
+	st.avail_out = w * h * 4;
+	if (inflateInit(&st) != Z_OK) {
+		free(raw);
+		return -1;
+	}
+	r = inflate(&st, Z_FINISH);
+	inflateEnd(&st);
+	if (r != Z_STREAM_END || st.avail_out) {
+		free(raw);
+		return -1;
+	}
+	for (y = 0; y < h; y++)
+		for (x = 0; x < w; x++) {
+			const unsigned char *p = raw + ((size_t)y * w + x) * 4;
+			t->texels[(size_t)y * t->pitch + x] = (uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 | (uint32_t)p[2] << 8 | p[3];
+		}
+	free(raw);
+	xsdk_gpu_invalidate(t->address, t->size_bytes);
+	return 0;
+}
+
+int gadgets_init(int blk)
+{
+	static const XsdkSampler point = {.mag_filter = XSDK_FILTER_POINT, .min_filter = XSDK_FILTER_POINT,
+	                                  .mip_filter = XSDK_FILTER_POINT, .address_u = XSDK_ADDRESS_CLAMP,
+	                                  .address_v = XSDK_ADDRESS_CLAMP};
+	static const XsdkSampler linear = {.mag_filter = XSDK_FILTER_LINEAR, .min_filter = XSDK_FILTER_LINEAR,
+	                                   .mip_filter = XSDK_FILTER_POINT, .address_u = XSDK_ADDRESS_CLAMP,
+	                                   .address_v = XSDK_ADDRESS_CLAMP};
+	static const XsdkBlend alpha = {.color_source = XSDK_BLEND_SRC_ALPHA, .color_dest = XSDK_BLEND_ONE_MINUS_SRC_ALPHA,
+	                                .color_op = XSDK_BLEND_OP_ADD, .alpha_source = XSDK_BLEND_ONE,
+	                                .alpha_dest = XSDK_BLEND_ONE_MINUS_SRC_ALPHA, .alpha_op = XSDK_BLEND_OP_ADD,
+	                                .write_mask = XSDK_WRITE_ALL};
+	static const XsdkBlend none = {.color_source = XSDK_BLEND_ONE, .color_dest = XSDK_BLEND_ZERO,
+	                               .color_op = XSDK_BLEND_OP_ADD, .alpha_source = XSDK_BLEND_ONE,
+	                               .alpha_dest = XSDK_BLEND_ZERO, .alpha_op = XSDK_BLEND_OP_ADD,
+	                               .write_mask = XSDK_WRITE_ALL};
+	/* test 72: in a one-game image (IB_GAME: 0 ibara, 1 Kuro BL; gen/card/card_art.c leaves the other game's
+	 * pictures out under the same define) only its own background and panels */
+#if !defined(IB_GAME) || IB_GAME == 0
+	const unsigned char *bgz = card_bg_z;
+	unsigned bgn = card_bg_z_size;
+	const unsigned char *const *p43 = card_p43_z; /* test 71: the game's two panels (Bond, Dyne) */
+	const unsigned *p43n = card_p43_z_size;
+#else
+	const unsigned char *bgz = card_bgblk_z;
+	unsigned bgn = card_bgblk_z_size;
+	const unsigned char *const *p43 = card_p43blk_z;
+	const unsigned *p43n = card_p43blk_z_size;
+#endif
+	NTSTATUS st;
+
+#if !defined(IB_GAME)
+#if CARD_HAVE_BLK
+	if (blk) {
+		bgz = card_bgblk_z;
+		bgn = card_bgblk_z_size;
+	}
+#endif
+#if CARD_HAVE_P43BLK
+	if (blk) {
+		p43 = card_p43blk_z;
+		p43n = card_p43blk_z_size;
+	}
+#endif
+#endif
+	M = blk ? &map_blk : &map_ib;
+	s.boss = -1;
+	s.cand = -1;
+	st = xsdk_shader_load(&gd_vs, card_vert.container, card_vert.container_bytes);
+	if (NT_SUCCESS(st))
+		st = xsdk_shader_load(&gd_ps, card_frag.container, card_frag.container_bytes);
+	if (NT_SUCCESS(st))
+		st = xsdk_shader_set_vertex_layout(&gd_vs, gd_layout, sizeof(gd_layout) / sizeof(gd_layout[0]),
+		                                   (const uint32_t[]){GD_VF * 4});
+	if (NT_SUCCESS(st))
+		st = xsdk_texture_create(&gd_bg, XSDK_FORMAT_A8R8G8B8, CARD_BG_W, CARD_BG_H, 1, false);
+	if (NT_SUCCESS(st))
+		st = xsdk_texture_create(&gd_atlas, XSDK_FORMAT_A8R8G8B8, CARD_ATLAS_W, CARD_ATLAS_H, 1, false);
+	if (NT_SUCCESS(st))
+		st = xsdk_texture_create(&gd_p43[0], XSDK_FORMAT_A8R8G8B8, CARD_P43_W, CARD_P43_H, 1, false);
+	if (NT_SUCCESS(st))
+		st = xsdk_texture_create(&gd_p43[1], XSDK_FORMAT_A8R8G8B8, CARD_P43_W, CARD_P43_H, 1, false);
+	if (NT_SUCCESS(st))
+		st = xsdk_texture_create(&gd_tate, XSDK_FORMAT_A8R8G8B8, CARD_TATE_W, CARD_TATE_H, 1, false);
+	if (!NT_SUCCESS(st)) {
+		log_printf(C_RED, "GADGETS: SHADERS OR TEXTURES FAILED %08X", (unsigned)st);
+		return -1;
+	}
+	gd_vmem = xsdk_gpu_alloc(GD_SLOTS * GD_MAX_QUADS * 6 * GD_VF * 4);
+	if (!gd_vmem) {
+		log_printf(C_RED, "GADGETS: NO GPU MEMORY FOR ITS QUADS");
+		return -1;
+	}
+	if (unpack(&gd_bg, bgz, bgn, CARD_BG_W, CARD_BG_H) ||
+	    unpack(&gd_atlas, card_atlas_z, card_atlas_z_size, CARD_ATLAS_W, CARD_ATLAS_H) ||
+	    unpack(&gd_p43[0], p43[0], p43n[0], CARD_P43_W, CARD_P43_H) ||
+	    unpack(&gd_p43[1], p43[1], p43n[1], CARD_P43_W, CARD_P43_H) ||
+	    unpack(&gd_tate, card_tate_z, card_tate_z_size, CARD_TATE_W, CARD_TATE_H)) {
+		log_printf(C_RED, "GADGETS: ITS PICTURES DID NOT UNPACK");
+		return -1;
+	}
+	xsdk_texture_sampler_state(&gd_point, &point);
+	xsdk_texture_sampler_state(&gd_linear, &linear);
+	xsdk_gpu_blend_state(&gd_alpha, &alpha);
+	xsdk_gpu_blend_state(&gd_none, &none);
+	gd_stats.ready = 1;
+	return 0;
+}
+
+static void gd_set(const XsdkTexture *t, int lin)
+{
+	xsdk_gpu_set_shaders(&gd_vs, &gd_ps);
+	xsdk_built_shader_set_literals(&card_vert);
+	xsdk_built_shader_set_literals(&card_frag);
+	xsdk_gpu_set_texture(CARD_FRAG_SAMPLER_0_0, t, lin ? &gd_linear : &gd_point);
+}
+
+/* the quads built so far into block slot and drawn */
+static void gd_flush(int slot)
+{
+	volatile uint32_t *dst = gd_vmem + (size_t)slot * GD_MAX_QUADS * 6 * GD_VF;
+	const uint32_t *src = (const uint32_t *)gd_q;
+	const unsigned words = gd_nq * 6 * GD_VF;
+	unsigned i;
+	uint32_t addr;
+
+	if (!gd_nq)
+		return;
+	for (i = 0; i < words; i++)
+		dst[i] = src[i];
+	addr = xsdk_gpu_address(dst);
+	xsdk_gpu_invalidate(addr, words * 4);
+	xsdk_gpu_set_vertices(0, addr, words * 4);
+	xsdk_gpu_draw(XSDK_PRIMITIVE_TRIANGLE_LIST, gd_nq * 6);
+}
+
+/* test 71: a player's WEAPON plate: 4 rows when ibara's RAPID row is on CONTROLS' text plate, else 5; test 81: ARRANGE's
+ * 5 always (SHOT, the stored sub weapons' three rows, HADOU: its RAPID only on CONTROLS, as AUTO) */
+static int weapon_plate(const struct gd_lay *L)
+{
+	return RAPID_ON_WEAPON && ctl_text_shown(L) ? CP_WEAPON4 : CP_WEAPON5;
+}
+
+/* test 71: the 16:9 co-op layout: 1P's column at the left as one player's (SCORE, STATUS, WEAPON, SPECIAL FORMATIONS,
+ * CONTROLS), RANK at its place, 2P's SCORE, STATUS, WEAPON and CONTROLS at the right, each plate at 1P's place mirrored
+ * (x), stacked under RANK and the room of its change (y); 2P's stick and buttons at the bottom right (CTL_DX2) */
+#define COOP_RANK_ROOM 12
+static void draw_wide_coop(const struct gd_lay *L)
+{
+	const int w4 = RAPID_ON_WEAPON && ctl_text_shown(L);
+	float y;
+
+	if (ON(GD_RANK) && plate(CP_RANK))
+		draw_rank(L);
+	/* 1P */
+	P = &pl[0];
+	CS = 0;
+	if (ON(GD_SCORE) && plate(CP_SCORE))
+		draw_score();
+	if (ON(GD_STATUS) && plate(CP_STATUS))
+		draw_status(L);
+	if (ON(GD_WEAPON) && plate(weapon_plate(L)))
+		draw_weapon(L);
+	if (w4)
+		plate_dy = (float)(card_sprites[CS_PLATE_WEAPON4].h - card_sprites[CS_PLATE_WEAPON5].h);
+	if (M->own_plates && ON(GD_FORMATION) && plate(CP_FORM)) /* one streak for both: 1P's side (user) */
+		draw_formation();
+	if (M->xtc && ON(GD_XTC) && plate(CP_XTC)) /* test 76: each player's */
+		draw_xtc();
+	plate_dy = 0;
+	if (ON(GD_CONTROLS) && !gd_ctl_text)
+		draw_controls(RAPID_ON_WEAPON && ON(GD_WEAPON));
+	if (ON(GD_CONTROLS) && gd_ctl_text && plate(CP_CTLTEXT))
+		draw_ctl_text();
+	/* 2P */
+	P = &pl[1];
+	CS = 1;
+	y = card_plates[CP_RANK].y[CPV_WIDE] + card_sprites[CS_PLATE_RANK].h + COOP_RANK_ROOM;
+#define MIRROR(cp) (1280.0f - card_plates[cp].x[CPV_WIDE])
+	if (ON(GD_SCORE)) {
+		y += plate_at(CP_SCORE, MIRROR(CP_SCORE), y) + 2;
+		draw_score();
+	}
+	if (ON(GD_STATUS)) {
+		y += plate_at(CP_STATUS, MIRROR(CP_STATUS), y) + 2;
+		draw_status(L);
+	}
+	if (ON(GD_WEAPON)) {
+		y += plate_at(weapon_plate(L), MIRROR(weapon_plate(L)), y) + 2;
+		draw_weapon(L);
+	}
+	if (M->xtc && ON(GD_XTC)) { /* test 76: 2P's under its WEAPON, when it ends above 2P's controls (the column starts
+	                             * under RANK: with CONTROLS on, Kuro BL's 5-row WEAPON leaves no room) */
+		const float bottom = !ON(GD_CONTROLS) ? 718.0f : gd_ctl_text ? card_plates[CP_CTLTEXT].y[CPV_WIDE] - 2.0f
+		                                                              : CTL_Y(533) - 2.0f;
+		if (y + card_sprites[CS_PLATE_XTC].h <= bottom) {
+			plate_at(CP_XTC, MIRROR(CP_XTC), y);
+			draw_xtc();
+		}
+	}
+	if (ON(GD_CONTROLS) && !gd_ctl_text) {
+		ctl_dx = CTL_DX2;
+		draw_controls(RAPID_ON_WEAPON && ON(GD_WEAPON));
+		ctl_dx = 0;
+	}
+	if (ON(GD_CONTROLS) && gd_ctl_text) {
+		plate_at(CP_CTLTEXT, MIRROR(CP_CTLTEXT), card_plates[CP_CTLTEXT].y[CPV_WIDE]);
+		draw_ctl_text();
+	}
+#undef MIRROR
+}
+
+/* test 71: 4:3 (user: "try to place everything (minus the stick controls, text controls only) at your discretion"): two
+ * columns at the panel's right, each plate right-aligned at its column's edge, stacked from CARD_C43_TOP CARD_C43_GAP
+ * apart (a gadget turned off leaves its room to the artwork): A = the player's SCORE, STATUS, WEAPON, SPECIAL FORMATIONS,
+ * CONTROLS (as text); B = RANK, NEXT DROP, MEDALS | BULLETS, BOSS, SCORE BREAKDOWN, MUSIC; co-op: A = 1P's, B = RANK,
+ * then 2P's SCORE, STATUS, WEAPON, CONTROLS */
+static void column43_player(const struct gd_lay *L, float xr, float *y, int form)
+{
+	if (ON(GD_SCORE)) {
+		*y += plate_at(CP_SCORE_S, xr, *y) + CARD_C43_GAP;
+		draw_score_s();
+	}
+	if (ON(GD_STATUS)) {
+		*y += plate_at(CP_STATUS, xr, *y) + CARD_C43_GAP;
+		draw_status(L);
+	}
+	if (ON(GD_WEAPON)) {
+		*y += plate_at(weapon_plate(L), xr, *y) + CARD_C43_GAP;
+		draw_weapon(L);
+	}
+	if (form && M->own_plates && ON(GD_FORMATION)) {
+		*y += plate_at(CP_FORM, xr, *y) + CARD_C43_GAP;
+		draw_formation();
+	}
+	if (M->xtc && ON(GD_XTC)) { /* test 76: Kuro BL's, each player's */
+		*y += plate_at(CP_XTC, xr, *y) + CARD_C43_GAP;
+		draw_xtc();
+	}
+	if (ON(GD_CONTROLS)) {
+		*y += plate_at(CP_CTLTEXT, xr, *y) + CARD_C43_GAP;
+		draw_ctl_text();
+	}
+}
+
+static void draw_43(const struct gd_lay *L)
+{
+	float ya = CARD_C43_TOP, yb = CARD_C43_TOP;
+
+	if (coop_now) {
+		P = &pl[0];
+		CS = 0;
+	}
+	column43_player(L, CARD_C43_RA, &ya, 1);
+	if (ON(GD_RANK)) {
+		yb += plate_at(CP_RANK, CARD_C43_RB, yb) + CARD_C43_GAP;
+		draw_rank(L);
+	}
+	if (coop_now) {
+		P = &pl[1];
+		CS = 1;
+		column43_player(L, CARD_C43_RB, &yb, 0);
+		return;
+	}
+	if (ON(GD_DROP)) {
+		yb += plate_at(CP_DROP, CARD_C43_RB, yb) + CARD_C43_GAP;
+		draw_drop();
+	}
+	if (ON(GD_MEDAL) || ON(GD_BULLETS)) { /* side by side, BULLETS at the right (16:9's pair) */
+		float h = 0, xr = CARD_C43_RB;
+		if (ON(GD_BULLETS)) {
+			h = plate_at(CP_BULLETS, xr, yb);
+			draw_bullets();
+		}
+		xr -= card_sprites[CS_PLATE43_BULLETS].w * 0.75f + 3 * CARD_F43X;
+		if (ON(GD_MEDAL)) {
+			const float hm = plate_at(CP_MEDALS, xr, yb);
+			draw_medal();
+			h = hm > h ? hm : h;
+		}
+		yb += h + CARD_C43_GAP;
+	}
+	if (ON(GD_BOSS)) {
+		yb += plate_at(CP_BOSS, CARD_C43_RB, yb) + CARD_C43_GAP;
+		draw_boss(L);
+	}
+	if (ON(GD_STAGES)) {
+		yb += plate_at(CP_STAGES, CARD_C43_RB, yb) + CARD_C43_GAP;
+		draw_stages();
+	}
+	if (ON(GD_MUSIC)) {
+		yb += plate_at(CP_MUSIC, CARD_C43_RB, yb) + CARD_C43_GAP;
+		draw_music();
+	}
+}
+
+static int gd_slot = -1; /* the block this frame's background took (-1: none, nothing drawn) */
+
+void gadgets_draw(int layer, int view, uint32_t queued, uint32_t flips)
+{
+	const int slot = (int)(queued % GD_SLOTS);
+	const int scaled = gd_fbw != 1280 || gd_fbh != 720; /* the 16:9 and tate canvases at 1:1 on a 720p front buffer */
+
+	if (!gd_stats.ready || view == GV_NONE)
+		return;
+	gd_view = view;
+	gd_v = view == GV_43 ? CPV_43 : view == GV_WIDE ? CPV_WIDE : CPV_TATE;
+	tx_none();
+	if (layer == 0) {
+		/* the background, the block's first quads; the block is this frame's from here on */
+		const XsdkTexture *t = &gd_bg;
+		int lin = scaled;
+		gd_slot = -1;
+		if ((int32_t)(flips - gd_used[slot]) < 0) {
+			gd_stats.busy_skips++;
+			return;
+		}
+		gd_slot = slot;
+		gd_used[slot] = queued + 1;
+		gd_nq = 0;
+		switch (view) {
+		case GV_43: /* the panel at the canvas's right (test 71: the run's pilot's, CARD_P43_CW canvas columns) */
+			quad(CARD_P43_X, 0, CARD_P43_X + CARD_P43_CW, CARD_P43_H, 0, 0, 1, 1, WHITE);
+			t = &gd_p43[s.pilot & 1];
+			lin = 1;
+			break;
+		case GV_TATE_L:
+		case GV_TATE_R: /* the top band over the game, the bottom one under it */
+			quad(0, 0, CARD_TATE_W, CARD_TATE_BAND, 0, 0, 1, 0.5f, WHITE);
+			quad(0, 1280 - CARD_TATE_BAND, CARD_TATE_W, 1280, 0, 0.5f, 1, 1, WHITE);
+			t = &gd_tate;
+			break;
+		default: /* test 65: one background (test 64 moved ibara's logo while FORMATION was on) */
+			quad(0, 0, CARD_BG_W, CARD_BG_H, 0, 0, 1, 1, WHITE);
+			break;
+		}
+		xsdk_gpu_set_blend(&gd_none);
+		gd_set(t, lin);
+		gd_flush(slot);
+		return;
+	}
+	{
+		const uint64_t t0 = tb_read();
+		const unsigned first = gd_nq; /* after the background's quads */
+		const struct gd_lay *L = view == GV_43 ? &lay_43 : view == GV_WIDE ? &lay_wide : &lay_tate;
+		volatile uint32_t *dst;
+		const uint32_t *src;
+		unsigned i, words;
+		uint32_t addr;
+
+		if (gd_slot != slot || !s.valid)
+			return;
+		/* test 71: co-op while both sides have played in this run (16:9 and 4:3; tate keeps one player's bands) */
+		coop_now = gd_coop && pl[0].in && pl[1].in && gd_v != CPV_TATE;
+		P = &pl[s.side];
+		CS = s.ctl;
+		ctl_dx = 0;
+		/* test 64: each gadget's plate, then its values (tx_*: through the plate's place); a plate a view does not have
+		 * draws nothing (plate() 0) */
+		if (gd_v == CPV_43) {
+			draw_43(L);
+		} else if (coop_now) {
+			draw_wide_coop(L);
+		} else if (gd_v == CPV_TATE) { /* test 65: the short plates, 2 x 2 per band */
+			if (ON(GD_SCORE) && plate(CP_SCORE_S))
+				draw_score_s();
+			if (ON(GD_RANK) && plate(CP_RANK))
+				draw_rank(L);
+			if (ON(GD_STATUS) && plate(CP_STATUS_S))
+				draw_status_s();
+			if (ON(GD_STAGES) && plate(CP_STAGES_S))
+				draw_stages_s();
+			if (ON(GD_BOSS) && plate(CP_BOSS))
+				draw_boss(L);
+			if (ON(GD_BULLETS) && plate(CP_BULLETS_S)) /* test 67 */
+				draw_bullets_s();
+			if (ON(GD_DROP) && plate(CP_DROP_S))
+				draw_drop_s();
+			if (ON(GD_MEDAL) && plate(CP_MEDAL_S))
+				draw_medal_s();
+		} else {
+			if (ON(GD_RANK) && plate(CP_RANK))
+				draw_rank(L);
+			if (ON(GD_DROP) && plate(CP_DROP))
+				draw_drop();
+			if (ON(GD_MEDAL) && plate(CP_MEDALS)) /* test 67: MEDALS | BULLETS side by side */
+				draw_medal();
+			if (ON(GD_BULLETS) && plate(CP_BULLETS)) /* test 67 */
+				draw_bullets();
+			if (ON(GD_SCORE) && plate(CP_SCORE))
+				draw_score();
+			if (ON(GD_STATUS) && plate(CP_STATUS))
+				draw_status(L);
+			/* test 70 (user: "remove the empty line from the weapon gadget"): ibara's RAPID row on CONTROLS' text plate
+			 * (test 69) left WEAPON's last row empty: 4 rows then, SPECIAL FORMATIONS under it that much higher */
+			const int w4 = RAPID_ON_WEAPON && ctl_text_shown(L);
+			if (ON(GD_WEAPON) && plate(weapon_plate(L)))
+				draw_weapon(L);
+			if (ON(GD_BOSS) && plate(CP_BOSS))
+				draw_boss(L);
+			if (ON(GD_STAGES) && plate(CP_STAGES))
+				draw_stages();
+			if (ON(GD_MUSIC) && plate(CP_MUSIC))
+				draw_music();
+			if (w4)
+				plate_dy = (float)(card_sprites[CS_PLATE_WEAPON4].h - card_sprites[CS_PLATE_WEAPON5].h);
+			if (M->own_plates && ON(GD_FORMATION) && plate(CP_FORM))
+				draw_formation();
+			if (M->xtc && ON(GD_XTC) && plate(CP_XTC)) /* test 76: Kuro BL's, in SPECIAL FORMATIONS' place */
+				draw_xtc();
+			plate_dy = 0;
+			if (L->wide && ON(GD_CONTROLS) && !gd_ctl_text)
+				draw_controls(RAPID_ON_WEAPON && ON(GD_WEAPON));
+			if (L->wide && ON(GD_CONTROLS) && gd_ctl_text && plate(CP_CTLTEXT)) /* test 67 */
+				draw_ctl_text();
+		}
+		tx_none();
+		P = &pl[s.side];
+		ctl_dx = 0;
+		if (gd_nq == first)
+			return;
+		dst = gd_vmem + ((size_t)slot * GD_MAX_QUADS + first) * 6 * GD_VF;
+		src = (const uint32_t *)gd_q[first];
+		words = (gd_nq - first) * 6 * GD_VF;
+		for (i = 0; i < words; i++)
+			dst[i] = src[i];
+		addr = xsdk_gpu_address(dst);
+		xsdk_gpu_invalidate(addr, words * 4);
+		xsdk_gpu_set_blend(&gd_alpha);
+		gd_set(&gd_atlas, 1); /* test 64: linear (the values drawn at CARD_KS; the plates at whole pixels, 1:1) */
+		xsdk_gpu_set_vertices(0, addr, words * 4);
+		xsdk_gpu_draw(XSDK_PRIMITIVE_TRIANGLE_LIST, (gd_nq - first) * 6);
+		xsdk_gpu_set_blend(&gd_none);
+		if (gd_nq > gd_stats.quads_max)
+			gd_stats.quads_max = gd_nq;
+		gd_stats.frames++;
+		{
+			const uint64_t dt = tb_read() - t0;
+			if (dt > gd_stats.build_ticks_max)
+				gd_stats.build_ticks_max = dt;
+		}
+	}
+}
+
+/* the front buffer's size (1280x720, or the kernel's 640x480 on an interlaced output) */
+void gadgets_target(int w, int h)
+{
+	gd_fbw = w;
+	gd_fbh = h;
+}

@@ -1,6 +1,30 @@
 #include "recomp.h"
 #include "blk_recomp_funcs.h"
 
+/* FUN_0c06d390 */
+void blk_f_0C06D390(sh3_t *c)
+{
+	LOCALS;
+L_0C06D390: BLKS(0x0C06D390u);
+	{ u32 v_ = r14; r15 -= 4; W32(r15, v_); } UPD(0x0C06D392u, 1);  /* 0C06D390 mov.l Rm,@-Rn */
+	r0 = 0x0u;  /* 0C06D392 mov #imm,Rn */
+	r7 = 0xC3C86B4u; UPD(0x0C06D396u, 2);  /* 0C06D394 mov.l @(disp,pc),Rn */
+	r14 = r15;  /* 0C06D396 mov Rm,Rn */
+	r3 = 0x0u;  /* 0C06D398 mov #imm,Rn */
+	r2 = 0x1Fu;  /* 0C06D39A mov #imm,Rn */
+	UPD(0x0C06D39Cu, 3);
+L_0C06D39C: BLKS(0x0C06D39Cu);
+	r4 = r0;  /* 0C06D39C mov Rm,Rn */
+	IF(0x0C06D39Eu); W8(r0 + r7, r3); UPD(0x0C06D3A0u, 2);  /* 0C06D39E mov.b Rm,@(r0,Rn) */
+	r4 += 0x1u;  /* 0C06D3A0 add #imm,Rn */
+	r0 = (u32)(s32)(s16)r4;  /* 0C06D3A2 exts.w Rm,Rn */
+	T = (s32)r0 > (s32)r2;  /* 0C06D3A4 cmp/gt Rm,Rn */
+	if (!T) { UPD(0x0C06D39Cu, 6); goto L_0C06D39C; }  /* 0C06D3A6 bf */
+L_0C06D3A8: BLKS(0x0C06D3A8u);
+	r15 = r14;  /* 0C06D3A8 mov Rm,Rn */
+	IF(0x0C06D3AAu); { u32 t_ = PR; { u32 v_ = R32(r15); r15 += 4; r14 = v_; } /* slot mov.l @Rm+,Rn */ UPD(t_, 4); RET(t_); }  /* 0C06D3AA rts */
+}
+
 /* FUN_0c06d3c0 */
 void blk_f_0C06D3C0(sh3_t *c)
 {
@@ -7110,51 +7134,5 @@ L_0C071540: BLKS(0x0C071540u);
 	{ u32 c_ = !T; W32(r2 + 0x38u, r4); /* slot mov.l Rm,@(disp,Rn) */ if (c_) { UPD(0x0C071530u, 4); goto L_0C071530; } UPD(0x0C071548u, 1); goto L_0C071548; }  /* 0C071544 bf/s */
 L_0C071548: BLKS(0x0C071548u);
 	{ W32(r2 + 0x38u, r3); /* slot mov.l Rm,@(disp,Rn) */ UPD(0x0C071530u, 3); goto L_0C071530; }  /* 0C071548 bra */
-}
-
-void blk_f_0C0715D0(sh3_t *c)
-{
-	LOCALS;
-L_0C0715D0: BLKS(0x0C0715D0u);
-	{ u32 v_ = r14; r15 -= 4; W32(r15, v_); } UPD(0x0C0715D2u, 1);  /* 0C0715D0 mov.l Rm,@-Rn */
-	r0 = 0x0u;  /* 0C0715D2 mov #imm,Rn */
-	r2 = 0xC3CA708u; UPD(0x0C0715D6u, 2);  /* 0C0715D4 mov.l @(disp,pc),Rn */
-	r14 = r15;  /* 0C0715D6 mov Rm,Rn */
-	r3 = 0xFFu; UPD(0x0C0715DAu, 2);  /* 0C0715D8 mov.w @(disp,pc),Rn */
-	IF(0x0C0715DAu); ;  /* 0C0715DA nop */
-	UPD(0x0C0715DCu, 1);
-L_0C0715DC: BLKS(0x0C0715DCu);
-	r7 = R32(r2); UPD(0x0C0715DEu, 1);  /* 0C0715DC mov.l @Rm,Rn */
-	T = (r7 & r7) == 0;  /* 0C0715DE tst Rm,Rn */
-	if (T) { UPD(0x0C0715EAu, 4); goto L_0C0715EA; }  /* 0C0715E0 bt */
-L_0C0715E2: BLKS(0x0C0715E2u);
-	r0 += 0x1u;  /* 0C0715E2 add #imm,Rn */
-	T = (s32)r0 > (s32)r3;  /* 0C0715E4 cmp/gt Rm,Rn */
-	{ u32 c_ = !T; r2 += 0x1Cu; /* slot add #imm,Rn */ if (c_) { UPD(0x0C0715DCu, 5); goto L_0C0715DC; } UPD(0x0C0715EAu, 1); goto L_0C0715EA; }  /* 0C0715E6 bf/s */
-L_0C0715EA: BLKS(0x0C0715EAu);
-	r3 = 0x100u; UPD(0x0C0715ECu, 1);  /* 0C0715EA mov.w @(disp,pc),Rn */
-	T = r0 == r3;  /* 0C0715EC cmp/eq Rm,Rn */
-	{ u32 c_ = T; r1 = 0xFFFFFFFFu; /* slot mov #imm,Rn */ if (c_) { UPD(0x0C071612u, 4); goto L_0C071612; } goto L_0C0715F2; }  /* 0C0715EE bt/s */
-L_0C0715F2: BLKS(0x0C0715F2u);
-	r7 = 0x1u;  /* 0C0715F2 mov #imm,Rn */
-	W32(r2, r7); UPD(0x0C0715F6u, 3);  /* 0C0715F4 mov.l Rm,@Rn */
-	r3 = 0x2Fu;  /* 0C0715F6 mov #imm,Rn */
-	W32(r2 + 0x8u, r5); UPD(0x0C0715FAu, 2);  /* 0C0715F8 mov.l Rm,@(disp,Rn) */
-	r7 = 0x4Fu;  /* 0C0715FA mov #imm,Rn */
-	W32(r2 + 0x4u, r4); UPD(0x0C0715FEu, 2);  /* 0C0715FC mov.l Rm,@(disp,Rn) */
-	r5 = 0x0u;  /* 0C0715FE mov #imm,Rn */
-	W32(r2 + 0xCu, r3); UPD(0x0C071602u, 2);  /* 0C071600 mov.l Rm,@(disp,Rn) */
-	r1 = r0;  /* 0C071602 mov Rm,Rn */
-	W32(r2 + 0x10u, r7); UPD(0x0C071606u, 2);  /* 0C071604 mov.l Rm,@(disp,Rn) */
-	W32(r2 + 0x14u, r6); UPD(0x0C071608u, 1);  /* 0C071606 mov.l Rm,@(disp,Rn) */
-	W32(r2 + 0x18u, r5); UPD(0x0C07160Au, 1);  /* 0C071608 mov.l Rm,@(disp,Rn) */
-	r4 = 0xC3CA704u; UPD(0x0C07160Cu, 1);  /* 0C07160A mov.l @(disp,pc),Rn */
-	r2 = R32(r4); UPD(0x0C07160Eu, 1);  /* 0C07160C mov.l @Rm,Rn */
-	r2 += 0x1u;  /* 0C07160E add #imm,Rn */
-	W32(r4, r2); UPD(0x0C071612u, 2);  /* 0C071610 mov.l Rm,@Rn */
-L_0C071612: BLKS(0x0C071612u);
-	r0 = r1;  /* 0C071612 mov Rm,Rn */
-	r15 = r14;  /* 0C071614 mov Rm,Rn */
-	IF(0x0C071616u); { u32 t_ = PR; { u32 v_ = R32(r15); r15 += 4; r14 = v_; } /* slot mov.l @Rm+,Rn */ UPD(t_, 5); RET(t_); }  /* 0C071616 rts */
 }
 

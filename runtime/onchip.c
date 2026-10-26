@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "cv1k.h"
+#include "state.h"
 
 u8 *cv1k_rom;
 u32 cv1k_rom_mask;
@@ -248,6 +249,21 @@ void onchip_reset(void)
 	onchip_intevt = onchip_intevt2 = onchip_expevt = onchip_tra = 0;
 }
 
+/* test 69: the registers and timers in a save state (state.h; the input ports are the host's) */
+void onchip_state(rt_sbuf *b)
+{
+	ST(b, regs_a4);
+	ST(b, regs_ff);
+	ST(b, cache_array);
+	ST(b, tmu);
+	ST(b, tocr);
+	ST(b, tstr);
+	ST(b, dma);
+	ST(b, dmaor);
+	ST(b, onchip_ipra);
+	ST(b, onchip_iprc);
+}
+
 /* area 1 (0xA4000000): INTC extension, DMAC, ports */
 static u32 a4_read(sh3_t *c, u32 off, int size)
 {
@@ -439,7 +455,7 @@ static void dev_write(sh3_t *c, u32 a, u32 v, int size)
 				else if (off == 1) nand_command_w(b);
 				else if (off == 2) nand_address_w(b);
 			} else if (q - 0x10400000u < 8) {
-				ymz770_write(rt_now(c), off, b);
+				ymz770_write(rt_now(c) + rt_epoch, off, b);
 			} else if (off == 1) {
 				/* EEPROMOUT: bit0 data, bit1 clock, bit2 CS (active low); callbacks on change */
 				rtc9701_port_w(b);

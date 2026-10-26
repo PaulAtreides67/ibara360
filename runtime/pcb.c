@@ -10,6 +10,7 @@
 
 #include "cv1k.h"
 #include "pcbx.h"
+#include "state.h"
 
 #ifdef CV1K_PCB
 
@@ -733,5 +734,23 @@ u32 pcb_ab_ifetch(void)
 	return pn;
 }
 #endif
+
+/* test 69: the model in a save state (state.h); its counters (the frame log's, SPIN_FF's pen_total) go on */
+void pcb_state(rt_sbuf *b)
+{
+	const u64 pen = pcb.pen_total, acc = pcb.n_access, miss = pcb.n_miss, ifs = pcb.n_ifetch_slow, idle = pcb.n_idle;
+
+	ST(b, pcb);
+	ST(b, bcr2);
+	ST(b, wcr1);
+	ST(b, wcr2);
+	ST(b, mcr);
+	ST(b, pcbx_stall_left);
+	pcb.pen_total = pen;
+	pcb.n_access = acc;
+	pcb.n_miss = miss;
+	pcb.n_ifetch_slow = ifs;
+	pcb.n_idle = idle;
+}
 
 #endif

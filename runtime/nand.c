@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "cv1k.h"
+#include "state.h"
 
 u8 *cv1k_nand;
 u32 cv1k_nand_size;
@@ -25,6 +26,16 @@ void nand_reset(void)
 	addr_ptr = 0;
 	page_addr = byte_addr = 0;
 	status = 0xC0;
+}
+
+/* test 69: in a save state (state.h) */
+void nand_state(rt_sbuf *b)
+{
+	ST(b, mode);
+	ST(b, addr_ptr);
+	ST(b, page_addr);
+	ST(b, byte_addr);
+	ST(b, status);
 }
 
 void nand_command_w(u8 v)

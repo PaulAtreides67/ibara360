@@ -26,6 +26,9 @@ static u64 out_t, out_step;      /* cycle << 16 */
 static s16 out_buf[8192 * 2];
 static u32 out_n;
 u64 snd_out_frames, snd_out_clipped;
+/* 48 kHz frames per emulated frame; the xsdk build (test 39 .xex) sets it from its display rate
+ * before snd_out_init, every other host keeps OUT_PER_FRAME */
+double snd_out_per_frame = OUT_PER_FRAME;
 
 static double bessel_i0(double x)
 {
@@ -65,7 +68,7 @@ void snd_out_init(void)
 	n_in = 0;
 	p_idx = 0;
 	out_t = 0;
-	out_step = (u64)llround((double)CPU_HZ / (SCREEN_HZ * OUT_PER_FRAME) * 65536.0);
+	out_step = (u64)llround((double)CPU_HZ / (SCREEN_HZ * snd_out_per_frame) * 65536.0);
 	out_n = 0;
 	snd_out_frames = snd_out_clipped = 0;
 }

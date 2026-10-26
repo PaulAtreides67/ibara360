@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "cv1k.h"
+#include "state.h"
 
 enum { CMD_WAIT, RTC_READ, RTC_WRITE, EEPROM_READ, EEPROM_WRITE, AFTER_WRITE_ENABLE };
 
@@ -17,6 +18,22 @@ static u8 port_prev;
 u16 *rtc9701_eeprom(void)
 {
 	return eeprom;
+}
+
+/* test 69: the serial interface in a save state (state.h); the clock goes on and the EEPROM keeps what the game wrote
+ * (its high scores, its settings) */
+void rtc9701_state(rt_sbuf *b)
+{
+	ST(b, latch);
+	ST(b, reset_line);
+	ST(b, state);
+	ST(b, cmd_pos);
+	ST(b, cur_cmd);
+	ST(b, addr_pos);
+	ST(b, data_pos);
+	ST(b, cur_addr);
+	ST(b, cur_data);
+	ST(b, port_prev);
 }
 
 void rtc9701_reset(void)
