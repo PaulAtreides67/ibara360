@@ -46,8 +46,8 @@ fitted to recordings of the real arcade board.
 - Your own MAME ROM sets `ibara.zip` and `ibarablk.zip` (not included). Arrange runs from `ibara.zip`.
 
 Put the four .xex files in one folder on a USB drive or the hard disk. Put the zips in the same folder, in a `roms`
-folder inside it, or in any folder above it up to the drive's root. Start `ibara360.xex`. The GALLERY also needs
-`gallery.dat` and `gallery.mp3` beside the launcher; they are not in this repository.
+folder inside it, or in any folder above it up to the drive's root. For the launcher's GALLERY, copy `gallery.dat`
+(the pictures) and `gallery.mp3` (its music) from `gen/launcher` into the same folder. Start `ibara360.xex`.
 
 ## Building
 
@@ -65,11 +65,12 @@ The .xex files land in `host/xsdk/test82/out`.
 - `host/xsdk/test82`: the Xbox 360 side (video, sound, pads, menus, GADGETS, ROM loading, saves) and the launcher
 - `runtime`: the CV1000 board (SH-3 runtime, blitter, YMZ770, EEPROM, clock, timing model)
 - `gen`: generated sources: the recompiled programs (`ibara_drc`, `ibarablk_drc`, `ibaraarr_drc`), the Arrange
-  patch, and the GADGETS, Arrange and launcher art
+  patch, the GADGETS, Arrange and launcher art, and the GALLERY's two files
 
 ## Credits
 
-- Ibara, Ibara Kuro Black Label and the PS2 port's Arrange mode, art and music: Cave
+- Ibara, Ibara Kuro Black Label and the PS2 port's Arrange mode, art and music (the GALLERY's pictures and its
+  music, "Endress Train"): Cave
 - GADGETS background: Baffo's MAME artwork for Ibara
 - YMZ770 decoder: after MAME's (BSD-3-Clause; Olivier Galibert, R. Belmont, MetalliC)
 - [xsdk](https://github.com/xenosworks/xsdk) (MIT), zlib, minimp3 (CC0)

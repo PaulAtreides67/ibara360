@@ -17,7 +17,8 @@
 
 # gen/: sh3rec --drc output for the three programs (ibara, ibarablk with --prefix blk_, ibaraarr = ibara with the PS2
 # port's ARRANGE patched in) and the generated sources the .xex files link: ARRANGE's patch records, the GADGETS art,
-# ARRANGE's HUD and pictures, the launcher's art
+# ARRANGE's HUD and pictures, the launcher's art; and the two files the launcher reads beside it for its GALLERY
+# (gallery.dat from tools/launcher/mkgallery.py, gallery.mp3 = 05.Endress_Train.mp3)
 !/gen/
 /gen/*
 !/gen/ibara_drc/
@@ -38,6 +39,8 @@
 /gen/launcher/*
 !/gen/launcher/launch_art.c
 !/gen/launcher/launch_layout.h
+!/gen/launcher/gallery.dat
+!/gen/launcher/gallery.mp3
 
 # host/xsdk/test82: CMakeLists.txt, build.sh and the four source folders
 !/host/
