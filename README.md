@@ -69,6 +69,7 @@ The .xex files land in `host/xsdk/test82/out`.
 
 ## Credits
 
+- ibara360: written by [Claude](https://claude.ai) (Anthropic); tested on the Xbox 360 by PaulAtreides67
 - Ibara, Ibara Kuro Black Label and the PS2 port's Arrange mode, art and music (the GALLERY's pictures and its
   music, "Endress Train"): Cave
 - GADGETS background: Baffo's MAME artwork for Ibara
