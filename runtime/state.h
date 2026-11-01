@@ -16,15 +16,23 @@
  * functions as usual; the functions that were running at the slot's moment finish interpreted.
  *
  * Time: the CPU's cycle count goes back with a load; frame_count (the host's) does not, nor does the sound side's
- * clock (rt_epoch is added to every time handed to the YMZ770's queue). */
+ * clock (rt_epoch is added to every time handed to the YMZ770's queue).
+ *
+ * Test 84 (save states on the hard disk): a fourth slot (the host's SLOT_STATE); a load keeps the slots taken after
+ * it (the blocks it puts back are copied for them first, as a blitter write would be), so the host drops the ones it
+ * no longer wants before loading; the CPU's time may also jump forward (a state from a longer session: rt_epoch
+ * follows it the other way); a slot's parts can be read out for a file and a machine put back in from one
+ * (rt_vram_put, rt_slot_open / rt_slot_add / rt_slot_close, then rt_state_load). */
 #ifndef STATE_H
 #define STATE_H
 
 #include <stddef.h>
 #include "recomp.h"
 
-#define RT_SLOTS 3                 /* the host's: attract, credit, stage */
+#define RT_SLOTS 4                 /* the host's: attract, credit, stage; test 84: the save state's moment */
 #define RT_VB_SHIFT 6              /* VRAM blocks of 64 x 64 pixels */
+#define RT_VB_N ((0x2000 >> RT_VB_SHIFT) * (0x1000 >> RT_VB_SHIFT))  /* test 84: 8192 blocks */
+#define RT_VB_BYTES ((1 << RT_VB_SHIFT) * (1 << RT_VB_SHIFT) * 2)    /* 8 KB each */
 
 /* a module's variables in or out of a slot: ST(b, v) for each */
 typedef struct {
@@ -57,6 +65,12 @@ void pcb_state(rt_sbuf *b);        /* its counters go on */
 void ymz770_state(rt_sbuf *b);     /* the CPU side's register latch */
 void ymz770_snap(u64 time, int slot);  /* sound side: the chip into / out of a slot at that time (rt_epoch's) */
 void ymz770_unsnap(u64 time, int slot);
+/* test 84: a slot's chip for a file: its bytes, the snaps made into it so far (the sound thread's count), its ROM
+ * pointer set to this session's after a file filled it; ymz770_idle = no queued event left to play */
+void *ymz770_chip(int slot, size_t *bytes);
+unsigned ymz770_snaps(int slot);
+void ymz770_chip_fix(int slot);
+int ymz770_idle(void);
 
 /* ---- the host's side ---- */
 
@@ -72,9 +86,24 @@ int rt_state_ready(int s);
 /* forget slot s (its blocks go back to the pool) */
 void rt_state_drop(int s);
 
-/* from host_vblank: the machine back to slot s, the slots taken after it dropped; frame_count goes on (+1 for the
- * vblank being handled). Never returns */
+/* from host_vblank: the machine back to slot s, the other slots kept (test 69 dropped the ones taken after it);
+ * frame_count goes on (+1 for the vblank being handled). Never returns */
 void rt_state_load(int s) __attribute__((noreturn));
+
+/* test 84: a slot's parts for a file (the host paused: no blitter job, the slot taken) */
+size_t rt_state_dev_bytes(void);
+u8 *rt_slot_ram(int s);            /* the slot's work RAM (RAM_SIZE) */
+u8 *rt_slot_dev(int s);            /* its modules' variables (rt_state_dev_bytes) */
+int rt_slot_has(int s, int b);     /* it keeps its own copy of VRAM block b (the block was written since it was taken) */
+void rt_slot_block(int s, int b, u8 *dst);   /* block b as at slot s's moment: RT_VB_BYTES, rows of 64 pixels */
+void rt_live_block(int b, u8 *dst);          /* block b of VRAM now */
+
+/* test 84: a machine from a file, from host_vblank (the blitter idle), then rt_state_load of the slot filled last */
+int rt_vram_put(int b, const u8 *src);       /* VRAM block b = src; the live slots lacking it get its pixels first
+                                              * (cow); 1 = it changed */
+void rt_slot_open(int s);          /* slot s dropped and opened: rt_slot_ram / rt_slot_dev filled, then rt_slot_add */
+int rt_slot_add(int s, int b, const u8 *src); /* its own copy of block b (its moment's pixels); -1 = the pool is full */
+void rt_slot_close(int s);         /* slot s live, taken after every other one: VRAM now plus its blocks = its moment */
 
 /* host callbacks: a parallel copy (default memcpy), told when a slot has been taken (frame_count, the time it took
  * on the host's clock if blitter_clock is set) */

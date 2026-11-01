@@ -700,9 +700,9 @@ L_0C05E11E: BLKS(0x0C05E11Eu);
 L_0C05E128: BLKS(0x0C05E128u);
 	r5 = 0xC161E8Bu; UPD(0x0C05E12Au, 2);  /* 0C05E128 mov.l @(disp,pc),Rn */
 	r4 = r11;  /* 0C05E12A mov Rm,Rn */
-	r8 = 0xC05E610u; UPD(0x0C05E12Eu, 2);  /* 0C05E12C mov.l @(disp,pc),Rn */
+	r8 = 0xC7C4CF0u; UPD(0x0C05E12Eu, 2);  /* 0C05E12C mov.l @(disp,pc),Rn */
 	IF(0x0C05E12Eu); r6 = (u32)(s32)(s8)R8(r0 + r5); UPD(0x0C05E130u, 1);  /* 0C05E12E mov.b @(r0,Rm),Rn */
-	IF(0x0C05E130u); { u32 t_ = r8; PR = 0x0C05E134u; r5 = 0x25u; /* slot mov #imm,Rn */ UPD(t_, 2); CALLP(t_, f_0C05E610, 0x0C05E610u, 0x0C05E134u); }  /* 0C05E130 jsr @Rn */
+	IF(0x0C05E130u); { u32 t_ = r8; PR = 0x0C05E134u; r5 = 0x25u; /* slot mov #imm,Rn */ UPD(t_, 2); CALLP(t_, f_0C7C4CF0, 0x0C7C4CF0u, 0x0C05E134u); }  /* 0C05E130 jsr @Rn */
 L_0C05E134: BLKS(0x0C05E134u);
 	{ IF(0x0C05E136u); ; /* slot nop */ UPD(0x0C05DE76u, 3); goto L_0C05DE76; }  /* 0C05E134 bra */
 }

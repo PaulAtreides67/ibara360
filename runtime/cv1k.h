@@ -62,6 +62,8 @@ void dma_fire(sh3_t *c, int ch);
 
 void nand_reset(void);
 u8 nand_data_r(void);
+void nand_data_read(u8 *dst, u32 n);  /* test 113: n nand_data_r calls into dst */
+extern u64 stat_dma_fast;             /* test 113: bytes dma_transfer moved by nand_data_read */
 void nand_data_w(u8 v);
 void nand_command_w(u8 v);
 void nand_address_w(u8 v);
@@ -72,6 +74,7 @@ int rtc9701_read_bit(void);
 void rtc9701_tick_second(void);
 void rtc9701_set_time(int year, int month, int day, int wday, int hour, int min, int sec);
 void rtc9701_get(u8 out[7]);        /* sec min hour wday day month year as the chip holds them */
+void rtc9701_put(const u8 in[7]);   /* test 86: and back */
 u16 *rtc9701_eeprom(void);         /* 256 big-endian words, for nvram load/save */
 
 void blitter_reset(void);
@@ -118,7 +121,11 @@ enum { YMZ_CAT_MUSIC, YMZ_CAT_SFX, YMZ_CAT_VOICE, YMZ_CATS };
 #define YMZT_RESET 0x20000u
 extern u8 ymz_phrase_cat[256];
 extern u16 ymz_phrase_k[256];
+extern volatile u32 ymz_phrase_starts[256]; /* test 97 */
+void ymz_hush_keyed(void);                    /* test 101: playing phrases whose factor is 0 hushed at once */
 extern volatile s32 ymz_gain_main[YMZ_CATS], ymz_gain_test[YMZ_CATS];
+extern volatile s32 ymz_gain_att[YMZ_CATS]; /* test 100: phrases keyed while ymz_attract */
+extern volatile int ymz_attract;
 extern volatile int ymz_scaled, ymz_test_busy;
 extern s32 ymz_out;
 int ymz_test_cmd(u32 what);

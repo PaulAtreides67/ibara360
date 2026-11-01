@@ -28,6 +28,7 @@ extern const unsigned arrange_nrecs, arrange_image_crc;
 #define ARRANGE_ROSE_VAL 0x0C7C441Cu
 #define ARRANGE_SLOW 0x0C7C4278u
 #define ARRANGE_STR_COPYRIGHT 0x0C7C41D8u
+#define ARRANGE_STR_COPYRIGHT2 0x0C7C4DC0u
 #define ARRANGE_STR_WARN 0x0C7C41F4u
 #define ARRANGE_SUB 0x0C7C4238u
 #define ARRANGE_TABLE 0x0C7C4234u

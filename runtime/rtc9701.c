@@ -72,6 +72,18 @@ void rtc9701_get(u8 out[7])
 	out[6] = rtc.year;
 }
 
+/* test 86: the registers back as rtc9701_get gave them (a replay's clock at its run's start, then the host's again) */
+void rtc9701_put(const u8 in[7])
+{
+	rtc.sec = in[0];
+	rtc.min = in[1];
+	rtc.hour = in[2];
+	rtc.wday = in[3];
+	rtc.day = in[4];
+	rtc.month = in[5];
+	rtc.year = in[6];
+}
+
 void rtc9701_tick_second(void)
 {
 	static const u8 dpm[12] = { 0x31, 0x28, 0x31, 0x30, 0x31, 0x30, 0x31, 0x31, 0x30, 0x31, 0x30, 0x31 };

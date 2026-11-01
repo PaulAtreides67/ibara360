@@ -389,6 +389,8 @@ typedef struct {
 	u8 loop;
 	u8 pending, is_playing, is_paused, last_block;
 	u8 cat;                  /* test 68: the playing phrase's YMZ_CAT_* and factor (set where it starts) */
+	u8 att;                  /* test 100: 1 = keyed while ymz_attract (the attract's gains); the padding byte before
+	                          * gk, so the chip's copy in a save state keeps its size */
 	u16 gk;
 	amm_t dec;
 	s16 output_data[0x1000];
@@ -426,11 +428,27 @@ int ymz_rate_mode;          /* 0 = MAME 0.289 (rate from each AMM block), 1 = fi
  * test chip, the sum both make into ymz_out */
 u8 ymz_phrase_cat[256];
 u16 ymz_phrase_k[256];
+volatile u32 ymz_phrase_starts[256]; /* test 97: the board's chip's starts of each phrase (the host's hush) */
 volatile s32 ymz_gain_main[YMZ_CATS], ymz_gain_test[YMZ_CATS];
+/* Test 100 (user: "with the attract volume at 0% the "IBARA" sound bleeds in for a second before starting a run", and
+ * "plays out after the initials"): a phrase keeps the gains of the time it was keyed: ymz_gain_att while the host
+ * says ymz_attract, ymz_gain_main otherwise, so the title's voice keyed in the attract stays at the attract's level when
+ * the run begins under it */
+volatile s32 ymz_gain_att[YMZ_CATS];
+volatile int ymz_attract;
 volatile int ymz_scaled;
 volatile int ymz_test_busy;
 s32 ymz_out;
-static s32 g_main[YMZ_CATS], g_test[YMZ_CATS]; /* the gains now, ramping to the targets */
+static s32 g_main[YMZ_CATS], g_test[YMZ_CATS], g_att[YMZ_CATS]; /* the gains now, ramping to the targets */
+/* Test 99 (ibara360's SOUND page SOUNDTRACK: PS2, the PS2 port's streams in place of the board's music): while the
+ * host sets ymz_music_hush's YMZ_HUSH_BOARD the board's music category is left out of ymz_out (its gain held at 0, so
+ * it ramps back in once the hush ends), with YMZ_HUSH_TEST the sound test chip's; ymz_slot_hook (NULL: none) hears the
+ * board's chip going into a save state's slot (load 0) and out of one (load 1) at that chip time, on the sound thread
+ * inside ymz_run. With neither used nothing changes. */
+#define YMZ_HUSH_BOARD 1
+#define YMZ_HUSH_TEST 2
+volatile int ymz_music_hush;
+void (*ymz_slot_hook)(int load, int slot, u64 time);
 
 static u8 rom_byte(u32 offset) { return zm.rom[offset % zm.rom_bytes]; }
 static u32 get_phrase_offs(int phrase)
@@ -481,6 +499,7 @@ static void internal_reg_write(ymz_chip *z, u8 reg, u8 data)
 				c->pending = 1;
 				c->is_playing = 1;
 				c->last_block = 0;
+				c->att = (u8)(ymz_attract != 0);
 			} else if ((data & 6) == 0)
 				c->is_playing = 0;
 			c->loop = (data & 1) ? 255 : 0;
@@ -582,7 +601,7 @@ static s32 final_stage(const ymz_chip *z, s32 mixr)
 /* one output sample of chip z: MAME's right channel, the only one the board routes. Test 68: with g (the
  * categories' gains, Q15), *scaled = the same mix with each channel's share times its phrase's gain (32768 for every
  * category and a factor of 256 give the chip's sample exactly: v * 32768 >> 15 == v) */
-static s32 chip_sample(ymz_chip *z, const s32 *g, s32 *scaled)
+static s32 chip_sample(ymz_chip *z, const s32 *g, const s32 *ga, s32 *scaled)
 {
 	s32 mixr = 0, mixs = 0;
 
@@ -609,6 +628,8 @@ retry:
 					c->pptr = 8 * (int)get_phrase_offs(phrase);
 					c->cat = ymz_phrase_cat[phrase & 0xFF];
 					c->gk = ymz_phrase_k[phrase & 0xFF];
+					if (z == &zm)
+						ymz_phrase_starts[phrase & 0xFF]++;
 					if (!c->last_block && c->latch.volume2 != c->current.volume2)
 						amm_clear(&c->dec);
 					c->pending = 0;
@@ -638,7 +659,7 @@ retry:
 			const s32 v = (smpl * c->current.pan) >> 7;
 			mixr += v;
 			if (g)
-				mixs += (s32)(((s64)v * ((g[c->cat] * c->gk) >> 8)) >> 15);
+				mixs += (s32)(((s64)v * (((ga && c->att == 1 ? ga : g)[c->cat] * c->gk) >> 8)) >> 15);
 			c->output_remaining--;
 			if (c->output_remaining == 0 && !c->is_playing)
 				amm_clear(&c->dec);
@@ -667,9 +688,12 @@ static s32 ymz_sample(void)
 
 	if (ymz_scaled) {
 		ramp(g_main, ymz_gain_main, ymz_test_busy); /* the test chip plays alone */
-		r = chip_sample(&zm, g_main, &ymz_out);
+		ramp(g_att, ymz_gain_att, ymz_test_busy);   /* test 100 */
+		if (ymz_music_hush & YMZ_HUSH_BOARD) /* test 99: a PS2 stream plays in place of the board's music */
+			g_main[YMZ_CAT_MUSIC] = g_att[YMZ_CAT_MUSIC] = 0;
+		r = chip_sample(&zm, g_main, g_att, &ymz_out);
 	} else {
-		r = chip_sample(&zm, NULL, NULL);
+		r = chip_sample(&zm, NULL, NULL, NULL);
 		ymz_out = r;
 	}
 	ymz_samples++;
@@ -746,7 +770,9 @@ static void test_sample(void)
 		busy = zt.seq[k].is_playing || zt.ch[k].is_playing || zt.ch[k].output_remaining > 0;
 	if (busy || t_loop >= 0) {
 		ramp(g_test, ymz_gain_test, 0);
-		chip_sample(&zt, g_test, &v);
+		if (ymz_music_hush & YMZ_HUSH_TEST) /* test 99: the sound test's track as a PS2 stream */
+			g_test[YMZ_CAT_MUSIC] = 0;
+		chip_sample(&zt, g_test, NULL, &v);
 		v = ymz_out + v;
 		ymz_out = v < -32768 ? -32768 : v > 32767 ? 32767 : v;
 	}
@@ -802,6 +828,7 @@ void ymz770_mark(u64 now)
 /* test 69 (state.h): the chip as it is at that time, kept for a save state's slot, and put back at a load's time (the
  * sound side's clock never goes back: rt_epoch); the CPU side's register latch goes with the CPU's state */
 static ymz_chip zsnap[RT_SLOTS];
+static volatile unsigned zsnap_n[RT_SLOTS]; /* test 84: the snaps made into each slot (sound thread) */
 
 void ymz770_snap(u64 time, int slot)
 {
@@ -816,6 +843,43 @@ void ymz770_unsnap(u64 time, int slot)
 void ymz770_state(rt_sbuf *b)
 {
 	ST(b, cpu_cur_reg);
+}
+
+/* test 84 (state.h): a slot's chip for the host's files; its ROM pointer is this session's after a file filled it */
+void *ymz770_chip(int slot, size_t *bytes)
+{
+	*bytes = sizeof(ymz_chip);
+	return &zsnap[slot];
+}
+
+unsigned ymz770_snaps(int slot)
+{
+	return zsnap_n[slot];
+}
+
+void ymz770_chip_fix(int slot)
+{
+	zsnap[slot].rom = zm.rom;
+	zsnap[slot].rom_bytes = zm.rom_bytes;
+}
+
+/* test 101 (user: "coming back from a training stage still plays IBARA"): the attract's slot was kept with the title's
+ * IBARA already playing, so the host's hush (a factor of 0, taken by a channel where its phrase starts) never reached
+ * it. Each board channel playing a phrase whose factor is 0 now takes it at once (the host's sum only: the chip's
+ * sample, which the checks hash, is untouched). At a load (sound thread) and each vblank of the hush (game thread: a
+ * u16 store the sound thread reads) */
+void ymz_hush_keyed(void)
+{
+	for (int k = 0; k < YMZ_CHANNELS; k++) {
+		ymz_channel *c = &zm.ch[k];
+		if (c->is_playing && !ymz_phrase_k[c->phrase & 0xFF])
+			c->gk = 0;
+	}
+}
+
+int ymz770_idle(void)
+{
+	return __atomic_load_n(&q_tail, __ATOMIC_ACQUIRE) == __atomic_load_n(&q_head, __ATOMIC_ACQUIRE);
 }
 
 /* ======================================================================== */
@@ -850,7 +914,7 @@ void ymz_init(const u8 *rom, u32 bytes)
 	for (int k = 0; k < 256; k++)
 		ymz_phrase_k[k] = 256;
 	for (int k = 0; k < YMZ_CATS; k++)
-		ymz_gain_main[k] = ymz_gain_test[k] = g_main[k] = g_test[k] = 32768;
+		ymz_gain_main[k] = ymz_gain_test[k] = ymz_gain_att[k] = g_main[k] = g_test[k] = g_att[k] = 32768;
 	ymz_scaled = 0;
 	ymz_out = 0;
 	memset(&zt, 0, sizeof zt);
@@ -875,10 +939,19 @@ int ymz_run(void (*sink)(s32 v, u32 rate, u64 time, void *u), void *u)
 			u32 what = queue[t & (YMZ_QUEUE - 1)].what;
 			if ((what >> 8) == EVT_MARK)
 				mark_time = queue[t & (YMZ_QUEUE - 1)].time;
-			else if ((what >> 8) == EVT_SNAP)
+			else if ((what >> 8) == EVT_SNAP) {
 				zsnap[what & 0xFF] = zm;
-			else if ((what >> 8) == EVT_LOAD)
+				if (ymz_slot_hook) /* test 99 */
+					ymz_slot_hook(0, (int)(what & 0xFF), chip_time);
+				__sync_synchronize(); /* test 84: the copy before its count (the host reads it for a file) */
+				zsnap_n[what & 0xFF]++;
+			}
+			else if ((what >> 8) == EVT_LOAD) {
 				zm = zsnap[what & 0xFF];
+				ymz_hush_keyed(); /* test 101 */
+				if (ymz_slot_hook) /* test 99 */
+					ymz_slot_hook(1, (int)(what & 0xFF), chip_time);
+			}
 			else {
 				if (ymz_write_hook)
 					ymz_write_hook(ymz_samples, (u8)(what >> 8), (u8)what);

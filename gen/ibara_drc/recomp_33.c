@@ -1,6 +1,13 @@
 #include "recomp.h"
 #include "recomp_funcs.h"
 
+void f_0C1CED6A(sh3_t *c)
+{
+	LOCALS;
+L_0C1CED6A: BLKS(0x0C1CED6Au);
+	IF(0x0C1CED6Au); { u32 tv_ = (r0 + 0x0C1CED6Eu); u32 t_ = PHYS(tv_); W32(r0 + 0x0u, r0); /* slot mov.l Rm,@(disp,Rn) */ JRGN(tv_); UPD(t_, 3); switch (t_) {  default: JUMPD(tv_); } }  /* 0C1CED6A braf Rn */
+}
+
 void f_0C1CED74(sh3_t *c)
 {
 	LOCALS;

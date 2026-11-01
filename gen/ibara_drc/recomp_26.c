@@ -1,6 +1,49 @@
 #include "recomp.h"
 #include "recomp_funcs.h"
 
+void f_0C0ADF70(sh3_t *c)
+{
+	LOCALS;
+L_0C0ADF70: BLKS(0x0C0ADF70u);
+	r1 = (u32)(s32)(s16)r4;  /* 0C0ADF70 exts.w Rm,Rn */
+	r2 = 0x38u;  /* 0C0ADF72 mov #imm,Rn */
+	IF(0x0C0ADF74u); MACL = r1 * r2;  /* 0C0ADF74 mul.l Rm,Rn */
+	r0 = 0xC275E1Cu; UPD(0x0C0ADF78u, 5);  /* 0C0ADF76 mov.l @(disp,pc),Rn */
+	{ u32 v_ = r14; r15 -= 4; W32(r15, v_); } UPD(0x0C0ADF7Au, 1);  /* 0C0ADF78 mov.l Rm,@-Rn */
+	IF(0x0C0ADF7Au); r3 = MACL;  /* 0C0ADF7A sts macl,Rn */
+	r3 += r0;  /* 0C0ADF7C add Rm,Rn */
+	r7 = R32(r3 + 0xCu); UPD(0x0C0ADF80u, 3);  /* 0C0ADF7E mov.l @(disp,Rm),Rn */
+	r0 = 0x9u;  /* 0C0ADF80 mov #imm,Rn */
+	T = (s32)r7 > (s32)r0;  /* 0C0ADF82 cmp/gt Rm,Rn */
+	{ u32 c_ = !T; r14 = r15; /* slot mov Rm,Rn */ if (c_) { UPD(0x0C0ADF90u, 5); goto L_0C0ADF90; } goto L_0C0ADF88; }  /* 0C0ADF84 bf/s */
+L_0C0ADF88: BLKS(0x0C0ADF88u);
+	r4 = R32(r3 + 0x2Cu); UPD(0x0C0ADF8Au, 2);  /* 0C0ADF88 mov.l @(disp,Rm),Rn */
+	r5 = 0xFFFAFAFBu; UPD(0x0C0ADF8Cu, 1);  /* 0C0ADF8A mov.l @(disp,pc),Rn */
+	r4 += r5;  /* 0C0ADF8C add Rm,Rn */
+	W32(r3 + 0x2Cu, r4); UPD(0x0C0ADF90u, 2);  /* 0C0ADF8E mov.l Rm,@(disp,Rn) */
+L_0C0ADF90: BLKS(0x0C0ADF90u);
+	r2 = r3;  /* 0C0ADF90 mov Rm,Rn */
+	r2 += 0x30u;  /* 0C0ADF92 add #imm,Rn */
+	r6 = (u32)(s32)(s8)R8(r2); UPD(0x0C0ADF96u, 3);  /* 0C0ADF94 mov.b @Rm,Rn */
+	r6 += 0x1u;  /* 0C0ADF96 add #imm,Rn */
+	r0 = r6 & 0xFF;  /* 0C0ADF98 extu.b Rm,Rn */
+	T = r0 == 0x3u;  /* 0C0ADF9A cmp/eq #imm,r0 */
+	{ u32 c_ = T; W8(r2, r6); /* slot mov.b Rm,@Rn */ if (c_) { UPD(0x0C0ADFB0u, 6); goto L_0C0ADFB0; } UPD(0x0C0ADFA0u, 1); goto L_0C0ADFA0; }  /* 0C0ADF9C bt/s */
+L_0C0ADFA0: BLKS(0x0C0ADFA0u);
+	r15 = r14;  /* 0C0ADFA0 mov Rm,Rn */
+	IF(0x0C0ADFA2u); { u32 t_ = PR; { u32 v_ = R32(r15); r15 += 4; r14 = v_; } /* slot mov.l @Rm+,Rn */ UPD(t_, 4); RET(t_); }  /* 0C0ADFA2 rts */
+L_0C0ADFB0: BLKS(0x0C0ADFB0u);
+	r0 = 0x0u;  /* 0C0ADFB0 mov #imm,Rn */
+	W8(r2, r0); UPD(0x0C0ADFB4u, 2);  /* 0C0ADFB2 mov.b Rm,@Rn */
+	r0 = r7;  /* 0C0ADFB4 mov Rm,Rn */
+	r0 += 0x1u;  /* 0C0ADFB6 add #imm,Rn */
+	T = r0 == 0x10u;  /* 0C0ADFB8 cmp/eq #imm,r0 */
+	{ u32 c_ = !T; W32(r3 + 0xCu, r0); /* slot mov.l Rm,@(disp,Rn) */ if (c_) { UPD(0x0C0ADFA0u, 6); goto L_0C0ADFA0; } UPD(0x0C0ADFBEu, 1); goto L_0C0ADFBE; }  /* 0C0ADFBA bf/s */
+L_0C0ADFBE: BLKS(0x0C0ADFBEu);
+	r7 = 0x0u;  /* 0C0ADFBE mov #imm,Rn */
+	{ W32(r3, r7); /* slot mov.l Rm,@Rn */ UPD(0x0C0ADFA0u, 4); goto L_0C0ADFA0; }  /* 0C0ADFC0 bra */
+}
+
 /* FUN_0c0adfd0 */
 void f_0C0ADFD0(sh3_t *c)
 {
@@ -3454,13 +3497,6 @@ L_0C0B0080: BLKS(0x0C0B0080u);
 	W32(r4 + 0x4u, r0); UPD(0x0C0B00ACu, 1);  /* 0C0B00AA mov.l Rm,@(disp,Rn) */
 	r0 = R32(r5 + 0x0u); UPD(0x0C0B00AEu, 1);  /* 0C0B00AC mov.l @(disp,Rm),Rn */
 	W32(r4 + 0x0u, r0); UPD(0x0C0B00B0u, 1);  /* 0C0B00AE mov.l Rm,@(disp,Rn) */
-	IF(0x0C0B00B0u); { u32 t_ = PR; r0 |= r0; /* slot or Rm,Rn */ UPD(t_, 3); RET(t_); }  /* 0C0B00B0 rts */
-}
-
-void f_0C0B00B0(sh3_t *c)
-{
-	LOCALS;
-L_0C0B00B0: BLKS(0x0C0B00B0u);
 	IF(0x0C0B00B0u); { u32 t_ = PR; r0 |= r0; /* slot or Rm,Rn */ UPD(t_, 3); RET(t_); }  /* 0C0B00B0 rts */
 }
 

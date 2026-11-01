@@ -5,5 +5,6 @@
 enum { AH_P873, AH_P880, AH_P881 }; /* arrhud_page's pages */
 extern const uint16_t arrhud_page[3][256 * 256];
 extern const uint16_t arrhud_font[96][64];
-extern const uint16_t arrhud_fbox[77][12];
+/* test 97: the PS2 label box, [77][12], from ps2data.bin (ps2data.c); blank until ps2data_games_init */
+extern const uint16_t (*arrhud_fbox)[12];
 #endif

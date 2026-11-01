@@ -136,6 +136,34 @@ u8 nand_data_r(void)
 	return r;
 }
 
+/* test 113: n reads of the data port into dst (the DMA's fast path), as n nand_data_r calls */
+void nand_data_read(u8 *dst, u32 n)
+{
+	if (mode != M_READ && mode != M_RANDOM_OUT) {
+		while (n--)
+			*dst++ = nand_data_r();
+		return;
+	}
+	while (n) {
+		u32 run = 1, i;
+		if (byte_addr < PAGE_TOTAL && page_addr < NUM_PAGES) {
+			const u32 off = page_addr * PAGE_TOTAL + byte_addr;
+			run = PAGE_TOTAL - byte_addr < n ? PAGE_TOTAL - byte_addr : n;
+			if (off < cv1k_nand_size && run <= cv1k_nand_size - off) {
+				memcpy(dst, cv1k_nand + off, run);
+			} else {
+				for (i = 0; i < run; i++)
+					dst[i] = off + i < cv1k_nand_size ? cv1k_nand[off + i] : 0xFF;
+			}
+		} else {
+			*dst = 0xFF;
+		}
+		byte_addr += run;
+		dst += run;
+		n -= run;
+	}
+}
+
 void nand_data_w(u8 v)
 {
 	(void)v;    /* page program data: the games never write U2 */

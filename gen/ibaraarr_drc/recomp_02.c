@@ -846,8 +846,8 @@ L_0C04EF00: BLKS(0x0C04EF00u);
 	r0 = 0xC059CE0u; UPD(0x0C04EF02u, 1);  /* 0C04EF00 mov.l @(disp,pc),Rn */
 	IF(0x0C04EF02u); { u32 t_ = r0; PR = 0x0C04EF06u; IF(0x0C04EF04u); ; /* slot nop */ UPD(t_, 2); CALLP(t_, f_0C059CE0, 0x0C059CE0u, 0x0C04EF06u); }  /* 0C04EF02 jsr @Rn */
 L_0C04EF06: BLKS(0x0C04EF06u);
-	r0 = 0xC059E50u; UPD(0x0C04EF08u, 1);  /* 0C04EF06 mov.l @(disp,pc),Rn */
-	IF(0x0C04EF08u); { u32 t_ = r0; PR = 0x0C04EF0Cu; IF(0x0C04EF0Au); ; /* slot nop */ UPD(t_, 2); CALLP(t_, f_0C059E50, 0x0C059E50u, 0x0C04EF0Cu); }  /* 0C04EF08 jsr @Rn */
+	r0 = 0xC7C4CACu; UPD(0x0C04EF08u, 1);  /* 0C04EF06 mov.l @(disp,pc),Rn */
+	IF(0x0C04EF08u); { u32 t_ = r0; PR = 0x0C04EF0Cu; IF(0x0C04EF0Au); ; /* slot nop */ UPD(t_, 2); CALLP(t_, f_0C7C4CAC, 0x0C7C4CACu, 0x0C04EF0Cu); }  /* 0C04EF08 jsr @Rn */
 L_0C04EF0C: BLKS(0x0C04EF0Cu);
 	r0 = 0xC0588C0u; UPD(0x0C04EF0Eu, 1);  /* 0C04EF0C mov.l @(disp,pc),Rn */
 	IF(0x0C04EF0Eu); { u32 t_ = r0; PR = 0x0C04EF12u; IF(0x0C04EF10u); ; /* slot nop */ UPD(t_, 2); CALLP(t_, f_0C0588C0, 0x0C0588C0u, 0x0C04EF12u); }  /* 0C04EF0E jsr @Rn */

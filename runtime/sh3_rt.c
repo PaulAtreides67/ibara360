@@ -22,6 +22,38 @@ u64 stat_spin_cycles;            /* SH-3 cycles SPIN_FF skipped (recomp.h) */
 u64 stat_events;                 /* rt_event calls */
 int rt_spin_enabled = 1;
 
+/* test 113: SPIN_DT_FF's check that the spin block at start is a countdown on Rreg: nops, "dt Rreg", then "bf start" or
+ * "bf/s start" with a nop in its slot. The verdicts are kept by start (a block's code is the code it was compiled from:
+ * a function whose RAM differs runs interpreted) */
+#define SPIN_DT_SLOTS 64
+static struct { u32 start; s8 reg; s8 ok; } spin_dt_seen[SPIN_DT_SLOTS];
+
+int rt_spin_dt(u32 start, int reg)
+{
+	const unsigned h = (start >> 1) % SPIN_DT_SLOTS;
+	u32 a = start;
+	int ok = 0, i;
+
+	if (spin_dt_seen[h].start == start && spin_dt_seen[h].reg == reg)
+		return spin_dt_seen[h].ok;
+	for (i = 0; i < 8 && IS_RAM(a + 4); i++, a += 2) {
+		const u32 op = BE16(RAMP(a));
+		if (op == 0x0009u) /* nop */
+			continue;
+		if ((op & 0xF0FFu) == 0x4010u && (int)(op >> 8 & 15) == reg) { /* dt Rreg */
+			const u32 br = BE16(RAMP(a + 2));
+			/* bf 8Bdd, bf/s 8Fdd: the target is the branch + 4 + 2 * disp */
+			ok = (br & 0xFB00u) == 0x8B00u && a + 2 + 4 + 2 * (u32)(s32)(s8)(br & 0xFF) == start &&
+			     ((br & 0xFF00u) == 0x8B00u || BE16(RAMP(a + 4)) == 0x0009u);
+		}
+		break;
+	}
+	spin_dt_seen[h].start = start;
+	spin_dt_seen[h].reg = (s8)reg;
+	spin_dt_seen[h].ok = (s8)ok;
+	return ok;
+}
+
 #ifdef BLOCK_PROF
 /* cycles charged per block start (CHK) inside emulated frames BLK_A..BLK_B; spin-loop
  * passes SPIN_FF skips are not counted here. Printed at exit, BLK_OUT = file. */

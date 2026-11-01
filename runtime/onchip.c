@@ -145,6 +145,7 @@ static struct {
 	int active;
 } dma[4];
 static u16 dmaor;
+u64 stat_dma_fast;
 
 u32 bus_read(u32 a, int size);
 void bus_write(u32 a, u32 v, int size);
@@ -168,6 +169,14 @@ static void dma_transfer(sh3_t *c, int ch)
 	} else {
 		src &= ~(u32)(size - 1);
 		dst &= ~(u32)(size - 1);
+	}
+	/* test 113 (user: "the loading is still slow"): the boot's NAND pages into RAM (~29 MB, a byte a unit) in one go,
+	 * what the loop below makes of them through the decoder a byte at a time */
+	if (size == 1 && incs == 0 && src == 0x10000000u && incd == 1 && IS_RAM(dst) &&
+	    count <= RAM_SIZE - (dst - 0x0C000000u)) {
+		nand_data_read(RAMP(dst), count);
+		stat_dma_fast += count;
+		return;
 	}
 	for (; count > 0; count--) {
 		if (incs == 2) src -= size;

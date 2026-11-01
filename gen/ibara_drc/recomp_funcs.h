@@ -756,6 +756,7 @@ void f_0C09A0D0(sh3_t *c);
 void f_0C09A1D0(sh3_t *c);
 void f_0C09A260(sh3_t *c);
 void f_0C09A290(sh3_t *c);
+void f_0C09A520(sh3_t *c);
 void f_0C09A6D0(sh3_t *c);
 void f_0C09AC00(sh3_t *c);
 void f_0C09ACF0(sh3_t *c);

@@ -338,8 +338,32 @@ extern int rt_spin_enabled;      /* 0: SPIN_FF never skips (for measuring it) */
 /* --drc form, before the back branch's UPD: skip whole passes of n cycles (n = what one pass
  * charges over all its update points), leaving n..2n-1 so the last passes run for real and
  * fire at the same update point as they would have */
-#define SPIN_FFD(X, n) do { if (!spio_##X && IC >= 2 * (n) && rt_spin_enabled && SPIN_SAME(X) && \
-	SPIN_PCB_SAME(X)) { s32 sk__ = (IC - (n)) / (n) * (n); stat_spin_cycles += (u64)sk__; IC -= sk__; } } while (0)
+#define SPIN_FFD(X, n) do { if (!spio_##X && IC >= 2 * (n) && rt_spin_enabled && SPIN_PCB_SAME(X)) { \
+	if (SPIN_SAME(X)) { s32 sk__ = (IC - (n)) / (n) * (n); stat_spin_cycles += (u64)sk__; IC -= sk__; } \
+	else SPIN_DT_FF(X, n); } } while (0)
+/* Test 113 (user: "the loading is still slow"): the board's delay loops ("[nop ...] dt Rn; bf start" or "bf/s start"
+ * with a nop in the slot; the EEPROM's bit-banging spends ~600 boot frames in them) change Rn, so SPIN_SAME never
+ * holds. When a pass changed only one register, by -1, T is 0 and rt_spin_dt finds that loop's code at X, whole
+ * passes are skipped as above with Rn lowered by as many; Rn stays 1 or more, so the pass that takes it to 0 runs */
+int rt_spin_dt(u32 start, int reg);
+#define SPIN_DT_REG(X, i, rv) if ((rv) != spv_##X[i]) { dn__++; di__ = (i); dv__ = (rv); }
+#define SPIN_DT_SET(i, rv) if (di__ == (i)) (rv) -= p__
+#define SPIN_DT_FF(X, n) do { int dn__ = 0, di__ = 0; u32 dv__ = 0; \
+	SPIN_DT_REG(X, 0, r0) SPIN_DT_REG(X, 1, r1) SPIN_DT_REG(X, 2, r2) SPIN_DT_REG(X, 3, r3) \
+	SPIN_DT_REG(X, 4, r4) SPIN_DT_REG(X, 5, r5) SPIN_DT_REG(X, 6, r6) SPIN_DT_REG(X, 7, r7) \
+	SPIN_DT_REG(X, 8, r8) SPIN_DT_REG(X, 9, r9) SPIN_DT_REG(X, 10, r10) SPIN_DT_REG(X, 11, r11) \
+	SPIN_DT_REG(X, 12, r12) SPIN_DT_REG(X, 13, r13) SPIN_DT_REG(X, 14, r14) SPIN_DT_REG(X, 15, r15) \
+	if (dn__ == 1 && !T && PR == spv_##X[17] && MACL == spv_##X[18] && MACH == spv_##X[19] && \
+	    spv_##X[di__] - dv__ == 1 && dv__ > 1 && rt_spin_dt(0x##X##u, di__)) { \
+		u32 p__ = (u32)(IC - (n)) / (u32)(n); \
+		if (p__ > dv__ - 1) \
+			p__ = dv__ - 1; \
+		SPIN_DT_SET(0, r0); SPIN_DT_SET(1, r1); SPIN_DT_SET(2, r2); SPIN_DT_SET(3, r3); \
+		SPIN_DT_SET(4, r4); SPIN_DT_SET(5, r5); SPIN_DT_SET(6, r6); SPIN_DT_SET(7, r7); \
+		SPIN_DT_SET(8, r8); SPIN_DT_SET(9, r9); SPIN_DT_SET(10, r10); SPIN_DT_SET(11, r11); \
+		SPIN_DT_SET(12, r12); SPIN_DT_SET(13, r13); SPIN_DT_SET(14, r14); SPIN_DT_SET(15, r15); \
+		stat_spin_cycles += (u64)p__ * (u32)(n); \
+		IC -= (s32)(p__ * (u32)(n)); } } while (0)
 #define RS8(X, a) ({ u32 ma__ = (a), mv__; \
 	if (LIKELY(IS_RAM(ma__))) { mv__ = *RAMP(ma__); PCB_DATA(ma__, 0); } \
 	else { spio_##X = 1; c->icount = IC; mv__ = io_rd8(c, ma__); IC = c->icount; PCB_IO(ma__, 0); } mv__; })

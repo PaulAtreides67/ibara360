@@ -1,6 +1,13 @@
 #include "recomp.h"
 #include "recomp_funcs.h"
 
+void f_0C19EF50(sh3_t *c)
+{
+	LOCALS;
+L_0C19EF50: BLKS(0x0C19EF50u);
+	IF(0x0C19EF50u); { u32 t_ = c->spc; SET_SR(c->ssr); r0 += 0xFFFFFFC8u; /* slot add #imm,Rn */ PCB_PC(t_); UPDN(t_, 1); RET(t_); }  /* 0C19EF50 rte */
+}
+
 void f_0C19EF62(sh3_t *c)
 {
 	LOCALS;
@@ -272,12 +279,5 @@ void f_0C1AF2F8(sh3_t *c)
 	LOCALS;
 L_0C1AF2F8: BLKS(0x0C1AF2F8u);
 	IF(0x0C1AF2F8u); { u32 t_ = PR; W8(r0, r10); /* slot mov.b Rm,@Rn */ UPD(t_, 3); RET(t_); }  /* 0C1AF2F8 rts */
-}
-
-void f_0C1AF302(sh3_t *c)
-{
-	LOCALS;
-L_0C1AF302: BLKS(0x0C1AF302u);
-	IF(0x0C1AF302u); { u32 t_ = PR; T = (r0 & r12) == 0; /* slot tst Rm,Rn */ UPD(t_, 3); RET(t_); }  /* 0C1AF302 rts */
 }
 

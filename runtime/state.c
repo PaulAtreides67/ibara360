@@ -32,7 +32,8 @@ static struct {
 	unsigned nblk;
 } slot[RT_SLOTS];
 
-static int want_slot;
+static int want_slot;          /* test 84: a mask of the slots asked for */
+static int pinned = -1;       /* test 84: the slot a load is putting back (make_room never drops it) */
 static unsigned seq_n;
 static size_t dev_bytes;
 static u8 *pool;               /* pool_n blocks of VB_BYTES */
@@ -167,7 +168,7 @@ static void need_rebuild(void)
 static int make_room(int s)
 {
 	for (int v = 0; v < RT_SLOTS && !nfree; v++)
-		if (slot[v].live && v != s) {
+		if (slot[v].live && v != s && v != pinned) {
 			slot_clear(v);
 			rt_state_stats.overflows++;
 		}
@@ -224,7 +225,7 @@ void rt_state_request(int s)
 {
 	if (s < 0 || s >= RT_SLOTS || !pool)
 		return;
-	want_slot = s;
+	want_slot |= 1 << s;           /* test 84: each slot asked for (test 69: the one asked last) */
 	rt_state_want = 1;
 }
 
@@ -241,14 +242,27 @@ void rt_state_drop(int s)
 	need_rebuild();
 }
 
+static void take_one(int s);
+
+/* test 84: every slot asked for since the last safe point, at this one (the save's moment and a stage's start can be
+ * asked for at the same vblank) */
 void rt_state_take(void)
 {
-	const int s = want_slot;
+	const int m = want_slot;
+
+	want_slot = 0;
+	rt_state_want = 0;
+	blitter_sync();                /* the last job's pixels are in VRAM */
+	for (int s = 0; s < RT_SLOTS; s++)
+		if (m & (1 << s))
+			take_one(s);
+}
+
+static void take_one(int s)
+{
 	const u64 t0 = blitter_clock ? blitter_clock() : 0;
 	rt_sbuf b = {NULL, 0, 0, 0};
 
-	rt_state_want = 0;
-	blitter_sync();                /* the last job's pixels are in VRAM */
 	if (slot[s].live)
 		slot_clear(s);
 	rt_copy(slot[s].ram, cv1k_ram, RAM_SIZE);
@@ -275,7 +289,6 @@ void rt_state_load(int s)
 	const u64 t0 = blitter_clock ? blitter_clock() : 0;
 	const u64 was = rt_now(&cpu);
 	rt_sbuf b = {NULL, 0, 0, 1};
-	int o;
 
 	if (!rt_state_ready(s))
 		rt_fatal("state: slot %d is not there to load", s);
@@ -284,19 +297,126 @@ void rt_state_load(int s)
 	b.p = slot[s].dev;
 	b.cap = dev_bytes;
 	dev_io(&b);
+	/* test 84: the slots taken after it are kept (test 69 dropped them): each block put back goes to those lacking it
+	 * first, as a blitter write's would; slots taken before it have every such block already */
+	pinned = s;
 	for (int k = 0; k < VB_N; k++)
-		if (slot[s].blk[k])
+		if (slot[s].blk[k]) {
+			if (need[k >> 5] & (1u << (k & 31)))
+				cow(k);
 			block_in(k, pool_block(slot[s].blk[k] - 1u));
-	for (o = 0; o < RT_SLOTS; o++)  /* the slots taken after it are not this machine's past */
-		if (o != s && slot[o].live && slot[o].seq > slot[s].seq)
-			slot_clear(o);
+		}
+	pinned = -1;
 	need_rebuild();
-	if (was > rt_now(&cpu))
-		rt_epoch += was - rt_now(&cpu);
+	/* the sound side's clock never goes back: a CPU time that went back (test 69) or forward (test 84: a file's from a
+	 * longer session) moves rt_epoch the other way (modulo 2^64: only sums with it are used) */
+	rt_epoch += was - rt_now(&cpu);
 	ymz770_unsnap(rt_now(&cpu) + rt_epoch, s);
+	want_slot = 0;
 	rt_state_want = 0;
 	frame_count++;                 /* the vblank the host was handling */
 	rt_state_stats.loads++;
 	rt_state_stats.load_ticks = blitter_clock ? blitter_clock() - t0 : 0;
 	rt_resume_loaded();
+}
+
+/* ---- test 84: the slots' parts for the host's files ------------------------------------------------------------ */
+
+size_t rt_state_dev_bytes(void)
+{
+	if (!dev_bytes) { /* asked before rt_state_init (the host's buffers first) */
+		rt_sbuf dry = {NULL, 0, 0, 0};
+		dev_io(&dry);
+		dev_bytes = dry.n;
+	}
+	return dev_bytes;
+}
+
+u8 *rt_slot_ram(int s)
+{
+	return slot[s].ram;
+}
+
+u8 *rt_slot_dev(int s)
+{
+	return slot[s].dev;
+}
+
+int rt_slot_has(int s, int b)
+{
+	return slot[s].blk[b] != 0;
+}
+
+void rt_slot_block(int s, int b, u8 *dst)
+{
+	if (slot[s].blk[b])
+		memcpy(dst, pool_block(slot[s].blk[b] - 1u), VB_BYTES);
+	else
+		block_out(b, dst);
+}
+
+void rt_live_block(int b, u8 *dst)
+{
+	block_out(b, dst);
+}
+
+int rt_vram_put(int b, const u8 *src)
+{
+	const u16 *v = vram_block(b);
+	int y;
+
+	for (y = 0; y < VB_PX; y++)
+		if (memcmp(v + (size_t)y * CV1K_VRAM_STRIDE, src + y * VB_PX * 2, VB_PX * 2))
+			break;
+	if (y == VB_PX)
+		return 0;
+	if (need[b >> 5] & (1u << (b & 31)))
+		cow(b);
+	block_in(b, src);
+	return 1;
+}
+
+void rt_slot_open(int s)
+{
+	if (slot[s].live) {
+		slot_clear(s);
+		need_rebuild();
+	}
+	for (int b = 0; b < VB_N; b++) /* a slot opened before and never closed */
+		if (slot[s].blk[b]) {
+			pool_put(slot[s].blk[b] - 1u);
+			slot[s].blk[b] = 0;
+		}
+	slot[s].nblk = 0;
+	rt_state_stats.saved_blocks[s] = 0;
+}
+
+int rt_slot_add(int s, int b, const u8 *src)
+{
+	unsigned k;
+
+	if (slot[s].blk[b]) {
+		memcpy(pool_block(slot[s].blk[b] - 1u), src, VB_BYTES);
+		return 0;
+	}
+	if (!nfree)
+		return -1;
+	k = freel[--nfree];
+	memcpy(pool_block(k), src, VB_BYTES);
+	refc[k] = 1;
+	slot[s].blk[b] = (u16)(k + 1u);
+	slot[s].nblk++;
+	rt_state_stats.saved_blocks[s] = slot[s].nblk;
+	if (++rt_state_stats.pool_used > rt_state_stats.pool_peak)
+		rt_state_stats.pool_peak = rt_state_stats.pool_used;
+	return 0;
+}
+
+void rt_slot_close(int s)
+{
+	slot[s].live = 1;
+	slot[s].seq = ++seq_n;
+	rt_state_stats.taken_frame[s] = frame_count;
+	rt_state_stats.take_ticks[s] = 0;
+	need_rebuild();
 }
