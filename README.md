@@ -1,5 +1,5 @@
 # ibara360
-I did not make this. Claude did everything for me.
+**This project was AI-assisted by Claude Anthropic (Opus 5.5)**
 
 **Version 1.00** (November 2026)
 
