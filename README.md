@@ -157,13 +157,13 @@ Xbox 360 titles, inside a Docker container (Debian 13 with xsdk and its GCC 15 t
 
 ```
 MSYS_NO_PATHCONV=1 docker run --rm --memory=5g -v xsdk-gcc:/opt/xsdk-gcc \
-  -v "C:\New folder\ibara360:/p" -v "C:\New folder\xsdk-src\xsdk:/xsdk:ro" -v xsdk-t118:/b \
-  xsdk-base:1 sh /p/host/xsdk/test118/build.sh ibara ibarablk ibaraarr ibara360
+  -v "C:\New folder\ibara360:/p" -v "C:\New folder\xsdk-src\xsdk:/xsdk:ro" -v xsdk-ibara360:/b \
+  xsdk-base:1 sh /p/host/xsdk/ibara360/build.sh ibara ibarablk ibaraarr ibara360
 ```
 
-The .xex files land in `host/xsdk/test118/out`.
+The .xex files land in `host/xsdk/ibara360/out`.
 
-- `host/xsdk/test118`: the Xbox 360 side (video, sound, pads, menus, GADGETS, ROM loading, saves, replays,
+- `host/xsdk/ibara360`: the Xbox 360 side (video, sound, pads, menus, GADGETS, ROM loading, saves, replays,
   achievements) and the launcher
 - `runtime`: the CV1000 board (SH-3 runtime, blitter, YMZ770, EEPROM, clock, timing model)
 - `gen`: generated sources: the recompiled programs (`ibara_drc`, `ibarablk_drc`, `ibaraarr_drc`), the Arrange
