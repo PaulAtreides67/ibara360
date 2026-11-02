@@ -3,6 +3,11 @@
 
 **Every feature and test was done on a real Xbox 360 (Jasper model with RGH 1.2)**
 
+**if you're unsure how to navigate the games, here's how to access the menus:
+
+Press Start during the demo screen to bring up the main menu.
+Press Back during a run to pause the game.**
+
 **Version 1.00** (November 2026)
 
 Cave's arcade shooters **Ibara** (2005) and **Ibara Kuro: Black Label** (2006), plus the PlayStation 2 port's
