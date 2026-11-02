@@ -55,69 +55,59 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
 ### Games
 - **Ibara**: Normal, Harder and Extended (two loops), both pilots and all four ship types.
 - **Ibara Kuro: Black Label**, as on its arcade board.
-- **Ibara Arrange**, the PS2 port's arrange mode: its HUD, sub weapons, formation changes and aim lock, its continue,
-  12 bullet designs, its ending, 9-digit scores, its own score table and the TAITO logo and title as on the PS2.
-- One or two players (co-op), each pad with its own controls; a second player can join mid-run from a JOIN box
-  (ship type, and in Black Label the bomb type).
+- **Ibara Arrange**, the PS2 port's arrange mode: a prototype version of Black Label with it's own twists and turns.
 
 ### Picture
-- 720p output (1080p consoles scale it), 16:9 or 4:3.
-- Picture size, X / Y size and position, smoothing, scanlines with their strength, brightness in 5% steps.
-- TATE for a TV turned on its side, either way round.
+- 720p output (scaled to 1080p), 16:9 or 4:3. integer scaling, scanline support, TATE support, picture is fully customizable like a retail Cave port.
 
 ### M3 GADGETS
-- Info panels beside the game, in 16:9 and 4:3 layouts, each one on or off: score, status, weapon and formation, bullets, medal chain, controls with the shot rate, stages, boss HP and timer, BOMB / BLAST,
-  music, special formations.
-- Drawn on Baffo's MAME artwork for Ibara and official Cave art of the pilots (the PS2 port's and the Insanity DVD
-  booklet's).
+- Inspired by M2 ShotTriggers. Info panels beside the game, in 16:9 and 4:3 layouts, can be individually enabled or disabled
+- Originally from Baf and Olifante's MAME artwork for Ibara and official Cave art of the pilots (taken from the PS2 port and the Insanity DVD
+  booklet).
 
 ### Menus
 - One menu from the attract (START), in the arcade style or the PS2 port's style, in English or Japanese.
-- **PLAY**: start a run; player side, ship type, mode, DIP switches.
-- **TRAINING**: any stage, START AT BOSS straight to its fight, a starting rank that can be held, shot power, bomb
-  fragments, lives, options, a hitbox view; its own pause; a cleared stage or game over returns to the TRAINING page.
-- **LOAD STATE** and **REPLAY DATA**.
-- **OPTIONS**: GENERAL SCREEN, M3 GADGETS, P1 / P2 CONTROLS (every button can be remapped, AUTO SHOT at 30 Hz),
-  SOUND, DEBUG MENU, GAME SELECT (back to the launcher).
-- **Pause** (BACK in a run): resume, save / load states, restart the stage, full restart, sound and screen options,
-  quit to the attract.
+- **TRAINING MODE**: any stage, skip to boss function, starting rank, hitbox viewer.
+- **SAVESTATE SUPPORT** and **INPUT PLAYBACK** within the game itself.
+- Every button can be remapped, AUTO SHOT at 10/12/15/20/30 Hz,
+  Sound Test, and a Debug menu.
+- **Pause scrren** to access save/load states and options.
 
 ### Save states and replays
-- 10 save state slots per game on the hard disk, each with a picture.
+- 10 save state slots per game on the hard disk, each with a preview picture.
 - Replays: a finished run can be saved after its name entry and played back to the CAVE logo, with a pause menu and
-  LB / RB to change the speed. The newest 30 are kept. Loading a save state zeroes the SCORE BREAKDOWN panel until
-  the next run, and EX-DEBUG can turn replay saving off.
+  LB / RB to change the speed. Up to 30 replays can be saved. Loading a save state nullifies any score.
 
 ### Sound
-- The arcade's YMZ770 sound at 48 kHz, or the PS2 port's soundtrack (16 streams).
-- Music, effects, voice and attract volumes; mono or stereo; a music test and a sound test.
+- The arcade's YMZ770 soundtrack at 48 kHz, or the PS2 port's soundtrack (16 streams). Mono and Stereo support.
+- Individual volume slides for Music, sound effects, voice and attract.
 
 ### Launcher
-- The PS2 port's front end: its title, mode select and NOW LOADING screen, in 16:9, 4:3 and TATE (LB / RB on the
-  title).
-- The PS2 port's GALLERY: its 78 pictures and 5 sheets, with "Endress Train" playing.
+- Uses the PS2 port's front end: its title, mode select and NOW LOADING screen, in 16:9, 4:3 and TATE (LB / RB on the
+  title screen).
+- PS2 port's GALLERY mode, fully restored: 78 pictures and 5 sheets, with "Endress Train" from "Ibara Remix Tracks" playing in the background.
 - Each game is its own .xex; the launcher and the games hand over to each other directly.
 
 ### Achievements
-- 34 achievements across the three games, a secret one among them, with their notifications placed for 720p.
+- 34 achievements across the three games.
 - Off by default (DEBUG MENU, then hold LB + RB and press A for the EX-DEBUG page), so the games can be played on a
-  profile that goes online without that risk.
+  profile that goes online without the ban risk from homebrew achievements **(temporary offline account recommended)**.
 
 ### Saves and the rest
-- High scores and settings are kept like the arcade's (the EEPROM in MAME's format) in `<drive>:\ibara360`, with the
+- High scores and settings are handled just like MAME with EEPROM saves in `<drive>:\ibara360`, alongside the config 
   ini, save states, replays and a small loading index.
-- The clock comes from the console.
+- The stage 6 clock support comes from the console's clock.
 - DEBUG MENU: the arcade's service menu, initialize rankings, staff roll protection; EX-DEBUG: invincibility,
   infinite lives and bombs, hitboxes, logs.
-- Faster starts: the board's boot runs unpaced and the big graphics ROM is unpacked on four threads.
 
 ## What you need
 
 - An RGH/JTAG Xbox 360 with a dashboard that launches unsigned .xex files (for example Aurora).
-- Your own MAME ROM sets (not included). ibara360 checks each ROM by its CRC32, so the file names inside the zips
+- An ISO of Ibara for PS2 (not included in this repo)
+- Your own MAME ROM sets **ibara.zip** and **ibarablk.zip** (not included in this repo). ibara360 checks each ROM by its CRC32, so the file names inside the zips
   don't matter, but the contents have to be these:
 
-  `ibara.zip` (Ibara; Arrange runs from it too)
+  `ibara.zip` (Ibara Arrange runs from it too)
 
   | ROM | Size | CRC32 | MD5 |
   |---|---|---|---|
@@ -135,19 +125,18 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
   | u23 | 4,194,304 | a436bb22 | f86f993234651b3adf43b8074e44f30c |
   | u24 | 4,194,304 | d11ab6b6 | bc4386b37f38c5e61cea792e851872e9 |
 
-- For Arrange, the PS2 menu style, the PS2 soundtrack and the launcher's pictures: an ISO of your own Japanese Ibara
-  PS2 disc (SLPM-66301), for example made with ImgBurn's "Create image file from disc".
+- For Arrange, the PS2 menu style, the PS2 soundtrack and the launcher's gallery mode: an ISO of your own Japanese Ibara
+  PS2 disc (SLPM-66301).
   `Ibara (Japan).iso`: 3,932,848,128 bytes, MD5 `6ba671b5d23155b8254b6f4cefc90ae2`.
 
 ## Installing
 
-1. On a Windows PC, drag the ISO onto `ps2extract.exe`. It checks the disc's files (it stops on any other version of
-   the disc) and writes `ps2data.bin` and `ps2music.bin` into a folder `ibara360 ps2data` beside the ISO.
-2. Put the four .xex files (`ibara360.xex`, `ibara.xex`, `ibarablk.xex`, `ibaraarr.xex`), `ps2data.bin` and
+1. On a Windows PC, drag the ISO onto `ps2extract.exe`. It checks the disc's files, and writes `ps2data.bin` and `ps2music.bin`
+   into a folder `ibara360 ps2data` beside the ISO.
+3. Put the four .xex files (`ibara360.xex`, `ibara.xex`, `ibarablk.xex`, `ibaraarr.xex`), `ps2data.bin` and
    `ps2music.bin` in one folder on the Xbox 360's hard disk or a USB drive (for example `Hdd1:\apps\ibara360`).
-3. Put `ibara.zip` and `ibarablk.zip` in the same folder, in a `roms` folder inside it, or in any folder above it up to
-   the drive's root.
-4. Start `ibara360.xex`. The first start of each game also writes its loading index, so later starts are a little
+4. Put `ibara.zip` and `ibarablk.zip` in the same folder as the .xex files.
+5. Start `ibara360.xex`. The first start of each game also writes its loading index, so later starts are a little
    faster.
 
 ## Building
@@ -174,8 +163,9 @@ The .xex files land in `host/xsdk/ibara360/out`.
 
 - ibara360: written by [Claude](https://claude.ai) (Anthropic); tested on the Xbox 360 by PaulAtreides67
 - Ibara, Ibara Kuro: Black Label, the PS2 port's Arrange mode, art and music: Cave (the PS2 port published by Taito)
-- GADGETS background: Baffo's MAME artwork for Ibara
+- GADGETS background: Baf and Olifante's MAME artwork for Ibara
 - YMZ770 decoder: after MAME's (BSD-3-Clause; Olivier Galibert, R. Belmont, MetalliC)
+- Buffi's CV1000 reseach for blitter and slowdown
 - [xsdk](https://github.com/xenosworks/xsdk) (MIT), zlib, minimp3 (CC0)
 
 ## Sources
