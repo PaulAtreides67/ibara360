@@ -90,7 +90,7 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
 
 ### Achievements
 - 34 achievements across the three games.
-- Off by default (DEBUG MENU, then hold LB + RB and press A for the EX-DEBUG page), so the games can be played on a
+- Off by default (can be enabled in the Debug menu), so the games can be played on a
   profile that goes online without the ban risk from homebrew achievements **(temporary offline account recommended)**.
 
 ### Saves and the rest
