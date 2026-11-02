@@ -5,7 +5,7 @@ I did not make this. Claude did everything for me.
 
 Cave's arcade shooters **Ibara** (2005) and **Ibara Kuro: Black Label** (2006), plus the PlayStation 2 port's
 **Arrange mode**, running natively on the Xbox 360, with the arcade board's slowdown, a full menu system, save states,
-replays, a training mode, info panels beside the game, the PS2 port's front end and soundtrack, and achievements.
+replays, a training mode, info panels beside the game, the PS2 port's front end and soundtrack, and optional XBOX Live style achievements.
 
 ## The game
 
