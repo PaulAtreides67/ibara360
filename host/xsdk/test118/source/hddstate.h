@@ -70,6 +70,7 @@ struct hdd_game {
 	char rp_dir[128];      /* test 86: <dev>/ibara360/replays/<set> */
 	int rp_slot;           /* the runtime slot a replay starts from (main.c's SLOT_CREDIT) */
 	size_t rp_host_bytes;  /* main.c's replay record */
+	size_t rp_host_bytes_min; /* test 117: an older replay's (shorter) record still loads (the rest left as it was) */
 	uint8_t *rp_input;     /* main.c's input buffer: a save's from it, a load's into it */
 	size_t rp_input_cap;
 };

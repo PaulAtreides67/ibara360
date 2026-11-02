@@ -682,6 +682,17 @@ static unsigned bullets_read(void)
  * vblanks out of it); st_zeroed, not in st (the save states' and replays' record of it keeps its size), still makes
  * the next run's start a new run's (SCORE's red and the continues cleared there, as before) */
 static int st_zeroed;
+/* test 117 (user: "when i load a savestate, the score breakdown doesn't match the upper left score gadget"): after a
+ * load the table waits for the side shown to be in play again (pl[].in, which the load clears: until then s.side can
+ * be the pilot's or the other side's, and a score below st.last reads as a continue), then counts on from the score it
+ * sees. With no continue in the slot's run (cont 1; a load's red mark is 2 from this test on) the stage being played
+ * gets the score less the other stages (their sum = SCORE, as in a run without loads), else it keeps the slot's figure */
+static int st_resync;
+/* test 118 (user: "zero out any score breakdown when there's a loaded savestate to avoid confusion (all games)"): from
+ * a save state's load (SLOT_STATE: LOAD STATE from the menu or the pause, RESTART STAGE: STATE) to the end of that run
+ * the table stays empty (every stage "-"); the stage being played is still followed (STATUS's STAGE). A new run (the
+ * credit's slot, the attract's, GD_RUN_GAP vblanks out of a run) ends it: gadgets_breakdown_void */
+static int st_void;
 
 static void stages_frame(void)
 {
@@ -707,6 +718,7 @@ static void stages_frame(void)
 				st.idx = -1;
 				st_zeroed = 1;
 			}
+			st_void = 0; /* test 118 */
 		}
 		return;
 	}
@@ -720,6 +732,42 @@ static void stages_frame(void)
 		st_zeroed = 0;
 		restarted = 0; /* test 69: a new run */
 		pl[0].continued = pl[1].continued = 0; /* test 83 */
+		st_resync = 0;
+		if (st.out >= GD_RUN_GAP)
+			st_void = 0; /* test 118: a new run (a stage gone back is a restart in the same one) */
+	}
+	if (st_void) { /* test 118 */
+		memset(st.score, 0, sizeof(st.score));
+		memset(st.played, 0, sizeof(st.played));
+		memset(st.cont, 0, sizeof(st.cont));
+		st_resync = 0;
+		st.out = 0;
+		st.idx = i;
+		st.start = st.last = sc;
+		st.base = 0;
+		return;
+	}
+	if (st_resync) { /* test 117 */
+		if (!pl[s.side].in)
+			return;
+		st_resync = 0;
+		if (i == st.idx) {
+			const uint32_t was = st.score[i];
+			uint32_t other = 0;
+			int cont = 0;
+			for (int k = 0; k < ST_N; k++) {
+				if (k != i && st.played[k])
+					other += st.score[k];
+				cont |= st.cont[k] == 1;
+			}
+			if (!cont && sc >= other)
+				st.score[i] = sc - other;
+			st.base = st.score[i];
+			st.start = st.last = sc;
+			log_printf(st.score[i] == was ? C_WHITE : C_YELLOW, "GADGETS: SCORE BREAKDOWN AFTER THE LOAD: STAGE %d %u -> "
+			           "%u (%dP SCORE %u, OTHER STAGES %u%s)", i + 1, (unsigned)was, (unsigned)st.score[i], s.side + 1,
+			           (unsigned)sc, (unsigned)other, cont ? ", A CONTINUE IN THE RUN: KEPT" : "");
+		}
 	}
 	st.out = 0;
 	if (i != st.idx) {
@@ -747,9 +795,10 @@ void gadgets_state_load(int slot, int restart)
 	if (slot < 0 || slot >= GD_STATE_SLOTS)
 		return;
 	st = st_slot[slot];
+	st_resync = st.idx >= 0; /* test 117 */
 	restarted = restart;
-	if (restart && st.idx >= 0)
-		st.cont[st.idx] = 1;  /* the stage played again: red as a continue's */
+	if (restart && st.idx >= 0 && !st.cont[st.idx])
+		st.cont[st.idx] = 2;  /* the stage played again: red as a continue's (test 117: 2, a continue's 1) */
 	s.rank_n = 0;             /* the rank's change starts again (no fall from the jump) */
 	s.fall_left = 0;
 	for (int k = 0; k < 2; k++) { /* test 71: both sides; who plays is seen again from the slot's moment */
@@ -768,6 +817,14 @@ void gadgets_state_load(int slot, int restart)
 	s.cand = -1;
 	s.cand_n = 0;
 	bossclock_reset();
+}
+
+/* test 118 */
+void gadgets_breakdown_void(int on)
+{
+	if (on && !st_void)
+		log_printf(C_YELLOW, "GADGETS: SCORE BREAKDOWN ZEROED UNTIL THE NEXT RUN (A SAVE STATE LOADED)");
+	st_void = on;
 }
 
 /* test 84 (main.c's save state files) */

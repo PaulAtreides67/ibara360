@@ -200,7 +200,8 @@ static const char *head_why(const struct head *h, int rp)
 		return "ANOTHER MACHINE'S";
 	if (h->version != HDD_VERSION || h->image_crc != G.image_crc || h->patch_crc != G.patch_crc ||
 	    h->dev_bytes != dev_bytes || h->chip_bytes != chip_bytes || h->ram_bytes != RAM_SIZE ||
-	    (rp ? h->host_bytes != G.rp_host_bytes : h->host_bytes > G.host_bytes || h->host_bytes < G.host_bytes_min) ||
+	    (rp ? h->host_bytes > G.rp_host_bytes || h->host_bytes < G.rp_host_bytes_min :
+	          h->host_bytes > G.host_bytes || h->host_bytes < G.host_bytes_min) ||
 	    h->vb_n != RT_VB_N || h->vb_bytes != RT_VB_BYTES ||
 	    h->chunk_bytes != CHUNK || h->moment_slot != (uint32_t)(rp ? G.rp_slot : G.moment_slot))
 		return "MADE BY ANOTHER VERSION";

@@ -108,6 +108,8 @@ void gadgets_target(int w, int h);
 #define GD_STATE_SLOTS 4 /* test 84: + the save state's moment (main.c's SLOT_STATE) */
 void gadgets_state_save(int slot);
 void gadgets_state_load(int slot, int restart);
+/* test 118: on = a save state was loaded: SCORE BREAKDOWN empty until a new run (off: the credit's or attract's load) */
+void gadgets_breakdown_void(int on);
 /* test 84: a slot's record (the stage scores) for a save state's file, read out or written in (bytes = its size) */
 void *gadgets_state_blob(int slot, size_t *bytes);
 /* test 84: side s's score as the gadgets last saw it, and whether it plays in this run */

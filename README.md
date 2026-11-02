@@ -57,7 +57,8 @@ graphics, sound and slowdown.
 - **Ibara Kuro: Black Label**, as on its arcade board.
 - **Ibara Arrange**, the PS2 port's arrange mode: its HUD, sub weapons, formation changes and aim lock, its continue,
   12 bullet designs, its ending, 9-digit scores, its own score table and the TAITO logo and title as on the PS2.
-- One or two players (co-op), each pad with its own controls.
+- One or two players (co-op), each pad with its own controls; a second player can join mid-run from a JOIN box
+  (ship type, and in Black Label the bomb type).
 
 ### Picture
 - 720p output (1080p consoles scale it), 16:9 or 4:3.
@@ -84,7 +85,8 @@ graphics, sound and slowdown.
 ### Save states and replays
 - 10 save state slots per game on the hard disk, each with a picture.
 - Replays: a finished run can be saved after its name entry and played back to the CAVE logo, with a pause menu and
-  LB / RB to change the speed. The newest 30 are kept.
+  LB / RB to change the speed. The newest 30 are kept. Loading a save state zeroes the SCORE BREAKDOWN panel until
+  the next run, and EX-DEBUG can turn replay saving off.
 
 ### Sound
 - The arcade's YMZ770 sound at 48 kHz, or the PS2 port's soundtrack (16 streams).
@@ -155,13 +157,13 @@ Xbox 360 titles, inside a Docker container (Debian 13 with xsdk and its GCC 15 t
 
 ```
 MSYS_NO_PATHCONV=1 docker run --rm --memory=5g -v xsdk-gcc:/opt/xsdk-gcc \
-  -v "C:\New folder\ibara360:/p" -v "C:\New folder\xsdk-src\xsdk:/xsdk:ro" -v xsdk-t116:/b \
-  xsdk-base:1 sh /p/host/xsdk/test116/build.sh ibara ibarablk ibaraarr ibara360
+  -v "C:\New folder\ibara360:/p" -v "C:\New folder\xsdk-src\xsdk:/xsdk:ro" -v xsdk-t118:/b \
+  xsdk-base:1 sh /p/host/xsdk/test118/build.sh ibara ibarablk ibaraarr ibara360
 ```
 
-The .xex files land in `host/xsdk/test116/out`.
+The .xex files land in `host/xsdk/test118/out`.
 
-- `host/xsdk/test116`: the Xbox 360 side (video, sound, pads, menus, GADGETS, ROM loading, saves, replays,
+- `host/xsdk/test118`: the Xbox 360 side (video, sound, pads, menus, GADGETS, ROM loading, saves, replays,
   achievements) and the launcher
 - `runtime`: the CV1000 board (SH-3 runtime, blitter, YMZ770, EEPROM, clock, timing model)
 - `gen`: generated sources: the recompiled programs (`ibara_drc`, `ibarablk_drc`, `ibaraarr_drc`), the Arrange

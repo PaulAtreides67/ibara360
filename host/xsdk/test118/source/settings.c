@@ -41,7 +41,7 @@ struct settings cfg = {.card = 0, .picture = PIC_INTEGER, .save = 1, .record = 0
                        .pic_sx = {[0 ... PIC_SHAPES - 1] = 1000}, .pic_sy = {[0 ... PIC_SHAPES - 1] = 1000}, .smooth = 0,
                        .brightness = 100, .menu_style = MENU_ARCADE, .language = LANG_ENGLISH,
                        .soundtrack = TRACK_ARCADE, .achievements = 0, .toast_pos = 6, .staff_keep = 1,
-                       .mono = 0};
+                       .mono = 0, .replay_save = 1};
 /* test 112 (user: "keep achievements off as the default, make bottom right toast the default"; EX-DEBUG's "record
  * (default off), frame log (default off), network log (default off)"): netlog 0 and toast_pos 6 (bottom_right) above;
  * an ini from before test 112 (no "defaults = 112") gets those five once (defaults_seen, settings_load) */
@@ -227,6 +227,8 @@ static unsigned ini_text_more(char *b, unsigned size)
 		"# staff_roll: 1 = START cannot skip the ending and its staff roll (the default), 0 = it can, as on the arcade\n"
 		"#             (Ibara and ARRANGE) (the debug menu's STAFF ROLL)\n"
 		"staff_roll = %d\n"
+		"# replay_save: 1 = SAVE REPLAY? after a run (the default), 0 = never asked, nothing saved (EX-DEBUG's REPLAY SAVE)\n"
+		"replay_save = %d\n"
 		"# defaults: the build whose defaults this file has (test 112 set record, framelog, netlog, achievements and\n"
 		"#           toast_position once to 0, 0, 0, 0, bottom_right)\n"
 		"defaults = %d\n"
@@ -242,7 +244,7 @@ static unsigned ini_text_more(char *b, unsigned size)
 		cfg.vol_voice, cfg.vol_attract, cfg.mute, cfg.soundtrack == TRACK_PS2 ? "ps2" : "arcade", cfg.mono ? "mono" : "stereo", arr_bullet_words[cfg.arr_bullets >= 0 && cfg.arr_bullets < 3 ? cfg.arr_bullets : 0],
 		pic_lines(), cfg.smooth, cfg.brightness, cfg.menu_style == MENU_PS2 ? "ps2" : "arcade",
 		cfg.language == LANG_JAPANESE ? "japanese" : "english", cfg.achievements, toast_words[cfg.toast_pos],
-		cfg.staff_keep, DEFAULTS_VER);
+		cfg.staff_keep, cfg.replay_save, DEFAULTS_VER);
 	int s, i, p;
 
 	for (p = 0; p < CTL_PADS; p++)
@@ -522,6 +524,15 @@ static void ini_line(char *line, unsigned n)
 		} else {
 			ini_bad++;
 			log_printf(C_YELLOW, "INI LINE %u: AUDIO = %.20s? (STEREO OR MONO)", n, v);
+		}
+		return;
+	}
+	if (!strcasecmp(k, "replay_save")) { /* test 118 */
+		if (!strcmp(v, "0") || !strcmp(v, "1")) {
+			cfg.replay_save = v[0] - '0';
+		} else {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: REPLAY_SAVE = %.20s? (0 OR 1)", n, v);
 		}
 		return;
 	}
@@ -998,6 +1009,8 @@ void settings_log(const char *head)
 		log_printf(C_GREEN, "%s BRIGHTNESS %d%%", head, cfg.brightness);
 	log_printf(C_GREEN, "%s ACHIEVEMENTS %s, TOAST %s, STAFF ROLL %s", head, cfg.achievements ? "ON" : "OFF",
 	           toast_words[cfg.toast_pos], cfg.staff_keep ? "PROTECTED" : "SKIPPABLE"); /* test 106; test 109 */
+	if (!cfg.replay_save) /* test 118 */
+		log_printf(C_GREEN, "%s REPLAY SAVE OFF", head);
 	log_printf(C_GREEN, "%s MENU STYLE %s, LANGUAGE %s", head, cfg.menu_style == MENU_PS2 ? "PS2" : "ARCADE",
 	           cfg.language == LANG_JAPANESE ? "JAPANESE" : "ENGLISH"); /* test 98 */
 	log_printf(C_GREEN, "%s SOUND: MUSIC %d%% SFX %d%% VOICE %d%% ATTRACT %d%%%s, SOUNDTRACK %s, %s", head,

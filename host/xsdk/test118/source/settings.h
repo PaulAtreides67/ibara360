@@ -130,6 +130,8 @@ struct settings {
 	                        * (ibara, ARRANGE); the entry's own protection is always on */
 	int mono;              /* test 112 (user: "add mono/stereo audio toggles in sound options and pause sound options"):
 	                        * 1 = both speakers get (L + R) / 2 (sound.c, the final mix) */
+	int replay_save;       /* test 118 (user: "new EX-debug option, replay save on/off"): 0 = no SAVE REPLAY? at a run's
+	                        * end (the run's inputs are still kept: the prompt is what it skips) */
 };
 extern struct settings cfg;
 enum { MENU_ARCADE, MENU_PS2 };     /* test 98 */

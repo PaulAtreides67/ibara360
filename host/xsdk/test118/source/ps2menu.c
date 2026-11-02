@@ -446,17 +446,19 @@ struct pitem {
 struct pbox {
 	short x, y, w, h;
 	short nx, ny, nw, nh;
+	short exact; /* test 118: ps2m_exact's */
 };
 int ps2m_rec;
 static struct pitem it[PM_ITEMS];
 static struct pbox bx[PM_BOXES];
 static int nit, nbx;
 
-int ps2m_lines_en, ps2m_keep_x, ps2m_help_en;
+int ps2m_lines_en, ps2m_keep_x, ps2m_help_en, ps2m_exact;
 
 void ps2m_begin(void)
 {
 	ps2m_lines_en = 0;
+	ps2m_exact = 0;
 	nit = nbx = 0;
 }
 
@@ -468,6 +470,7 @@ void ps2m_box(int x, int y, int w, int h)
 	bx[nbx].y = (short)y;
 	bx[nbx].w = (short)w;
 	bx[nbx].h = (short)h;
+	bx[nbx].exact = (short)(ps2m_exact != 0);
 	nbx++;
 }
 
@@ -601,8 +604,8 @@ static int lay_box(int b, int a, int z, int jp)
 	int i, title = -1, help = -1, ts, hy, bottom = 0, R, k;
 	int prev_y = -9999, prev_end = 0, line_top = 0, line_h = 8, last_fy = -1, cx = 0, cy0 = 0, cy1 = -1;
 
-	B->nw = (short)(B->w >= 120 ? PW : 16 + ((B->w - 16) * 4 + 2) / 3);
-	B->nx = (short)(B->x + B->w / 2 - B->nw / 2);
+	B->nw = (short)(B->exact ? B->w : B->w >= 120 ? PW : 16 + ((B->w - 16) * 4 + 2) / 3);
+	B->nx = (short)(B->exact ? B->x : B->x + B->w / 2 - B->nw / 2);
 	B->nx = B->nx < 0 ? 0 : B->nx > PW - B->nw ? (short)(PW - B->nw) : B->nx;
 	R = B->nw - 8;
 	for (i = a; i < z; i++) {
@@ -709,8 +712,8 @@ static int lay_box(int b, int a, int z, int jp)
 			prev_y = p->y;
 			prev_end = 0;
 		}
-		p->nx = (short)(8 + ((p->x - x0) * 4 + 1) / 3);
-		if (p->nx < prev_end)
+		p->nx = (short)(B->exact ? p->x - B->x : 8 + ((p->x - x0) * 4 + 1) / 3); /* test 118: exact 1:1 */
+		if (p->nx < prev_end && !B->exact)
 			p->nx = (short)prev_end;
 		if (p->fy == 1 && jp && !p->en) { /* the Japanese line */
 			int w[2];

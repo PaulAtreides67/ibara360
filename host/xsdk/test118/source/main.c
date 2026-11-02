@@ -559,7 +559,7 @@ static volatile int menu_on, menu_sel;         /* the pad menu is up; the highli
  * toggle (TR_ROW_NONE; test 100: EDIT only), A opens the box on EDIT, X in a box all on / off (FORMATION: the next formation for all three
  * slots, "QUICK SWAP"), a row with none set NONE (until test 100); every game's RANK a start value, the game's own rise and falls after it (tr_rank_vblank), X on RANK holds it all the run
  * (TRR_HELD, a "*") */
-#define XEX_TEST "116"  /* test 61: the build's test number, in the log's first lines, the network log and the card */
+#define XEX_TEST "118"  /* test 118: SCORE BREAKDOWN empty after a save state's load, smaller PS2 JOIN / CONTINUE boxes, EX-DEBUG REPLAY SAVE; test 117: the JOIN boxes, the SCORE BREAKDOWN after a load; test 61: the build's test number, in the log's first lines, the network log and the card */
 #define XEX_VERSION "1.00" /* test 116: the release's version, shown where "TEST n" was (the test number stays beside it in the logs) */
 /* test 72: the image's game in its name (the log's first lines, the network log's session) */
 #if defined(IB_GAME) && IB_GAME == 1
@@ -1831,6 +1831,7 @@ static int rp_delete(int i, const char *why);
 static void rp_pause_draw(volatile uint32_t *t);
 static void rp_capture_start(uint32_t base, const char *from);
 static void rp_cancel(int why);
+static void rp_join_note(int value); /* test 117 */
 static int rp_label(volatile uint32_t *t);
 enum { RPB_NONE, RPB_RESTART, RPB_LOAD, RPB_QUIT, RPB_LONG, RPB_GAP, RPB_EXDBG, RPB_N }; /* why a run has no replay; test 108: EXDBG */
 #define RP_KEEP 30                  /* test 87 (user: "limit it to 30 replays"): a full list asks which one to replace */
@@ -1882,7 +1883,7 @@ enum { TR_STAGE, TR_BOSS, TR_LIVES, TR_BOMBS, TR_GAUGE, TR_SHOT, TR_MEDAL, TR_RA
 /* test 96 (user's todo list: "highlight rank, press the X button to lock rank in place, adding an * to the right of the
  * percentage"): TR_RANK's bit TRR_HELD = the rank held all the run (the "*"); its mode = TR_RANK & 3. Without it every
  * game's RANK is a start value, the game's own rise and falls after it (user: Kuro BL's and ARRANGE's lock was "not
- * supposed to behave that way"). HOST_N has no room for a row more, so a bit of the row's value */
+ * supposed to behave that way"). HOST_N had no room for a row more (test 117 raised it), so a bit of the row's value */
 #define TRR_HELD 4
 #define TRR_MODE(v) ((v) & 3)
 /* test 96 (user's todo list: OPTIONS / FORMATION "a toggle that displays both <none> and <edit> in the same row"): the
@@ -2070,7 +2071,8 @@ enum { OPT_SPECIAL, OPT_PICTURE, OPT_TATE, OPT_ASPECT, OPT_SCANLINES, OPT_STRENG
        OPT_FRAMELOG, OPT_NETLOG, OPT_GAME, OPT_AUTOFIRE, OPT_BACK, OPT_CONTROLS, OPT_PLAYER, OPT_GADGETS, OPT_M3,
        OPT_DEBUG, OPT_SOUND, OPT_SCREEN, OPT_CONTROLS2, OPT_GSEL, OPT_PLAY, OPT_BULLETS, OPT_LOAD, OPT_SERVICE, OPT_REPLAYS,
        OPT_OPTIONS, OPT_PSIZE, OPT_PXSIZE, OPT_PYSIZE, OPT_PXPOS, OPT_PYPOS, OPT_SMOOTH, OPT_TRAIN, OPT_BRIGHT, OPT_STYLE, OPT_LANG, OPT_RANKS, OPT_ACH, OPT_TOAST,
-       OPT_STAFF, OPT_EXINV, OPT_EXINFB, OPT_EXHIT, OPT_EXLIVES, OPT_N }; /* test 108: EX-DEBUG's; test 110: LIVES */
+       OPT_STAFF, OPT_EXINV, OPT_EXINFB, OPT_EXHIT, OPT_EXLIVES, OPT_EXREPLAY, OPT_N }; /* test 108: EX-DEBUG's; test 110:
+                                                                                         * LIVES; test 118: REPLAY SAVE */
 static const char *const opt_names[OPT_N] = { /* "*" = from the next power-on */
 	"SPECIAL MODE", "PICTURE SIZE", "ROTATION", "ASPECT RATIO", "SCANLINES", "SCAN STRENGTH", "DEBUG CARD",
 	"EEPROM SAVE *", "RECORD *", "FRAME LOG *", "NETWORK LOG *", "GAME MENU *", "AUTOFIRE", "BACK IN A RUN",
@@ -2105,6 +2107,7 @@ static const char *const opt_names[OPT_N] = { /* "*" = from the next power-on */
 	 * runs and still allow achievements"): the EX-DEBUG page's rows (ex_vblank), for this power-on only */
 	"INVINCIBLE", "INFINITE BOMBS", "HITBOXES", /* test 110: the user's "hitboxes" */
 	"INFINITE LIVES", /* test 110 (user: "add infinite lives to ex-debug") */
+	"REPLAY SAVE",    /* test 118 (user: "new EX-debug option, replay save on/off, above debug card") */
 };
 static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most (the box); "\n" = a second line (test 70) */
 	"IBARA'S SPECIAL VER. (PCB DIP S2-2)",
@@ -2162,6 +2165,7 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
 	"FULL BOMB STOCK KEPT\nACHIEVEMENTS STILL COUNT",
 	"PLAYER = THE SHIP'S HITBOX\nALL = ENEMIES, BULLETS, SHOTS TOO",
 	"LIVES NEVER RUN OUT\nACHIEVEMENTS STILL COUNT",                 /* test 110 */
+	"ENABLE/DISABLE REPLAY SAVING",                                  /* test 118: the user's */
 };
 /* test 67: [0] the options, [1] the debug menu; ending at OPT_N; test 68: SOUND after CONTROLS. Test 69 (user: "gadgets
  * on/off option is obsolete since the M3 gadgets options have an all/off toggle", "back in a run option is obsolete"):
@@ -2216,7 +2220,7 @@ static const unsigned char opt_rows_ib[OPT_PAGES][18] = { /* test 71: P2 CONTROL
 	{OPT_PAUSE_ROWS, OPT_N},
 	/* test 112 (user: "final order of ex debug menu should be: infinite lives, infinite bombs, invincible, hitboxes,
 	 * debug card, eeprom save, record, frame log, network log, achievements, toast") */
-	{OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXHIT, OPT_CARD, OPT_SAVE, OPT_RECORD, OPT_FRAMELOG, OPT_NETLOG, OPT_ACH,
+	{OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXHIT, OPT_EXREPLAY, OPT_CARD, OPT_SAVE, OPT_RECORD, OPT_FRAMELOG, OPT_NETLOG, OPT_ACH,
 	 OPT_TOAST, OPT_N},
 };
 /* test 82 (user: "in "debug menu", delete "special mode"", "move "bullet design" to "general screen""): ARRANGE's */
@@ -2231,7 +2235,7 @@ static const unsigned char opt_rows_arr[OPT_PAGES][18] = {
 	{OPT_PAUSE_ROWS, OPT_N},
 	/* test 112 (user: "final order of ex debug menu should be: infinite lives, infinite bombs, invincible, hitboxes,
 	 * debug card, eeprom save, record, frame log, network log, achievements, toast") */
-	{OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXHIT, OPT_CARD, OPT_SAVE, OPT_RECORD, OPT_FRAMELOG, OPT_NETLOG, OPT_ACH,
+	{OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXHIT, OPT_EXREPLAY, OPT_CARD, OPT_SAVE, OPT_RECORD, OPT_FRAMELOG, OPT_NETLOG, OPT_ACH,
 	 OPT_TOAST, OPT_N},
 };
 static const unsigned char opt_rows_blk[OPT_PAGES][18] = { /* test 60: GADGETS; 64: M3; 70: PLAYER in the start menu */
@@ -2245,7 +2249,7 @@ static const unsigned char opt_rows_blk[OPT_PAGES][18] = { /* test 60: GADGETS; 
 	{OPT_PAUSE_ROWS, OPT_N},
 	/* test 112 (user: "final order of ex debug menu should be: infinite lives, infinite bombs, invincible, hitboxes,
 	 * debug card, eeprom save, record, frame log, network log, achievements, toast") */
-	{OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXHIT, OPT_CARD, OPT_SAVE, OPT_RECORD, OPT_FRAMELOG, OPT_NETLOG, OPT_ACH,
+	{OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXHIT, OPT_EXREPLAY, OPT_CARD, OPT_SAVE, OPT_RECORD, OPT_FRAMELOG, OPT_NETLOG, OPT_ACH,
 	 OPT_TOAST, OPT_N},
 };
 static int lay_quiet; /* test 88: the picture's rows rebuild the layouts as they go: no PICTURE line each time */
@@ -2405,6 +2409,7 @@ static void opt_value(int i, char *s, size_t n)
 	case OPT_EXINFB: snprintf(s, n, "%s", ex_infb ? "ON" : "OFF"); break;
 	case OPT_EXLIVES: snprintf(s, n, "%s", ex_lives ? "ON" : "OFF"); break; /* test 110 */
 	case OPT_EXHIT: snprintf(s, n, "%s", ex_hit == HITBOX_ALL ? "ALL" : ex_hit ? "PLAYER" : "OFF"); break;
+	case OPT_EXREPLAY: snprintf(s, n, "%s", cfg.replay_save ? "ON" : "OFF"); break; /* test 118 */
 	default: s[0] = 0; break; /* test 89: a row without a value shows none */
 	}
 }
@@ -2477,6 +2482,7 @@ static void opt_step(int i, int d)
 	case OPT_ACH: cfg.achievements ^= 1; break; /* test 106: ach_step reads it (ON only after sm_frame's question) */
 	case OPT_TOAST: cfg.toast_pos = (cfg.toast_pos + ACHX_TOAST_N + d) % ACHX_TOAST_N; break;
 	case OPT_STAFF: cfg.staff_keep ^= 1; break; /* test 109: sm_frame reads it */
+	case OPT_EXREPLAY: cfg.replay_save ^= 1; break; /* test 118: an ini setting (a run's end reads it) */
 	case OPT_EXINV: case OPT_EXINFB: case OPT_EXHIT: case OPT_EXLIVES: /* test 108: not ini settings (no opt_changes,
 	                                                                     * no save) */
 		if (i == OPT_EXLIVES)
@@ -3209,10 +3215,14 @@ static int sm_rowid(int k)
 /* test 89: HOST_TR0 + TR_* = a training run's settings, HOST_TR_GO 1 = the next credit is a training run (0 = not);
  * test 91: the rows from TR_OLD_N on after HOST_TR_GO (HOST_TR_MORE + k - TR_OLD_N), test 89's numbers unchanged */
 enum { HOST_DIP0 = 0, HOST_BULLETS = 8, HOST_TR0 = 9, HOST_TR_GO = HOST_TR0 + TR_OLD_N, HOST_TR_MORE = HOST_TR_GO + 1,
-       HOST_TR_END = HOST_TR_MORE + TR_N - TR_OLD_N, HOST_RANKS = HOST_TR_END, HOST_N = 32 };
+       HOST_TR_END = HOST_TR_MORE + TR_N - TR_OLD_N, HOST_RANKS = HOST_TR_END, HOST_N = 40 }; /* test 117: 40 (was 32; only these arrays) */
 /* test 101: HOST_RANKS = the debug menu's INITIALIZE RANKINGS (rank_init, once: host_reapply leaves it, the EEPROM and
  * the attract slot's check keep it), recorded so a replay across it clears the tables at the same vblank */
 _Static_assert(HOST_RANKS < HOST_N, "HOST_N has no room for HOST_RANKS");
+/* test 117: HOST_JOIN = Kuro BL's JOIN box: the ship byte (side x 8 + ship x 4 + bomb type) into that side's record
+ * before the box's Start (ct_frame), so its join and respawn take it */
+enum { HOST_JOIN = HOST_RANKS + 1 };
+_Static_assert((int)HOST_JOIN < (int)HOST_N, "HOST_N has no room for HOST_JOIN");
 static int host_val[HOST_N], host_seen[HOST_N];
 static int rk_result = -1; /* test 101: rank_init's last return */
 static void dip_write(int i, int v);
@@ -3242,6 +3252,9 @@ static void host_set(int what, int value, int menu)
 		tr_host(what, value);
 	} else if (what == HOST_RANKS) { /* test 101 */
 		rk_result = rank_init(game_set, ARR);
+	} else if (what == HOST_JOIN && game_set != SET_IBARA) { /* test 117 */
+		*RAMP(0x0C29D1D8u + (uint32_t)(value >> 3 & 1) * 0x2A0u + 7) = (u8)(value & 15);
+		rp_join_note(value);
 	}
 }
 
@@ -4043,7 +4056,30 @@ static void sm_frame(uint32_t w[2])
  * credit's (never written at a continue). The command waits for the side to be out (its record's u32 0: Start must be
  * new on such a frame); the box closes by itself when the continue is no longer possible (GAME OVER at the countdown's
  * end). Both sides (2P: Dyne); Kuro BL: none (its continue keeps the ship; user: "black label seems to ignore this
- * rule"). A side that never played (a 2P join) is left to the game. */
+ * rule"). A side that never played (a 2P join) is left to the game.
+ * Test 117 (user: "if player 2 joins in mid-game for co-op, open a menu for them to select the bomb (ibara/arrange) and
+ * the ship/bomb type (black label); same thing if a player 2 starts a run and player 1 joins in mid-game"; then
+ * "arrange doesn't have co-op": its patches allow no join, so no box there): Start alone on a side that never played
+ * while the other side's run is on opens a JOIN box too. ibara: the continue's TYPE row and command (the join is the
+ * same poll, 0C05DE00, on that side's port). Kuro BL (work/g91/blkship/REPORT.md; work/blkarr/blk_decomp.c): a join
+ * after the select (0C06D950 -> 0C06CFF0) has no select, the side keeps the credit's ship byte (player +7 = side x 8,
+ * STRAIGHT A; only a demo writes it there) and the respawn it calls (0C06D170) takes the speed from that byte: TYPE
+ * (STRAIGHT / SPREAD) and BOMB TYPE (A-D) rows (UP / DOWN between them), and the command writes the byte first
+ * (host_set HOST_JOIN: recorded, and in a replay's record) and then sends Start alone. The box opens only when the
+ * game would take the join: Kuro BL's starts cap, a credit for the side's slot (or free play), no GAME OVER (0C06D950's
+ * own test). */
+#define CJ_PLAYER 0x0C29D1D8u     /* test 117: Kuro BL's 1P record (+ CJ_P2 the 2P one), u32 as ibara's */
+#define CJ_P2 0x2A0u
+#define CJ_SHIP 7u                /* u8: side x 8 + ship x 4 + bomb type (player +4's low byte) */
+#define CJ_SPEED 0x18u            /* u32: a speed the respawn copies from CJ_SPEEDS[ship byte & 7] (+0x1C the same) */
+#define CJ_STARTS 0x28Au          /* u8: the side's starts in this credit */
+#define CJ_SPEEDS 0x0C1740D0u     /* u32 x 8 */
+#define CJ_SLOT 0x0C297488u       /* u8 per side: its coin slot */
+#define CJ_CREDITS 0x0C2860B0u    /* u8 per slot */
+#define CJ_COST 0x0C3C8690u       /* u8 per slot (0 = free play) */
+#define CJ_CAP 0x0C3CA6F8u        /* u8: the starts a credit allows */
+#define CJ_GAME_OVER 0x0C29D194u  /* u8 */
+#define CJ_SELECT 0x0C3C86ACu     /* u32: 1 while the credit's ship select runs (a join then goes into it) */
 #define IB_PLAYER 0x0C283794u     /* the 1P record (+ IB_SHIP_P2 the 2P one): u32 DC000000 alive, 0 out */
 #define IB_P_SHIPS 0x253u         /* u8: ships in reserve */
 #define IB_P_STARTS 0x26Bu        /* u8: the side's starts in this credit (1 = the first; 0 = never joined) */
@@ -4054,6 +4090,8 @@ static void sm_frame(uint32_t w[2])
 #define CT_TAIL 4                 /* then the buttons alone this many */
 enum { CT_IDLE, CT_PICK, CT_SENDING };
 static int ct_state[2], ct_type[2], ct_last[2] = {-1, -1}; /* per side; ct_last = the type last played (-1 none) */
+static int ct_join[2], ct_ship[2], ct_row[2];   /* test 117: the box is a join's; Kuro BL's TYPE and row (0 = TYPE) */
+static int ct_blk_last[2] = {-1, -1};           /* test 117: Kuro BL's ship byte & 7 last played (-1 none) */
 static unsigned ct_k[2], ct_check_at[2];
 static uint32_t ct_prev[2], ct_hold[2];
 static unsigned ct_opens, ct_sends;
@@ -4073,42 +4111,99 @@ static int ct_waiting(int s)
 	return st == 0 || ((st == 0xE0000000u || st == 0xA0000000u) && *RAMP(pl + IB_P_SHIPS) == 0);
 }
 
+/* test 117: side s can join now: it never played in this credit (out, starts 0) while the other side has, the run on,
+ * not a demo, no GAME OVER; Kuro BL also past its select, with a credit for the side's slot (or free play). ARRANGE
+ * none (no join in its rules) */
+static int ct_joinable(int s)
+{
+	if (ARR)
+		return 0;
+	if (game_set == SET_IBARA) {
+		const uint32_t pl = IB_PLAYER + (uint32_t)s * IB_SHIP_P2, o = IB_PLAYER + (uint32_t)(s ^ 1) * IB_SHIP_P2;
+		if (!*RAMP(IB_STAGE_LOOP) || *RAMP(IB_DEMO) || *RAMP(IB_GAME_OVER))
+			return 0;
+		return BE32(RAMP(pl)) == 0 && *RAMP(pl + IB_P_STARTS) == 0 && *RAMP(o + IB_P_STARTS) != 0;
+	} else {
+		const uint32_t pl = CJ_PLAYER + (uint32_t)s * CJ_P2, o = CJ_PLAYER + (uint32_t)(s ^ 1) * CJ_P2;
+		const unsigned slot = *RAMP(CJ_SLOT + (uint32_t)s) & 1;
+		if (!*RAMP(BLK_GAME_ON) || *RAMP(BLK_DEMO) || *RAMP(CJ_GAME_OVER) || BE32(RAMP(CJ_SELECT)) != 0)
+			return 0;
+		if (BE32(RAMP(pl)) != 0 || *RAMP(pl + CJ_STARTS) != 0 || *RAMP(o + CJ_STARTS) == 0)
+			return 0;
+		return *RAMP(CJ_COST + slot) <= *RAMP(CJ_CREDITS + slot);
+	}
+}
+
+/* test 117: the Kuro BL box's choice as the ship byte */
+static int ct_blk_byte(int s)
+{
+	return s * 8 + (ct_ship[s] & 1) * 4 + (ct_type[s] & 3);
+}
+
 /* after sm_frame, on the pads' words (w[pad]; side s is pad s ^ pad_swap) */
 static void ct_frame(uint32_t w[2])
 {
 	int s;
 
-	if (game_set != SET_IBARA) /* test 81: ARRANGE's too (its continue is the arcade's: arrange.c arr_player_hud) */
-		return;
+	const int ib = game_set == SET_IBARA;
+
 	for (s = 0; s < 2; s++) {
 		const int p = s ^ pad_swap;
-		const uint32_t press = w[p] & ~ct_prev[s], pl = IB_PLAYER + (uint32_t)s * IB_SHIP_P2;
-		const int waiting = ct_waiting(s);
+		const uint32_t press = w[p] & ~ct_prev[s];
+		const uint32_t pl = ib ? IB_PLAYER + (uint32_t)s * IB_SHIP_P2 : CJ_PLAYER + (uint32_t)s * CJ_P2;
+		const char *const what = ct_join[s] ? "JOIN" : "CONTINUE";
+		/* test 117: a join's box too; Kuro BL only a join's (test 81: ARRANGE's continue is the arcade's, its join none) */
+		const int waiting = ct_state[s] == CT_IDLE ? (ib && ct_waiting(s)) || ct_joinable(s) :
+		                    ct_join[s] ? ct_joinable(s) : ct_waiting(s);
 
 		ct_prev[s] = w[p];
 		ct_hold[s] &= w[p];
-		if ((BE32(RAMP(pl)) & 0xCC000000u) == 0xCC000000u) /* alive or flying in (work/g65/inv) */
-			ct_last[s] = *RAMP(IB_SHIP + (uint32_t)s * IB_SHIP_P2) & 3;
+		if ((BE32(RAMP(pl)) & 0xCC000000u) == 0xCC000000u) { /* alive or flying in (work/g65/inv) */
+			if (ib)
+				ct_last[s] = *RAMP(IB_SHIP + (uint32_t)s * IB_SHIP_P2) & 3;
+			else
+				ct_blk_last[s] = *RAMP(pl + CJ_SHIP) & 7;
+		}
 		if (ct_state[s] == CT_IDLE && waiting && (press & A_START) && !(w[p] & (A_B1 | A_B2))) {
 			/* (Start with buttons 1 / 2 held reaches the game as before: its own re-select) */
 			ct_state[s] = CT_PICK;
-			ct_type[s] = ct_last[s] >= 0 ? ct_last[s] : 0;
+			ct_join[s] = ct_joinable(s); /* test 117 */
+			ct_row[s] = 0;
+			if (ib) {
+				ct_type[s] = ct_last[s] >= 0 ? ct_last[s] : 0;
+			} else { /* none played yet: the arcade's join's STRAIGHT A */
+				ct_ship[s] = ct_blk_last[s] >= 0 ? ct_blk_last[s] >> 2 & 1 : 0;
+				ct_type[s] = ct_blk_last[s] >= 0 ? ct_blk_last[s] & 3 : 0;
+			}
 			ct_opens++;
-			log_printf(C_WHITE, "CONTINUE: %dP TYPE BOX, TYPE %c FIRST (PAD %d, EMU %u)", s + 1, 'A' + ct_type[s], p,
-			           (unsigned)frame_count);
+			if (ib)
+				log_printf(C_WHITE, "%s: %dP TYPE BOX, TYPE %c FIRST (PAD %d, EMU %u)", ct_join[s] ? "JOIN" : "CONTINUE",
+				           s + 1, 'A' + ct_type[s], p, (unsigned)frame_count);
+			else
+				log_printf(C_WHITE, "JOIN: %dP BOX, %s BOMB TYPE %c FIRST (PAD %d, EMU %u)", s + 1,
+				           ct_ship[s] ? "SPREAD" : "STRAIGHT", 'A' + ct_type[s], p, (unsigned)frame_count);
 		} else if (ct_state[s] == CT_PICK) {
 			if (!waiting) {
 				ct_state[s] = CT_IDLE;
-				log_printf(C_YELLOW, "CONTINUE: %dP BOX CLOSED, NO CONTINUE NOW (EMU %u)", s + 1, (unsigned)frame_count);
+				log_printf(C_YELLOW, "%s: %dP BOX CLOSED, NO %s NOW (EMU %u)", what, s + 1, what, (unsigned)frame_count);
 			} else if (press & (A_START | A_MA)) {
 				ct_state[s] = CT_SENDING;
 				ct_k[s] = 0;
 				ct_sends++;
-				log_printf(C_GREEN, "CONTINUE: %dP %s TYPE %c (EMU %u)", s + 1, sm_ships[s], 'A' + ct_type[s],
-				           (unsigned)frame_count);
+				if (ib)
+					log_printf(C_GREEN, "%s: %dP %s TYPE %c (EMU %u)", what, s + 1, sm_ships[s], 'A' + ct_type[s],
+					           (unsigned)frame_count);
+				else
+					log_printf(C_GREEN, "JOIN: %dP %s %s BOMB TYPE %c (EMU %u)", s + 1, sm_ships[s],
+					           ct_ship[s] ? "SPREAD" : "STRAIGHT", 'A' + ct_type[s], (unsigned)frame_count);
 			} else if (press & A_MB) {
 				ct_state[s] = CT_IDLE;
-				log_printf(C_WHITE, "CONTINUE: %dP BOX CLOSED (B)", s + 1);
+				log_printf(C_WHITE, "%s: %dP BOX CLOSED (B)", what, s + 1);
+			} else if (!ib && (press & (A_UP | A_DOWN))) { /* test 117: Kuro BL's two rows */
+				ct_row[s] ^= 1;
+			} else if (!ib && ct_row[s] == 0) {
+				if (press & (A_LEFT | A_RIGHT))
+					ct_ship[s] ^= 1;
 			} else {
 				if (press & A_LEFT)
 					ct_type[s] = (ct_type[s] + 3) % 4;
@@ -4120,9 +4215,12 @@ static void ct_frame(uint32_t w[2])
 			ct_hold[s] = w[p]; /* the box's presses never reach the game */
 		w[p] &= ~ct_hold[s];
 		if (ct_state[s] == CT_SENDING) {
-			uint32_t cmd = (ct_type[s] & 1 ? A_B1 : 0) | (ct_type[s] & 2 ? A_B2 : 0);
+			/* test 117: Kuro BL's Start alone, its ship byte written first */
+			uint32_t cmd = !ib ? 0 : (ct_type[s] & 1 ? A_B1 : 0) | (ct_type[s] & 2 ? A_B2 : 0);
 			if (ct_k[s] == 0 && BE32(RAMP(pl)) != 0) /* not out yet: the command once it is */
 				continue;
+			if (ct_k[s] == 0 && !ib)
+				host_set(HOST_JOIN, ct_blk_byte(s), 1);
 			if (ct_k[s] < CT_START)
 				cmd |= A_START;
 			w[p] = cmd;
@@ -4132,13 +4230,23 @@ static void ct_frame(uint32_t w[2])
 			}
 		}
 		if (ct_check_at[s] && (unsigned)frame_count == ct_check_at[s]) {
-			const unsigned ship = *RAMP(IB_SHIP + (uint32_t)s * IB_SHIP_P2);
 			const int plays = (BE32(RAMP(pl)) & 0xCC000000u) == 0xCC000000u;
 			ct_check_at[s] = 0;
-			log_printf(plays && (ship & 3) == (unsigned)ct_type[s] ? C_GREEN : C_RED,
-			           "CONTINUE: %dP %s, %s TYPE %c%s", s + 1, plays ? "PLAYS" : "NOT PLAYING",
-			           ship < 8 ? sm_ships[ship / 4] : "SHIP ?", 'A' + (int)(ship & 3),
-			           (ship & 3) == (unsigned)ct_type[s] ? " = THE CHOICE" : ", NOT THE CHOICE");
+			if (ib) {
+				const unsigned ship = *RAMP(IB_SHIP + (uint32_t)s * IB_SHIP_P2);
+				log_printf(plays && (ship & 3) == (unsigned)ct_type[s] ? C_GREEN : C_RED,
+				           "%s: %dP %s, %s TYPE %c%s", what, s + 1, plays ? "PLAYS" : "NOT PLAYING",
+				           ship < 8 ? sm_ships[ship / 4] : "SHIP ?", 'A' + (int)(ship & 3),
+				           (ship & 3) == (unsigned)ct_type[s] ? " = THE CHOICE" : ", NOT THE CHOICE");
+			} else { /* test 117: the byte and the speed its respawn took */
+				const unsigned b = *RAMP(pl + CJ_SHIP);
+				const uint32_t v = BE32(RAMP(pl + CJ_SPEED)), want = BE32(RAMP(CJ_SPEEDS + (b & 7) * 4u));
+				const int ok = plays && b == (unsigned)ct_blk_byte(s) && v == want;
+				log_printf(ok ? C_GREEN : C_RED, "JOIN: %dP %s, %s BOMB TYPE %c%s, SPEED %05X%s", s + 1,
+				           plays ? "PLAYS" : "NOT PLAYING", b & 4 ? "SPREAD" : "STRAIGHT", 'A' + (int)(b & 3),
+				           b == (unsigned)ct_blk_byte(s) ? " = THE CHOICE" : ", NOT THE CHOICE", (unsigned)v,
+				           v == want ? " = THE TYPE'S" : ", NOT THE TYPE'S");
+			}
 		}
 	}
 }
@@ -5665,7 +5773,7 @@ static void state_frame(void)
 		st_prev = -1;
 		rt_state_drop(SLOT_STAGE);
 		rt_state_drop(SLOT_STATE); /* test 84 */
-		if (rp_cap && !rp_bad && rt_state_ready(SLOT_CREDIT)) {
+		if (rp_cap && !rp_bad && cfg.replay_save && rt_state_ready(SLOT_CREDIT)) { /* test 118: EX-DEBUG's REPLAY SAVE */
 			/* test 86: the credit's slot kept for the replay, the ports still added (its GAME OVER, the initials and the
 			 * ranking); SAVE REPLAY? once the scene changes (the attract's first demo) or a new run starts first; test
 			 * 87: or the CAVE logo comes (sm_logo), the initials' entry over */
@@ -5677,7 +5785,8 @@ static void state_frame(void)
 			log_printf(C_WHITE, "STATE: THE RUN ENDED (EMU %u), ITS STATES DROPPED; POOL %u OF %u BLOCKS", (unsigned)frame_count,
 			           rt_state_stats.pool_used, rt_state_stats.pool_blocks);
 			if (rp_cap)
-				log_printf(C_YELLOW, "REPLAY: NONE FOR THIS RUN (%s)", rp_bad ? rp_why(rp_bad) : "ITS START STATE WAS DROPPED");
+				log_printf(C_YELLOW, "REPLAY: NONE FOR THIS RUN (%s)", rp_bad ? rp_why(rp_bad) : !cfg.replay_save ?
+				           "EX-DEBUG'S REPLAY SAVE OFF" : "ITS START STATE WAS DROPPED");
 			rp_cap = 0;
 		}
 	}
@@ -5986,15 +6095,43 @@ static void sm_box(volatile uint32_t *t, int bx, int by, int bw, int bh)
  * (both open at once: side by side, 12 apart) */
 #define CT_W 108
 #define CT_H 31
+/* test 117: Kuro BL's JOIN box: TYPE with its value between arrows (the PLAY page's way), BOMB TYPE's letters 2 apart */
+#define CT_WB 132
+#define CT_HB 41
+static void ct_draw_blk(volatile uint32_t *t, int x0, int y0, int s)
+{
+	const char *const v = ct_ship[s] ? "SPREAD" : "STRAIGHT";
+	int i;
+
+	for (i = 0; i < 2; i++) {
+		const int y = y0 + 10 * i, sel = i == ct_row[s];
+		if (sel)
+			sm_text(t, x0, y, C_YELLOW, ">");
+		sm_text(t, x0 + 6, y, sel ? C_YELLOW : C_WHITE, i ? "BOMB TYPE" : "TYPE");
+	}
+	sm_text(t, x0 + 6 * 10, y0, ct_row[s] == 0 ? C_YELLOW : C_DIM, "<");
+	sm_text(t, x0 + 6 * 11 + (48 - 6 * (int)strlen(v)) / 2, y0, C_YELLOW, v);
+	sm_text(t, x0 + 6 * 19, y0, ct_row[s] == 0 ? C_YELLOW : C_DIM, ">");
+	for (i = 0; i < 4; i++) {
+		const char c[2] = {(char)('A' + i), 0};
+		sm_text(t, x0 + 6 * (11 + 2 * i), y0 + 10, i == ct_type[s] ? C_YELLOW : C_DIM, c);
+	}
+}
+
 static void ct_draw(volatile uint32_t *t, int s)
 {
-	const int bx = s ? GAME_H - CT_W - 6 : 6, by = 30, x0 = bx + 6, y0 = by + 6;
+	const int ib = game_set == SET_IBARA, w = ib ? CT_W : CT_WB;
+	const int bx = s ? GAME_H - w - 6 : 6, by = 30, x0 = bx + 6, y0 = by + 6;
 	char h[24];
 	int i;
 
-	sm_box(t, bx, by, CT_W, CT_H);
-	snprintf(h, sizeof(h), "CONTINUE %dP %s", s + 1, sm_ships[s]);
+	sm_box(t, bx, by, w, ib ? CT_H : CT_HB);
+	snprintf(h, sizeof(h), "%s %dP %s", ct_join[s] ? "JOIN" : "CONTINUE", s + 1, sm_ships[s]); /* test 117: JOIN */
 	sm_text(t, x0, y0, C_YELLOW, h);
+	if (!ib) {
+		ct_draw_blk(t, x0, y0 + 12, s);
+		return;
+	}
 	sm_text(t, x0, y0 + 12, C_WHITE, "TYPE");
 	for (i = 0; i < 4; i++) {
 		const char c[2] = {(char)('A' + i), 0};
@@ -6241,7 +6378,8 @@ static int sm_pages(volatile uint32_t *t)
 			 * ex-debug ... should also be converted to english even when language is japanese"): English always */
 			ps2m_help_en = 1;
 			sm_text(t, x0, y0 + gy, C_DIM, id == OPT_EXLIVES || id == OPT_EXINFB || id == OPT_EXINV || id == OPT_EXHIT ?
-			        "UNTIL THE POWER-OFF, NO REPLAY" : "* = FROM THE NEXT POWER-ON");
+			        "UNTIL THE POWER-OFF, NO REPLAY" : id == OPT_EXREPLAY ? "AT ONCE, KEPT IN IBARA360.INI" : /* test 118 */
+			        "* = FROM THE NEXT POWER-ON");
 			ps2m_help_en = 0;
 			sm_text(t, x0, y0 + gy + 12, C_GREEN, "LEFT/RIGHT CHANGE");
 			sm_text(t, x0, y0 + gy + 22, C_GREEN, "B / BACK = OPTIONS");
@@ -6530,30 +6668,56 @@ static unsigned ps2m_clock; /* the rose's (a picture every 2 draws) */
  * ARCADE): MENU STYLE PS2 records each open side's box as a page of its own for ps2m_render: CONTINUE as the title,
  * the side and ship, then one row with the rose, TYPE and the four letters 2 columns apart (ARCADE's 3 apart would
  * pass the leaf window's right edge). A box as narrow as ARCADE's comes out 138 wide in the PS2 look, so two no
- * longer fit side by side: with both open 2P's goes under 1P's */
-#define CT_PS2_H 54 /* the leaf window's height for these lines (lay_box: the last row at 36, + 8 + 10) */
+ * longer fit side by side: with both open 2P's goes under 1P's.
+ * Test 118 (user: "there's plenty of room to make the windows smaller (make an exception for the ibara arcade window
+ * and make some of the fonts smaller in order to fit them on the same horizontal space), for black label, just make
+ * the window smaller and fix it to whatever direction a player is joining in from"): the panels exactly as recorded
+ * (ps2m_exact, the texts at their PS2 places). Ibara: 108 wide, the four letters 12 px apart (were 16), 1P's at the
+ * left edge, 2P's at the right, both at row 30 again (side by side, 12 apart). Kuro BL: 144 wide (was the whole 240),
+ * on the joining side's edge; TYPE's value between arrows, BOMB TYPE's letters 10 apart */
+#define CT_PS2_H 54  /* the leaf window's height for these lines (lay_box: the last row at 36, + 8 + 10) */
+#define CT_PS2_W 108 /* test 118: ibara's */
+#define CT_PS2_WB 144 /* test 118: Kuro BL's */
 static void ct_draw_ps2(volatile uint32_t *t)
 {
 	const struct ps2m_target tg = {t, gtex_pitch, cv1k_vram, CV1K_VRAM_STRIDE, tex_sx, tex_sy};
-	const int both = ct_state[0] == CT_PICK && ct_state[1] == CT_PICK;
+	const int ib = game_set == SET_IBARA, w = ib ? CT_PS2_W : CT_PS2_WB, hh = ib ? CT_PS2_H : CT_PS2_H + 10;
 	int s, i;
 
 	ps2m_begin();
 	ps2m_rec = 1;
+	ps2m_exact = 1; /* test 118 */
 	for (s = 0; s < 2; s++) {
-		const int bx = s ? GAME_H - CT_W - 6 : 6, by = s && both ? 30 + CT_PS2_H + 4 : 30, x0 = bx + 8, y0 = by + 6;
+		const int bx = s ? GAME_H - w - 6 : 6, by = 30, x0 = bx + 8, y0 = by + 6;
 		char h[12];
 		if (ct_state[s] != CT_PICK)
 			continue;
-		sm_box(t, bx, by, CT_W, CT_PS2_H);
-		sm_text(t, x0, y0, C_YELLOW, "CONTINUE");
+		sm_box(t, bx, by, w, hh);
+		sm_text(t, x0, y0, C_YELLOW, ct_join[s] ? "JOIN" : "CONTINUE"); /* test 117: JOIN */
 		snprintf(h, sizeof(h), "%dP %s", s + 1, sm_ships[s]);
-		sm_text(t, x0 + 6, y0 + 12, C_WHITE, h);
+		sm_text(t, x0 + 8, y0 + 12, C_WHITE, h);
+		if (!ib) {
+			const char *const v = ct_ship[s] ? "SPREAD" : "STRAIGHT";
+			for (i = 0; i < 2; i++) {
+				const int y = y0 + 22 + 10 * i, sel = i == ct_row[s];
+				if (sel)
+					sm_text(t, x0, y, C_YELLOW, ">");
+				sm_text(t, x0 + 8, y, sel ? C_YELLOW : C_WHITE, i ? "BOMB TYPE" : "TYPE");
+			}
+			sm_text(t, bx + 56, y0 + 22, ct_row[s] == 0 ? C_YELLOW : C_DIM, "<");
+			sm_text(t, bx + 64 + (64 - 8 * (int)strlen(v)) / 2, y0 + 22, C_YELLOW, v);
+			sm_text(t, bx + 128, y0 + 22, ct_row[s] == 0 ? C_YELLOW : C_DIM, ">");
+			for (i = 0; i < 4; i++) {
+				const char c[2] = {(char)('A' + i), 0};
+				sm_text(t, bx + 96 + 10 * i, y0 + 32, i == ct_type[s] ? C_YELLOW : C_DIM, c);
+			}
+			continue;
+		}
 		sm_text(t, x0, y0 + 22, C_YELLOW, ">");
-		sm_text(t, x0 + 6, y0 + 22, C_YELLOW, "TYPE");
+		sm_text(t, x0 + 8, y0 + 22, C_YELLOW, "TYPE");
 		for (i = 0; i < 4; i++) {
 			const char c[2] = {(char)('A' + i), 0};
-			sm_text(t, x0 + 6 * (6 + 2 * i), y0 + 22, i == ct_type[s] ? C_YELLOW : C_DIM, c);
+			sm_text(t, bx + 56 + 12 * i, y0 + 22, i == ct_type[s] ? C_YELLOW : C_DIM, c);
 		}
 	}
 	ps2m_rec = 0;
@@ -7405,6 +7569,12 @@ static void state_load_now(void)
 	           (unsigned)rt_state_stats.taken_frame[s], red ? ", THE SCORE RED" : "");
 	state_load_why = NULL;
 	gadgets_state_load(s, red);
+	/* test 118: a save state's load empties SCORE BREAKDOWN for the rest of the run; the credit's slot (FULL RESTART,
+	 * RESTART STAGE of stage 1) and the attract's start clean; a later stage's RESTART STAGE keeps what the run had */
+	if (s == SLOT_STATE)
+		gadgets_breakdown_void(1);
+	else if (s == SLOT_CREDIT || s == SLOT_ATTRACT)
+		gadgets_breakdown_void(0);
 	arrhud_reset(); /* test 79 */
 	if (s == SLOT_ATTRACT) { /* the credit's, the stage's and the state's dropped above */
 		credit_on = 0;
@@ -8036,6 +8206,10 @@ struct rp_host {                /* main.c's part of a replay's file */
 	uint8_t rtc[8];             /* the RTC9701's registers then (rtc9701_get) */
 	int32_t bullets;            /* ARRANGE's BULLET DESIGN (host_val[HOST_BULLETS]) */
 	uint32_t frames, every;     /* the input section: frames x 4 port bytes (C D L F), then a hash every 'every' */
+	/* test 117 (a file from before: none, rp_host_bytes_min): each side's Kuro BL JOIN box write (HOST_JOIN), the
+	 * vblank of the input section + 1 (0 = none) and the ship byte */
+	uint32_t join_k[2];
+	uint8_t join_b[2], join_pad[2];
 };
 static struct rp_host rh;
 static uint8_t *rp_buf;          /* the input section: a run's (being kept) or a playback's (loaded) */
@@ -8043,6 +8217,8 @@ static uint32_t rp_chk_off;      /* where its hashes start in rp_buf */
 static uint16_t rp_cr_eep[256];  /* the run's start: the EEPROM, the clock, BULLET DESIGN */
 static uint8_t rp_cr_rtc[8];
 static int rp_cr_bullets;
+static uint32_t rp_join_k[2];    /* test 117: the run's HOST_JOIN writes (struct rp_host's join_k / join_b) */
+static uint8_t rp_join_b[2];
 static int rp_red, rp_stage, rp_players; /* the run: its SCORE went red, the last stage, the sides that played */
 static uint32_t rp_score[2];
 static uint16_t rp_keep_eep[256]; /* a playback: the player's EEPROM, clock and BULLET DESIGN, put back at its end */
@@ -8144,7 +8320,19 @@ static void rp_capture_start(uint32_t base, const char *from)
 	memset(rp_cr_rtc, 0, sizeof(rp_cr_rtc));
 	rtc9701_get(rp_cr_rtc);
 	rp_cr_bullets = host_val[HOST_BULLETS];
+	rp_join_k[0] = rp_join_k[1] = 0; /* test 117 */
 	log_printf(C_WHITE, "REPLAY: THE RUN'S PORTS KEPT FROM EMU %u (%s)", (unsigned)base, from);
+}
+
+/* test 117: host_set's HOST_JOIN (ct_frame's, before rp_capture keeps this vblank's ports: its k is rp_n's) */
+static void rp_join_note(int value)
+{
+	const int s = value >> 3 & 1;
+
+	if (!rp_cap || rp_play)
+		return;
+	rp_join_k[s] = (uint32_t)frame_count - rp_base + 1;
+	rp_join_b[s] = (uint8_t)value;
 }
 
 /* the run gets no replay (why: RPB_*); a stage restart's run can still get one after a FULL RESTART */
@@ -8262,6 +8450,10 @@ static void rp_write(int num, int harness)
 	memcpy(rh.eep, rp_cr_eep, sizeof(rh.eep));
 	memcpy(rh.rtc, rp_cr_rtc, sizeof(rh.rtc));
 	rh.bullets = rp_cr_bullets;
+	for (int s = 0; s < 2; s++) { /* test 117 */
+		rh.join_k[s] = rp_join_k[s];
+		rh.join_b[s] = rp_join_b[s];
+	}
 	rh.frames = rp_n;
 	rh.every = RP_EVERY;
 	memmove(rp_buf + rp_n * 4u, rp_buf + rp_chk_off, nchk * 4u); /* the hashes right after the ports */
@@ -8447,6 +8639,7 @@ static void rp_start(int harness)
 	rp_req = -1;
 	rp_wait = 0;
 	gadgets_state_blob(0, &n);
+	memset(&rh, 0, sizeof(rh)); /* test 117: an older file's record is shorter (no join_k) */
 	if (!why && hdd_rp_load_check(i, &rh) != 0) {
 		why = hdd_why();
 	} else if (!why && (rh.gad_bytes != n || rh.every != RP_EVERY || !rh.frames || rh.frames > RP_MAX_FRAMES ||
@@ -8678,6 +8871,9 @@ static void rp_inputs(void)
 
 	if (host_reapply_due)
 		host_reapply();
+	for (int s = 0; s < 2; s++) /* test 117: the run's Kuro BL JOIN box writes at their vblanks */
+		if (rh.join_k[s] && rh.join_k[s] == (uint32_t)frame_count - rp_base + 1)
+			host_set(HOST_JOIN, rh.join_b[s], 0);
 	sm_frame(none);
 	snd_frame();
 	if (rp_label_left)
@@ -11910,6 +12106,7 @@ static void game_start(void)
 			snprintf(g.rp_dir, sizeof(g.rp_dir), "%s/ibara360/replays/%s", dev, ARR ? "ibaraarr" : romload_set_name(game_set));
 			g.rp_slot = SLOT_CREDIT;
 			g.rp_host_bytes = sizeof(struct rp_host);
+			g.rp_host_bytes_min = offsetof(struct rp_host, join_k); /* test 117: tests 86-116's replays */
 			g.rp_input = rp_buf;
 			g.rp_input_cap = RP_BUF_BYTES;
 		}
