@@ -11,14 +11,14 @@ replays, a training mode, info panels beside the game, the PS2 port's front end 
 
 **Ibara** (鋳薔薇, "cast-iron rose") came out in Japanese arcades on July 15, 2005, on Cave's CV1000-B board,
 published by AMI. It was directed and programmed by Shinobu Yagawa, the programmer behind *Recca* and Raizing's
-*Battle Garegga*, and it was his first game for Cave after leaving Raizing. The music is by Shinji Hosoe and the world
+*Battle Garegga*, and it was his first game for Cave after leaving Raizing. Music is by Shinji Hosoe, world
 and characters by Cave's lead designer Akira Wakabayashi.
 
 It plays like a successor to *Battle Garegga*: biplanes and steam-powered machinery, a power-up system with option
 formations, a medal chain that is the heart of the scoring, and a rank system that raises the difficulty in real time
-as you collect items and deal damage. In the original, the only known way to lower the rank is to die. Yagawa has said
+as you collect items and deal damage. In the vanilla, the only known way to lower the rank is to die. Yagawa has said
 that rank was "one of my methods for increasing income for arcade operators", since arcade income follows the time
-people spend playing. Two pilots, Bond and Dyne, fight the Rose Sisters and their mechanical army across a factory, a
+people spend playing. Two pilots, Bond and Dyne, fight Teresa Rose and her daughters, leading a mechanical army across a factory, a
 mine, a valley, the sky, a fortified city and the Rose Garden where the robots are built.
 
 **Ibara Kuro: Black Label** followed on February 10, 2006, in limited distribution. It was made to answer players'
