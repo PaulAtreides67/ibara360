@@ -48,7 +48,7 @@ The arcade games' SH-3 programs are recompiled to PowerPC C code (about 1,340 fu
 re-implementation of the CV1000 board: the blitter, the YMZ770 sound chip, the EEPROM, the real-time clock and the NAND
 flash. Slowdown comes from a timing model fitted to recordings of the real arcade board, not from a fixed frame skip.
 Arrange mode is the PS2 port's arrange code rebuilt as SH-3 patches on the arcade program, so it runs with the arcade's
-graphics, sound and slowdown.
+graphics, sound and slowdown. one could technically even run it as it's own MAME rom if they so choose.
 
 ## Features
 
