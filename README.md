@@ -73,7 +73,7 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
 - **SAVESTATE SUPPORT** and **INPUT PLAYBACK** within the game itself.
 - Every button can be remapped, AUTO SHOT at 10/12/15/20/30 Hz,
   Sound Test, and a Debug menu.
-- **Pause scrren** to access save/load states and options.
+- **Pause screen (accessed by pressing Back during a run)** to access save/load states and options.
 
 ### Save states and replays
 - 10 save state slots per game on the hard disk, each with a preview picture.
