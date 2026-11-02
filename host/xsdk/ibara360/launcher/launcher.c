@@ -99,8 +99,8 @@
 #define LA_TV_H 896
 
 /* test 97: the music in the .xex, the PS2 data from ps2data.bin (the plain screen without it) */
-#define XEX_VERSION "1.00" /* test 116: the release's version, on the title where "TEST n" was */
-#define XEX_TEST "116" /* test 116: the version label only; test 101: ARRANGE MODE / GALLERY words and the gallery guides in English; test 89: the games' volume (lsound.c), the log file new each run (launch.c); test 90: that
+#define XEX_VERSION "1.01" /* test 116: the release's version, on the title where "TEST n" was; test 119: 1.01 */
+#define XEX_TEST "119" /* test 119: the version label only; test 116: the version label only; test 101: ARRANGE MODE / GALLERY words and the gallery guides in English; test 89: the games' volume (lsound.c), the log file new each run (launch.c); test 90: that
                        * log delete taken out again (it hung every .xex at its start); test 91: the log's lines
                        * written by their own thread, the gallery's LB / RB without the page between pictures;
                        * test 93: the PS2 port's NOW LOADING ticker (GO, the gallery's gate) */

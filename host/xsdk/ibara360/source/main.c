@@ -559,8 +559,8 @@ static volatile int menu_on, menu_sel;         /* the pad menu is up; the highli
  * toggle (TR_ROW_NONE; test 100: EDIT only), A opens the box on EDIT, X in a box all on / off (FORMATION: the next formation for all three
  * slots, "QUICK SWAP"), a row with none set NONE (until test 100); every game's RANK a start value, the game's own rise and falls after it (tr_rank_vblank), X on RANK holds it all the run
  * (TRR_HELD, a "*") */
-#define XEX_TEST "118"  /* test 118: SCORE BREAKDOWN empty after a save state's load, smaller PS2 JOIN / CONTINUE boxes, EX-DEBUG REPLAY SAVE; test 117: the JOIN boxes, the SCORE BREAKDOWN after a load; test 61: the build's test number, in the log's first lines, the network log and the card */
-#define XEX_VERSION "1.00" /* test 116: the release's version, shown where "TEST n" was (the test number stays beside it in the logs) */
+#define XEX_TEST "119"  /* test 119: EX-DEBUG closed (its code kept), ACHIEVEMENTS the debug menu's last row; test 118: SCORE BREAKDOWN empty after a save state's load, smaller PS2 JOIN / CONTINUE boxes, EX-DEBUG REPLAY SAVE; test 117: the JOIN boxes, the SCORE BREAKDOWN after a load; test 61: the build's test number, in the log's first lines, the network log and the card */
+#define XEX_VERSION "1.01" /* test 119: EX-DEBUG closed, ACHIEVEMENTS on the debug menu; test 116: the release's version, shown where "TEST n" was (the test number stays beside it in the logs) */
 /* test 72: the image's game in its name (the log's first lines, the network log's session) */
 #if defined(IB_GAME) && IB_GAME == 1
 #define XEX_GAME " KURO BL"
@@ -2178,6 +2178,7 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
 #define OPT_PAGE_OPTIONS 4 /* test 88: OPTIONS (the menu's settings pages) */
 #define OPT_PAGE_PAUSE 5   /* test 100: the pause's OPTIONS (OPTIONS' rows but DEBUG MENU) */
 #define OPT_PAGE_EXDBG 6  /* test 108: EX-DEBUG (RB held + A on DEBUG MENU); test 112: LB + RB held + A */
+#define EXDBG_OPEN 0      /* test 119 (user: "disable access to ex-debug (but keep it in the game)"): 1 = LB + RB + A opens it */
 #define OPT_PAGES 7
 /* test 72: no GAME MENU row in a one-game image (the launcher chooses), GAME SELECT at the options' end instead */
 #ifdef IB_GAME
@@ -2213,34 +2214,34 @@ static const unsigned char opt_rows_ib[OPT_PAGES][18] = { /* test 71: P2 CONTROL
 	 * bottom, staff roll to the top after special mode"). Test 112 (user: "move service menu to the bottom of the debug
 	 * menu, before initialize rankings", "move achivements and toast options in the ex-debug menu", "move EEPROM save,
 	 * record, framelog and network log on the ex-debug menu"; DEBUG CARD is in their EX-DEBUG order too) */
-	{OPT_SPECIAL, OPT_STAFF, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_N},
+	{OPT_SPECIAL, OPT_STAFF, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_ACH, OPT_N}, /* test 119 (user): ACHIEVEMENTS last */
 	{OPT_SCREEN_ROWS, OPT_N}, /* test 100: M3 GADGETS on the pause's OPTIONS page */
 	{OPT_GENERAL_ROWS, OPT_N},
 	{OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_DEBUG, OPT_LANG, OPT_N}, /* test 102: LANGUAGE */
 	{OPT_PAUSE_ROWS, OPT_N},
 	/* test 112 (user: "final order of ex debug menu should be: infinite lives, infinite bombs, invincible, hitboxes,
 	 * debug card, eeprom save, record, frame log, network log, achievements, toast") */
-	{OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXHIT, OPT_EXREPLAY, OPT_CARD, OPT_SAVE, OPT_RECORD, OPT_FRAMELOG, OPT_NETLOG, OPT_ACH,
-	 OPT_TOAST, OPT_N},
+	{OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXHIT, OPT_EXREPLAY, OPT_CARD, OPT_SAVE, OPT_RECORD, OPT_FRAMELOG, OPT_NETLOG,
+	 OPT_TOAST, OPT_N}, /* test 119: ACHIEVEMENTS on the debug menu */
 };
 /* test 82 (user: "in "debug menu", delete "special mode"", "move "bullet design" to "general screen""): ARRANGE's */
 static const unsigned char opt_rows_arr[OPT_PAGES][18] = {
 	{OPT_PLAY, OPT_TRAIN, OPT_LOAD, OPT_REPLAYS, OPT_OPTIONS, OPT_GSEL_ROW OPT_N},
 	/* test 102 (user: "ibara arrange shouldn't have the service menu accessible, since it didn't exist on PS2"):
 	 * no SERVICE MENU row */
-	{OPT_STAFF, OPT_GAME_ROW OPT_RANKS, OPT_N}, /* test 112: the rest on EX-DEBUG */
+	{OPT_STAFF, OPT_GAME_ROW OPT_RANKS, OPT_ACH, OPT_N}, /* test 112: the rest on EX-DEBUG; test 119: ACHIEVEMENTS last */
 	{OPT_SCREEN_ROWS, OPT_N},
 	{OPT_GENERAL_ROWS, OPT_BULLETS, OPT_N},
 	{OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_DEBUG, OPT_LANG, OPT_N}, /* test 102: LANGUAGE */
 	{OPT_PAUSE_ROWS, OPT_N},
 	/* test 112 (user: "final order of ex debug menu should be: infinite lives, infinite bombs, invincible, hitboxes,
 	 * debug card, eeprom save, record, frame log, network log, achievements, toast") */
-	{OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXHIT, OPT_EXREPLAY, OPT_CARD, OPT_SAVE, OPT_RECORD, OPT_FRAMELOG, OPT_NETLOG, OPT_ACH,
-	 OPT_TOAST, OPT_N},
+	{OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXHIT, OPT_EXREPLAY, OPT_CARD, OPT_SAVE, OPT_RECORD, OPT_FRAMELOG, OPT_NETLOG,
+	 OPT_TOAST, OPT_N}, /* test 119: ACHIEVEMENTS on the debug menu */
 };
 static const unsigned char opt_rows_blk[OPT_PAGES][18] = { /* test 60: GADGETS; 64: M3; 70: PLAYER in the start menu */
 	{OPT_PLAY, OPT_TRAIN, OPT_LOAD, OPT_REPLAYS, OPT_OPTIONS, OPT_GSEL_ROW OPT_N},
-	{OPT_STAFF, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_N}, /* test 110: STAFF ROLL first (Kuro BL's addresses found),
+	{OPT_STAFF, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_ACH, OPT_N}, /* test 119: ACHIEVEMENTS last; test 110: STAFF ROLL first (Kuro BL's addresses found),
 	                                                         * INITIALIZE RANKINGS last; test 112: SERVICE MENU before it,
 	                                                         * the rest on EX-DEBUG */
 	{OPT_SCREEN_ROWS, OPT_N}, /* test 100: M3 GADGETS on the pause's OPTIONS page */
@@ -2249,8 +2250,8 @@ static const unsigned char opt_rows_blk[OPT_PAGES][18] = { /* test 60: GADGETS; 
 	{OPT_PAUSE_ROWS, OPT_N},
 	/* test 112 (user: "final order of ex debug menu should be: infinite lives, infinite bombs, invincible, hitboxes,
 	 * debug card, eeprom save, record, frame log, network log, achievements, toast") */
-	{OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXHIT, OPT_EXREPLAY, OPT_CARD, OPT_SAVE, OPT_RECORD, OPT_FRAMELOG, OPT_NETLOG, OPT_ACH,
-	 OPT_TOAST, OPT_N},
+	{OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXHIT, OPT_EXREPLAY, OPT_CARD, OPT_SAVE, OPT_RECORD, OPT_FRAMELOG, OPT_NETLOG,
+	 OPT_TOAST, OPT_N}, /* test 119: ACHIEVEMENTS on the debug menu */
 };
 static int lay_quiet; /* test 88: the picture's rows rebuild the layouts as they go: no PICTURE line each time */
 static int opt_page;               /* test 67: 0 = the options, 1 = the debug menu; test 69: 2 = the pause's SCREEN;
@@ -3866,7 +3867,7 @@ static void sm_frame(uint32_t w[2])
 					gp_open();
 				else if ((press & A_MA) && id == OPT_SOUND) /* test 68 */
 					snd_open();
-				else if ((press & A_MA) && id == OPT_DEBUG && (w[p] & (A_MLB | A_MRB)) == (A_MLB | A_MRB)) {
+				else if (EXDBG_OPEN && (press & A_MA) && id == OPT_DEBUG && (w[p] & (A_MLB | A_MRB)) == (A_MLB | A_MRB)) {
 					/* test 108: RB held = EX-DEBUG; test 112 (user: "modify ex-debug menu to be opened by holding LB+RB,
 					 * then A") */
 					opt_page = OPT_PAGE_EXDBG;
@@ -6337,12 +6338,12 @@ static int sm_pages(volatile uint32_t *t)
 #ifdef IB_GAME
 		else if (id == OPT_DEBUG) /* test 72: no GAME MENU row; test 82: ARRANGE's without SPECIAL MODE; test 85: SERVICE
 		                           * MENU */
-			help = ib && !ARR ? "SPECIAL MODE, STAFF ROLL,\nSERVICE MENU, RANKINGS" : ARR ? "STAFF ROLL,\nINITIALIZE RANKINGS" : /* test 102;
+			help = ib && !ARR ? "SPECIAL MODE, STAFF ROLL,\nSERVICE, RANKS, ACHIEVEMENTS" : ARR ? "STAFF ROLL, RANKINGS,\nACHIEVEMENTS" : /* test 102;
 			       * test 112: the debug menu's rows now */
-			       "STAFF ROLL, SERVICE MENU,\nINITIALIZE RANKINGS";
+			       "STAFF ROLL, SERVICE MENU,\nRANKINGS, ACHIEVEMENTS"; /* test 119: ACHIEVEMENTS */
 #else
 		else if (id == OPT_DEBUG) /* test 67; test 70: DEBUG CARD there */
-			help = ib ? "SPECIAL MODE, STAFF ROLL,\nGAME MENU, RANKINGS" : "STAFF ROLL, GAME MENU,\nSERVICE MENU, RANKINGS";
+			help = ib ? "SPECIAL MODE, STAFF ROLL,\nGAME, RANKS, ACHIEVEMENTS" : "STAFF ROLL, GAME, SERVICE,\nRANKINGS, ACHIEVEMENTS";
 #endif
 		else if (id == OPT_GSEL) /* test 72 */
 			help = !launcher_ok ? "NO IBARA360.XEX\nBESIDE THIS XEX" : gsel_armed ? "QUIT? A = YES, B = NO" : help;

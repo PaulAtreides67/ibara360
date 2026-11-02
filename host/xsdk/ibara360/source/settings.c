@@ -45,7 +45,7 @@ struct settings cfg = {.card = 0, .picture = PIC_INTEGER, .save = 1, .record = 0
 /* test 112 (user: "keep achievements off as the default, make bottom right toast the default"; EX-DEBUG's "record
  * (default off), frame log (default off), network log (default off)"): netlog 0 and toast_pos 6 (bottom_right) above;
  * an ini from before test 112 (no "defaults = 112") gets those five once (defaults_seen, settings_load) */
-#define DEFAULTS_VER 112
+#define DEFAULTS_VER 119 /* test 119: the release defaults (EX-DEBUG closed), once */
 static int defaults_seen;
 const int autofire_rates[AUTOFIRE_RATES] = {30, 20, 15, 12, 10};
 /* test 106: toast_position's words, in achxam.c's toast_pos order */
@@ -950,11 +950,13 @@ void settings_load(const char *dev)
 				memcpy(cfg.ctl[1][s], cfg.ctl[0][s], sizeof(cfg.ctl[1][s]));
 				log_printf(C_WHITE, "INI: NO P2 CONTROLS FOR %s: P2'S BUTTONS AS P1'S", settings_ctl_set_name(s));
 			}
-		if (defaults_seen < DEFAULTS_VER) { /* test 112: the user's new defaults, once */
-			cfg.record = cfg.framelog = cfg.netlog = cfg.achievements = 0;
+		if (defaults_seen < DEFAULTS_VER) { /* test 112: the user's new defaults, once; test 119 (user: "final ex-debug
+			                                     * options as default for release"): EX-DEBUG's ini rows too, as it is closed */
+			cfg.record = cfg.framelog = cfg.netlog = cfg.achievements = cfg.card = 0;
+			cfg.save = cfg.replay_save = 1;
 			cfg.toast_pos = 6;
-			log_printf(C_WHITE, "INI: FROM BEFORE TEST 112: RECORD, FRAME LOG, NETWORK LOG, ACHIEVEMENTS OFF, TOAST "
-			           "BOTTOM RIGHT (THE NEW DEFAULTS, ONCE)");
+			log_printf(C_WHITE, "INI: FROM BEFORE 1.01: DEBUG CARD, RECORD, FRAME LOG, NETWORK LOG, ACHIEVEMENTS OFF, "
+			           "EEPROM SAVE, REPLAY SAVE ON, TOAST BOTTOM RIGHT (THE RELEASE DEFAULTS, ONCE)");
 		}
 		if (!af2_seen) {
 			cfg.autofire_hz[1] = cfg.autofire_hz[0];
