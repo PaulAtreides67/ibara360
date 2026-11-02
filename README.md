@@ -133,12 +133,12 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
 
 ## Installing
 
-1. On a Windows PC, drag the ISO onto `ps2extract.exe`. It checks the disc's files, and writes `ps2data.bin` and `ps2music.bin`
+1. On a Windows PC, drag `Ibara (Japan).iso` onto `ps2extract.exe`. It checks the disc's files, and writes `ps2data.bin` and `ps2music.bin`
    into a folder `ibara360 ps2data` beside the ISO.
 3. Put the four .xex files (`ibara360.xex`, `ibara.xex`, `ibarablk.xex`, `ibaraarr.xex`), `ps2data.bin` and
    `ps2music.bin` in one folder on the Xbox 360's hard disk or a USB drive (for example `Hdd1:\apps\ibara360`).
-4. Put `ibara.zip` and `ibarablk.zip` in the same folder as the .xex files.
-5. Start `ibara360.xex`. The first start of each game also writes its loading index, so later starts are a little
+4. Put the arcade ROMs `ibara.zip` and `ibarablk.zip` in the same folder as the .xex files.
+5. Start `ibara360.xex` in Aurora. The first start of each game also writes its loading index, so later starts are a little
    faster.
 
 ## Building
