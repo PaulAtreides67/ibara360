@@ -1,5 +1,6 @@
 # ibara360
 **This project was AI-assisted by Claude Anthropic (Opus 5.5)**
+**Every feature and test was done on a real Xbox 360 (Jasper model with RGH 1.2**
 
 **Version 1.00** (November 2026)
 
