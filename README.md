@@ -32,11 +32,11 @@ to see already, a shortened first stage, and almost none of the arcade's slowdow
 
 A sequel, *Pink Sweets: Ibara Sorekara*, reached arcades on April 21, 2006.
 
-## Missing from the Xbox 360
+## Why Ibara?
 
 The Xbox 360 became Cave's home console of choice: *Mushihimesama Futari*, *Deathsmiles*, *Espgaluda II*, *Guwange*,
 *DoDonPachi Resurrection*, *Akai Katana*, *DoDonPachi SaiDaiOuJou* and more were all ported to it. Ibara's own
-sequel came out on the 360 too, on the *Muchi Muchi Pork! & Pink Sweets* disc (February 24, 2011).
+sequel came out on the 360 too, on the *Muchi Muchi Pork! & Pink Sweets* disc, in 2011.
 
 Ibara never did. Its only home version is the PS2 port, and Black Label never had a home release at all. ibara360
 fills that gap: both arcade versions and the PS2 Arrange mode, on the console that got almost every other Cave shooter
