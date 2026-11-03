@@ -24,14 +24,14 @@ and characters by Cave's lead designer Akira Wakabayashi.
 
 It plays like a successor to *Battle Garegga*: biplanes and steam-powered machinery, a power-up system with option
 formations, a medal chain that is the heart of the scoring, and a rank system that raises the difficulty in real time
-as you collect items and deal damage. In the vanilla, the only known way to lower the rank is to die. Yagawa has said
+as you collect items and deal damage; and the only known way to lower said difficulty is to die. Yagawa has said
 that rank was "one of my methods for increasing income for arcade operators", since arcade income follows the time
-people spend playing. Two pilots, Bond and Dyne, fight Teresa Rose and her daughters, leading a mechanical army across a factory, a
-mine, a valley, the sky, a fortified city and the Rose Garden where the robots are built.
+people spend playing. Two pilots, Bond and Dyne, fight Teresa Rose and her daughters, leading a mechanical army across 6
+stages, flying over the skies of Edelweiss to reach Teresa's Rose Garden, where her massive army robots are built.
 
 **Ibara Kuro: Black Label** followed on February 10, 2006, in limited distribution. It was made to answer players'
 complaints about the original and took several ideas from the PS2 port's Arrange mode: bombs that cancel bullets can
-now bring the rank down, but the rank also climbs much faster.
+now bring the rank down, but the rank also climb much faster.
 
 The **PlayStation 2 port**, published by Taito in Japan on February 23, 2006, added the Arrange mode, with its own
 rank rules that the player can partly steer by cancelling bullets with bombs and the Hadou cannon. The port itself is
