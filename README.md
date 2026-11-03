@@ -26,8 +26,9 @@ It plays like a successor to *Battle Garegga*: biplanes and steam-powered machin
 formations, a medal chain that is the heart of the scoring, and a rank system that raises the difficulty in real time
 as you collect items and deal damage; and the only known way to lower said difficulty is to die. Yagawa has said
 that rank was "one of my methods for increasing income for arcade operators", since arcade income follows the time
-people spend playing. Two pilots, Bond and Dyne, fight Teresa Rose and her daughters, leading a mechanical army across 6
-stages, flying over the skies of Edelweiss to reach Teresa's Rose Garden, where her massive army robots are built.
+people spend playing. Two negotiators, Bond and Dyne, fight Teresa Rose and her daughters, who are leading a mechanical army
+with the intent of conquering the world, across 6 stages, flying over the skies of Edelweiss, to eventually reach 
+Teresa's Rose Garden, where her massive army of robots are built.
 
 **Ibara Kuro: Black Label** followed on February 10, 2006, in limited distribution. It was made to answer players'
 complaints about the original and took several ideas from the PS2 port's Arrange mode: bombs that cancel bullets can
