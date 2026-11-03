@@ -110,7 +110,7 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
 
 ## What you need
 
-- An RGH/JTAG Xbox 360 with a dashboard that launches unsigned .xex files (for example Aurora).
+- An RGH/JTAG or softmodded (BadUpdate, ABadAvatar, Peer Pressure) Xbox 360 with a dashboard that launches unsigned .xex files (for example Aurora).
 - An ISO of Ibara for PS2 (not included in this repo)
 - Your own MAME ROM sets **ibara.zip** and **ibarablk.zip** (not included in this repo). ibara360 checks each ROM by its CRC32, so the file names inside the zips
   don't matter, but the contents have to be these:
