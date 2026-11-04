@@ -41,7 +41,7 @@ to see already, a shortened first stage, and almost none of the arcade's slowdow
 
 A sequel, *Pink Sweets: Ibara Sorekara*, reached arcades on April 21, 2006.
 
-## Why Ibara?
+## Why Ibara? Why Xbox 360?
 
 The Xbox 360 became Cave's home console of choice: *Mushihimesama Futari*, *Deathsmiles*, *Espgaluda II*, *Guwange*,
 *DoDonPachi Resurrection*, *Akai Katana*, *DoDonPachi SaiDaiOuJou* and more were all ported to it. Ibara's own
