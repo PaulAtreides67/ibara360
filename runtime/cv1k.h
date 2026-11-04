@@ -121,7 +121,9 @@ enum { YMZ_CAT_MUSIC, YMZ_CAT_SFX, YMZ_CAT_VOICE, YMZ_CATS };
 #define YMZT_RESET 0x20000u
 extern u8 ymz_phrase_cat[256];
 extern u16 ymz_phrase_k[256];
+extern u8 ymz_phrase_force_main[256];
 extern volatile u32 ymz_phrase_starts[256]; /* test 97 */
+int ymz_phrase_active(int phrase);           /* host: wait for an attract voice before starting a run */
 void ymz_hush_keyed(void);                    /* test 101: playing phrases whose factor is 0 hushed at once */
 extern volatile s32 ymz_gain_main[YMZ_CATS], ymz_gain_test[YMZ_CATS];
 extern volatile s32 ymz_gain_att[YMZ_CATS]; /* test 100: phrases keyed while ymz_attract */

@@ -104,7 +104,7 @@ struct settings {
 	int gadget[GD_N];      /* test 64: each gadget on (1) or off (0) */
 	int ctl_text;          /* test 67: CONTROLS as text on a slim plate (1) or as the stick and buttons (0) */
 	int vol_music, vol_sfx, vol_voice; /* test 68: the sound page's volumes, percent in tens (0-100) */
-	int vol_attract;       /* test 68: the share they get while the game is idle (the attract), percent */
+	int vol_attract;       /* test 68: the share all sound gets in the attract; test 120: the start voice is exempt */
 	int mute;              /* test 68: no sound at all */
 	int coop;              /* test 71: GADGETS' co-op layout while both players play (M3 GADGETS' CO-OP row) */
 	int arr_bullets;       /* test 81: ARRANGE's BULLET DESIGN (test 82: GENERAL SCREEN's): 0 NORMAL, 1 COLOR, 2 COLORLESS */
@@ -117,7 +117,7 @@ struct settings {
 	                                             * pic_x / pic_y are the player's axes too */
 	int smooth;            /* test 89: SMOOTHING, the game picture linearly filtered (1) or point-sampled (0) */
 	int brightness;        /* test 91: BRIGHTNESS, the game picture's, percent (BRIGHT_MIN .. BRIGHT_MAX, 5% steps) */
-	int menu_style;        /* test 98: GENERAL SCREEN's MENU STYLE: MENU_ARCADE (test 97's menus) or MENU_PS2 */
+	int menu_style;        /* legacy INI field, retained for compatibility and forced to MENU_PS2 */
 	int language;          /* test 98: LANGUAGE: LANG_ENGLISH or LANG_JAPANESE (the helps, under MENU_PS2 only) */
 	int soundtrack;        /* test 99: the SOUND page's SOUNDTRACK: TRACK_ARCADE (the board's music) or TRACK_PS2 (the
 	                        * PS2 port's streams from ps2music.bin: source/ps2music.c) */
@@ -134,7 +134,7 @@ struct settings {
 	                        * end (the run's inputs are still kept: the prompt is what it skips) */
 };
 extern struct settings cfg;
-enum { MENU_ARCADE, MENU_PS2 };     /* test 98 */
+enum { MENU_PS2 = 0 };              /* test 120: the PS2 menu is the only supported style */
 enum { LANG_ENGLISH, LANG_JAPANESE };
 enum { TRACK_ARCADE, TRACK_PS2 };      /* test 99 */
 extern const int autofire_rates[AUTOFIRE_RATES];

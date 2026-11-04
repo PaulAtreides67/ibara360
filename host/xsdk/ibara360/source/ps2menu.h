@@ -42,6 +42,7 @@ extern int ps2m_help_en;
  * (its place and width, no 4/3 widening, no full-width panel from 120 px on) and whose texts are at their PS2 places
  * already (x from the box's left edge 1:1, no closing up behind the text before); ps2m_begin clears it */
 extern int ps2m_exact;
+extern int ps2m_bottom;
 void ps2m_begin(void);
 void ps2m_box(int x, int y, int w, int h);
 void ps2m_text(int x, int y, uint32_t c, const char *s);

@@ -421,6 +421,13 @@ typedef struct {
 static ymz_chip zm, zt;
 static u8 t_vol0;           /* test 68: the test chip's channel 0 volume in place of its sequences' (0: theirs) */
 
+/* IKUZE is the start-of-run voice (phrases 172 / 178). Let these one-shot phrases reach
+ * their natural end when a game sequence sends a channel stop while they are speaking. */
+static int is_ikuze_phrase(u8 phrase)
+{
+	return phrase == 128 + 44 || phrase == 128 + 50;
+}
+
 int ymz_rate_mode;          /* 0 = MAME 0.289 (rate from each AMM block), 1 = fixed 16 kHz (MAME before 2026-03) */
 
 /* Test 68: what the host makes of the mix (never the chip: ymz_run's sink still gets the chip's sample, which the
@@ -428,6 +435,7 @@ int ymz_rate_mode;          /* 0 = MAME 0.289 (rate from each AMM block), 1 = fi
  * test chip, the sum both make into ymz_out */
 u8 ymz_phrase_cat[256];
 u16 ymz_phrase_k[256];
+u8 ymz_phrase_force_main[256];
 volatile u32 ymz_phrase_starts[256]; /* test 97: the board's chip's starts of each phrase (the host's hush) */
 volatile s32 ymz_gain_main[YMZ_CATS], ymz_gain_test[YMZ_CATS];
 /* Test 100 (user: "with the attract volume at 0% the "IBARA" sound bleeds in for a second before starting a run", and
@@ -499,9 +507,11 @@ static void internal_reg_write(ymz_chip *z, u8 reg, u8 data)
 				c->pending = 1;
 				c->is_playing = 1;
 				c->last_block = 0;
-				c->att = (u8)(ymz_attract != 0);
-			} else if ((data & 6) == 0)
-				c->is_playing = 0;
+				c->att = (u8)(ymz_attract != 0 && !ymz_phrase_force_main[c->phrase & 0xFF]);
+			} else if ((data & 6) == 0) {
+				if (!is_ikuze_phrase(c->phrase))
+					c->is_playing = 0;
+			}
 			c->loop = (data & 1) ? 255 : 0;
 			break;
 		}
@@ -519,7 +529,7 @@ static void internal_reg_write(ymz_chip *z, u8 reg, u8 data)
 			} else if ((data & 6) == 0 && s->is_playing) {
 				s->is_playing = 0;
 				for (int i = 0; i < 8; i++)
-					if (s->stopchan & (1 << i))
+					if ((s->stopchan & (1 << i)) && !is_ikuze_phrase(z->ch[i].phrase))
 						z->ch[i].is_playing = 0;
 			}
 			s->loop = data & 1;
@@ -553,7 +563,7 @@ static void sequencer(ymz_chip *z)
 			switch (reg) {
 			case 0x0f:
 				for (int ch = 0; ch < 8; ch++)
-					if (s->stopchan & (1 << ch))
+					if ((s->stopchan & (1 << ch)) && !is_ikuze_phrase(z->ch[ch].phrase))
 						z->ch[ch].is_playing = 0;
 				if (s->loop)
 					s->offset = get_seq_offs(s->sequence);
@@ -868,6 +878,16 @@ void ymz770_chip_fix(int slot)
  * it. Each board channel playing a phrase whose factor is 0 now takes it at once (the host's sum only: the chip's
  * sample, which the checks hash, is untouched). At a load (sound thread) and each vblank of the hush (game thread: a
  * u16 store the sound thread reads) */
+int ymz_phrase_active(int phrase)
+{
+	for (int k = 0; k < YMZ_CHANNELS; k++) {
+		const ymz_channel *c = &zm.ch[k];
+		if (c->phrase == (u8)phrase && (c->is_playing || c->pending || c->output_remaining))
+			return 1;
+	}
+	return 0;
+}
+
 void ymz_hush_keyed(void)
 {
 	for (int k = 0; k < YMZ_CHANNELS; k++) {

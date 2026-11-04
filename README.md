@@ -9,7 +9,7 @@
 Press Back during a run to pause the game.
 If the continue screen appears, press start to resume your run**
 
-**Version 1.00** (November 2026)
+**Version 1.02** (November 2026)
 
 Cave's arcade shooters **Ibara** (2005) and **Ibara Kuro: Black Label** (2006), plus the PlayStation 2 port's
 **Arrange mode**, running natively on the Xbox 360, with the arcade board's slowdown, a full menu system, save states,
@@ -78,6 +78,7 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
 
 ### Menus
 - Playstation 2's port's UI, in English or Japanese.
+- The PS2 menu is the only menu style; it requires `ps2data.bin` from `ps2extract`.
 - **TRAINING MODE**: any stage, skip to boss function, starting rank, hitbox viewer.
 - **SAVESTATE SUPPORT** and **INPUT PLAYBACK (Replays)** within the game itself.
 - Every button can be remapped, AUTO SHOT at 10/12/15/20/30 Hz.
@@ -92,6 +93,7 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
 ### Sound
 - The arcade's YMZ770 soundtrack at 48 kHz, or the PS2 port's high quality soundtrack (16 streams). Mono and Stereo support.
 - Individual volume slides for music, sound effects, voice and attract.
+- The attract volume controls title and demo sound; the start-of-run character call still follows the voice volume.
 
 ### Launcher
 - Uses the PS2 port's front end: its title, mode select and NOW LOADING screen, in 16:9, 4:3 and TATE (LB / RB on the
@@ -135,7 +137,7 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
   | u23 | 4,194,304 | a436bb22 | f86f993234651b3adf43b8074e44f30c |
   | u24 | 4,194,304 | d11ab6b6 | bc4386b37f38c5e61cea792e851872e9 |
 
-- For Arrange, the PS2 menu style, the PS2 soundtrack and the launcher's gallery mode: an ISO of your own Japanese Ibara
+- For Arrange, PS2 menus, the PS2 soundtrack and the launcher's gallery mode: an ISO of your own Japanese Ibara
   PS2 disc (SLPM-66301).
   `Ibara (Japan).iso`: 3,932,848,128 bytes, MD5 `6ba671b5d23155b8254b6f4cefc90ae2`.
 

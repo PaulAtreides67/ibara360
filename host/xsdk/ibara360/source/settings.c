@@ -39,7 +39,7 @@ struct settings cfg = {.card = 0, .picture = PIC_INTEGER, .save = 1, .record = 0
                        .vol_attract = 100, .mute = 0, .coop = 1, .arr_bullets = 0,
                        .pic_size = {[0 ... PIC_SHAPES - 1] = 1000}, .xtc_full = 0,
                        .pic_sx = {[0 ... PIC_SHAPES - 1] = 1000}, .pic_sy = {[0 ... PIC_SHAPES - 1] = 1000}, .smooth = 0,
-                       .brightness = 100, .menu_style = MENU_ARCADE, .language = LANG_ENGLISH,
+                       .brightness = 100, .menu_style = MENU_PS2, .language = LANG_ENGLISH,
                        .soundtrack = TRACK_ARCADE, .achievements = 0, .toast_pos = 6, .staff_keep = 1,
                        .mono = 0, .replay_save = 1};
 /* test 112 (user: "keep achievements off as the default, make bottom right toast the default"; EX-DEBUG's "record
@@ -212,10 +212,9 @@ static unsigned ini_text_more(char *b, unsigned size)
 		"# brightness: the game picture's, in percent, 50 to 150 in steps of 5 (GENERAL SCREEN's BRIGHTNESS)\n"
 		"brightness = %d\n"
 		"\n"
-		"# menu_style: arcade (the menus' own look) or ps2 (the PS2 port's option menus: its fonts, leaf windows, rose\n"
-		"#             cursor and menu sounds; needs ps2data.bin from ps2extract) (GENERAL SCREEN's MENU STYLE)\n"
-		"# language: english or japanese (the menus' help lines in the PS2 port's Japanese font; menu_style = ps2 only)\n"
-		"menu_style = %s\n"
+		"# menu_style: legacy setting, always ps2 (PS2 menu resources from ps2extract are required)\n"
+		"# language: english or japanese (the menus' help lines in the PS2 port's Japanese font)\n"
+		"menu_style = ps2\n"
 		"language = %s\n"
 		"\n"
 		"# achievements: 1 = the dashboard achievements are written to the signed-in profile, 0 = XAM is never asked about\n"
@@ -242,7 +241,7 @@ static unsigned ini_text_more(char *b, unsigned size)
 		"#   ibara_p2_..., ibarablk_p2_..., ibaraarr_p2_... = the second pad's (P2 CONTROLS)\n",
 		cfg.autofire_hz[0], cfg.autofire_hz[1], gadget_lines(), cfg.vol_music, cfg.vol_sfx,
 		cfg.vol_voice, cfg.vol_attract, cfg.mute, cfg.soundtrack == TRACK_PS2 ? "ps2" : "arcade", cfg.mono ? "mono" : "stereo", arr_bullet_words[cfg.arr_bullets >= 0 && cfg.arr_bullets < 3 ? cfg.arr_bullets : 0],
-		pic_lines(), cfg.smooth, cfg.brightness, cfg.menu_style == MENU_PS2 ? "ps2" : "arcade",
+		pic_lines(), cfg.smooth, cfg.brightness,
 		cfg.language == LANG_JAPANESE ? "japanese" : "english", cfg.achievements, toast_words[cfg.toast_pos],
 		cfg.staff_keep, cfg.replay_save, DEFAULTS_VER);
 	int s, i, p;
@@ -484,13 +483,11 @@ static void ini_line(char *line, unsigned n)
 		return;
 	}
 	if (!strcasecmp(k, "menu_style")) { /* test 98 */
-		if (!strcasecmp(v, "arcade"))
-			cfg.menu_style = MENU_ARCADE;
-		else if (!strcasecmp(v, "ps2"))
+		if (!strcasecmp(v, "arcade") || !strcasecmp(v, "ps2"))
 			cfg.menu_style = MENU_PS2;
 		else {
 			ini_bad++;
-			log_printf(C_YELLOW, "INI LINE %u: MENU_STYLE = %.20s? (ARCADE OR PS2)", n, v);
+			log_printf(C_YELLOW, "INI LINE %u: MENU_STYLE = %.20s? (PS2)", n, v);
 		}
 		return;
 	}

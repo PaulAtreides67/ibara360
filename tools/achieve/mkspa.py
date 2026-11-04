@@ -173,7 +173,9 @@ def main():
     root = Path(__file__).resolve().parents[2]
     out = Path(sys.argv[1])
     icons = Path(sys.argv[2]) if len(sys.argv) > 2 else root / "work/g105/icons/out"
-    fallback = (root / "host/xsdk/achprobe/art/rose.png").read_bytes()
+    title = Path(sys.argv[2]) / "8000.png" if len(sys.argv) > 2 else root / "work/g105/icons/out/8000.png"
+    fallback_path = title if title.is_file() else root / "host/xsdk/achprobe/art/rose.png"
+    fallback = fallback_path.read_bytes()
     spa, missing = build(icons, fallback)
     (out / "spa.bin").write_bytes(spa)
     lines = [

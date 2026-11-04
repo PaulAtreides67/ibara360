@@ -2160,9 +2160,9 @@ static int stick_sprite(unsigned dirs)
  * mkcard.py's *_A); test 83 (user: "shrink arrange's stick"): CARD_CTL_ARR (0.57), its button row under FORMATIONS */
 #define CTL_K (ARR ? 0.95f * CARD_CTL_ARR : 0.95f)
 #define CTL_X(x) (13 + ((x) - 13) * CTL_K)
-#define CTL_Y(y) (699 + ((y) - 699) * CTL_K)
+#define CTL_Y(y) (699 + ((y) - 699) * CTL_K + ctl_dy + 28.0f)
 #define CTL_DX2 971.0f /* test 71: co-op's 2P controls this far right (the group's 13-296 to 984-1267) */
-static float ctl_dx;
+static float ctl_dx, ctl_dy;
 
 static void ctl_spr(int id, float x, float y, col_t c)
 {
@@ -2714,6 +2714,7 @@ static void wide_col(const struct gd_lay *L, int xfull, struct wide_col *c)
  * and ARRANGE: BOSS (1P side) beside RANK (2P side), then Kuro BL's two XTCs when they end above CONTROLS. CONTROLS at
  * their places, 2P's mirrored (stick: CTL_DX2) */
 #define COOP_STICK_TOP 560.0f /* the stick CONTROLS' top (their sprites' empty top rows allowed over) */
+#define XTC_STICK_GAP 14.0f /* test 120: leave visible space below Kuro BL's small XTC plate */
 static void draw_wide_coop(const struct gd_lay *L)
 {
 	const float sl = card_plates[CP_STATUS].x[CPV_WIDE], sr = sl + card_sprites[CS_PLATE_STATUS].w; /* 5 .. 356 */
@@ -2784,8 +2785,9 @@ static void draw_wide_coop(const struct gd_lay *L)
 		CS = p;
 		if (ON(GD_CONTROLS) && !gd_ctl_text) {
 			ctl_dx = p ? CTL_DX2 : 0;
+			ctl_dy = M->xtc && ON(GD_XTC) ? XTC_STICK_GAP : 0;
 			draw_controls(RAPID_ON_WEAPON && ON(GD_WEAPON));
-			ctl_dx = 0;
+			ctl_dx = ctl_dy = 0;
 		}
 		if (ON(GD_CONTROLS) && gd_ctl_text) {
 			plate_at(CP_CTLTEXT, MXR(sr, sl, p), card_plates[CP_CTLTEXT].y[CPV_WIDE]);
@@ -3159,8 +3161,11 @@ void gadgets_draw(int layer, int view, uint32_t queued, uint32_t flips)
 			else if (M->xtc && ON(GD_XTC) && plate(CP_XTC)) /* test 76: Kuro BL's, in SPECIAL FORMATIONS' place */
 				draw_xtc();
 			plate_dy = 0;
-			if (L->wide && ON(GD_CONTROLS) && !gd_ctl_text && !xfull)
+			if (L->wide && ON(GD_CONTROLS) && !gd_ctl_text && !xfull) {
+				ctl_dy = M->xtc && ON(GD_XTC) ? XTC_STICK_GAP : 0;
 				draw_controls(RAPID_ON_WEAPON && ON(GD_WEAPON));
+				ctl_dy = 0;
+			}
 			if (xfull) {
 				plate_dx = CTL_UNDER_MUSIC_X - card_plates[CP_CTLTEXT].x[CPV_WIDE];
 				plate_dy = CTL_UNDER_MUSIC_Y - card_plates[CP_CTLTEXT].y[CPV_WIDE];

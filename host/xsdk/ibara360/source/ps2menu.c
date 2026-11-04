@@ -453,12 +453,13 @@ static struct pitem it[PM_ITEMS];
 static struct pbox bx[PM_BOXES];
 static int nit, nbx;
 
-int ps2m_lines_en, ps2m_keep_x, ps2m_help_en, ps2m_exact;
+int ps2m_lines_en, ps2m_keep_x, ps2m_help_en, ps2m_exact, ps2m_bottom;
 
 void ps2m_begin(void)
 {
 	ps2m_lines_en = 0;
 	ps2m_exact = 0;
+	ps2m_bottom = 0;
 	nit = nbx = 0;
 }
 
@@ -764,12 +765,12 @@ static int lay_box(int b, int a, int z, int jp)
 	if (help >= 0)
 		helpd = &it[help];
 	B->nh = (short)(bottom + 10 < 24 ? 24 : bottom + 10);
-	B->ny = (short)(B->y + (B->h - B->nh) / 2);
-	if (B->ny + B->nh > PANEL_MAX_Y)
+	B->ny = (short)(ps2m_bottom ? PH - B->nh : B->y + (B->h - B->nh) / 2);
+	if (!ps2m_bottom && B->ny + B->nh > PANEL_MAX_Y)
 		B->ny = (short)(PANEL_MAX_Y - B->nh);
 	if (B->ny < 0)
 		B->ny = 0;
-	return B->ny + B->nh <= PANEL_MAX_Y;
+	return B->ny + B->nh <= (ps2m_bottom ? PH : PANEL_MAX_Y);
 }
 
 static void draw_item(const struct pbox *B, struct pitem *p, unsigned frame)

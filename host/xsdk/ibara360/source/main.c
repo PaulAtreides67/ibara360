@@ -559,8 +559,8 @@ static volatile int menu_on, menu_sel;         /* the pad menu is up; the highli
  * toggle (TR_ROW_NONE; test 100: EDIT only), A opens the box on EDIT, X in a box all on / off (FORMATION: the next formation for all three
  * slots, "QUICK SWAP"), a row with none set NONE (until test 100); every game's RANK a start value, the game's own rise and falls after it (tr_rank_vblank), X on RANK holds it all the run
  * (TRR_HELD, a "*") */
-#define XEX_TEST "119"  /* test 119: EX-DEBUG closed (its code kept), ACHIEVEMENTS the debug menu's last row; test 118: SCORE BREAKDOWN empty after a save state's load, smaller PS2 JOIN / CONTINUE boxes, EX-DEBUG REPLAY SAVE; test 117: the JOIN boxes, the SCORE BREAKDOWN after a load; test 61: the build's test number, in the log's first lines, the network log and the card */
-#define XEX_VERSION "1.01" /* test 119: EX-DEBUG closed, ACHIEVEMENTS on the debug menu; test 116: the release's version, shown where "TEST n" was (the test number stays beside it in the logs) */
+#define XEX_TEST "120"  /* test 120: release candidate; test 119: EX-DEBUG closed, ACHIEVEMENTS the debug menu's last row */
+#define XEX_VERSION "1.02" /* test 120: PS2-only menus and the 1.02 presentation fixes */
 /* test 72: the image's game in its name (the log's first lines, the network log's session) */
 #if defined(IB_GAME) && IB_GAME == 1
 #define XEX_GAME " KURO BL"
@@ -1950,7 +1950,7 @@ static void volley_clear(const char *who)
 /* test 98: MENU STYLE PS2 in use (chosen, and ps2data.bin has its pieces); LANGUAGE JAPANESE in use (and PS2) */
 static int menu_ps2(void)
 {
-	return cfg.menu_style == MENU_PS2 && ps2menu_ok();
+	return ps2menu_ok();
 }
 
 static int menu_ja(void)
@@ -2197,7 +2197,7 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
 /* test 93 (user's todo list, "options screen menu (all games)": picture size .. y position, rotation, scanlines, scan
  * strength, brightness, smoothing, aspect ratio, m3 gadgets): the pause's SCREEN page and GENERAL SCREEN (the user's
  * choice: both; GENERAL SCREEN without M3 GADGETS, ARRANGE's BULLET DESIGN last) */
-#define OPT_GENERAL_ROWS OPT_PIC_ROWS, OPT_TATE, OPT_SCANLINES, OPT_STRENGTH, OPT_BRIGHT, OPT_SMOOTH, OPT_ASPECT, OPT_STYLE
+#define OPT_GENERAL_ROWS OPT_PIC_ROWS, OPT_TATE, OPT_SCANLINES, OPT_STRENGTH, OPT_BRIGHT, OPT_SMOOTH, OPT_ASPECT
 /* test 98: MENU STYLE, LANGUAGE after ASPECT RATIO (the screen's look; the ini keeps them for all four .xex); test 102
  * (user: "language option should be at the bottom of the options page, below debug menu, instead of general screen"):
  * GENERAL SCREEN without LANGUAGE, OPTIONS' last row; the pause's SCREEN page keeps it (the pause has no other place).
@@ -2401,7 +2401,7 @@ static void opt_value(int i, char *s, size_t n)
 		break;
 	case OPT_BULLETS: snprintf(s, n, "%s", bullet_names[cfg.arr_bullets % 3]); break; /* test 82 */
 	case OPT_GAME: snprintf(s, n, "%s", cfg.game == GAME_ASK ? "ASK" : cfg.game == SET_IBARA ? "IBARA" : "KURO BL"); break;
-	case OPT_STYLE: snprintf(s, n, "%s", cfg.menu_style == MENU_PS2 ? "PS2" : "ARCADE"); break; /* test 98 */
+	case OPT_STYLE: snprintf(s, n, "PS2"); break; /* test 120: retained index, fixed menu style */
 	case OPT_LANG: snprintf(s, n, "%s", cfg.language == LANG_JAPANESE ? "JAPANESE" : "ENGLISH"); break;
 	case OPT_ACH: snprintf(s, n, "%s", cfg.achievements ? "ON" : "OFF"); break; /* test 106 */
 	case OPT_TOAST: snprintf(s, n, "%s", achx_toast_name(cfg.toast_pos)); break;
@@ -2478,7 +2478,7 @@ static void opt_step(int i, int d)
 		return;
 	case OPT_GADGETS: cfg.gadgets ^= 1; break; /* test 58: at once (present) */
 	case OPT_GAME: cfg.game = (cfg.game + 1 + 3 + d) % 3 - 1; break; /* ask (-1), ibara (0), ibarablk (1) */
-	case OPT_STYLE: cfg.menu_style ^= 1; break; /* test 98: at once (sm_draw) */
+	case OPT_STYLE: cfg.menu_style = MENU_PS2; break; /* test 120: fixed menu style */
 	case OPT_LANG: cfg.language ^= 1; break;
 	case OPT_ACH: cfg.achievements ^= 1; break; /* test 106: ach_step reads it (ON only after sm_frame's question) */
 	case OPT_TOAST: cfg.toast_pos = (cfg.toast_pos + ACHX_TOAST_N + d) % ACHX_TOAST_N; break;
@@ -3159,8 +3159,10 @@ static void snd_frame(void)
 	else if (sm_idle >= SM_IDLE || (sm_after && sm_logo))
 		snd_att = 1;
 	sound_levels(cfg.vol_music, cfg.vol_sfx, cfg.vol_voice, cfg.vol_attract, snd_att,
-	             cfg.mute || tr_turbo || boot_turbo || snd_hush); /* test 89: START AT BOSS's skip is silent; test 112:
-	                                                                * the boot's too */
+	             cfg.mute || tr_turbo || boot_turbo || snd_hush, sm_state == SM_SENDING); /* IKUZE stays at 100%; test
+	                                                                                      * 89: START AT BOSS's skip
+	                                                                                      * is silent; test 112: the
+	                                                                                      * boot's too */
 }
 
 /* the start menu's play: ibara's command on the chosen side's port, Kuro BL's Start on the pad's;
@@ -3624,7 +3626,7 @@ static void sm_frame(uint32_t w[2])
 		for (p = 0; p < 2; p++) /* the B / BACK that stopped it, still held, is no press on the page */
 			sm_prev[p] = sm_hold[p] = w[p];
 	}
-	if (tr_reopen && sm_state == SM_CLOSED && sm_idle >= SM_IDLE) { /* test 91: QUIT TO TRAINING MODE */
+	if (tr_reopen && sm_state == SM_CLOSED) { /* test 120: reopen immediately after restoring the training attract slot */
 		tr_reopen = 0;
 		opt_open();
 		opt_sels[0] = 1; /* the menu's TRAINING row under it (B goes back there) */
@@ -3971,6 +3973,13 @@ static void sm_frame(uint32_t w[2])
 		const int on = *RAMP(game_on) == 1;
 		uint32_t cmd = 0;
 		static unsigned sent_scene = ~0u, try_scene;
+
+		/* Let the attract's IBARA phrase finish before issuing the credit/start command. The
+		 * game keys IKUZE as the run begins, and its start sequence otherwise cuts that voice off. */
+		if (ymz_phrase_active(SND_VOICE0 + 65)) {
+			w[sm_pad] = 0;
+			return;
+		}
 
 		if (sm_k == 0)
 			try_scene = scene;
@@ -8888,17 +8897,33 @@ static void rp_inputs(void)
 /* the playback's label at the game's bottom for RP_LABEL vblanks; 1 = drawn */
 static int rp_label(volatile uint32_t *t)
 {
-	const int w = 180, h = 17, bx = (GAME_H - w) / 2, by = GAME_W - h - 6;
+	const int w = 216, h = 24, bx = (GAME_H - w) / 2, by = GAME_W - h - 3;
 	char v[40];
 
 	if (!rp_label_left && rp_speed >= 100) /* test 89: up while slowed */
 		return 0;
-	sm_box(t, bx, by, w, h);
 	if (rp_speed < 100 || rp_speed_shown) /* test 89: LB / RB */
 		snprintf(v, sizeof(v), "REPLAY %04d  SPEED %d%%", rp_num, rp_speed);
 	else
-		snprintf(v, sizeof(v), "REPLAY %04d  BACK = PAUSE", rp_num); /* test 87 */
-	sm_text(t, bx + 6, by + 5, C_YELLOW, v);
+		snprintf(v, sizeof(v), "REPLAY %04d", rp_num);
+	if (menu_ps2()) {
+		const struct ps2m_target tg = {t, gtex_pitch, cv1k_vram, CV1K_VRAM_STRIDE, tex_sx, tex_sy};
+		ps2m_begin();
+		ps2m_exact = 1;
+		ps2m_bottom = 1;
+		ps2m_rec = 1;
+		sm_box(t, bx, by, w, h);
+		sm_text(t, bx + 8, by + 6, C_YELLOW, v);
+		sm_text(t, bx + 8 + 8 * 12, by + 6, C_CYAN, "BACK = PAUSE");
+		sm_text(t, bx + 8, by + 14, C_GREEN, "LB / RB = PLAYBACK SPEED");
+		ps2m_rec = 0;
+		ps2m_render(&tg, ps2m_clock++, menu_ja());
+	} else {
+		sm_box(t, bx, by, w, h);
+		sm_text(t, bx + 6, by + 5, C_YELLOW, v);
+		sm_text(t, bx + 6 + 6 * 12, by + 5, C_CYAN, "BACK = PAUSE");
+		sm_text(t, bx + 6, by + 13, C_GREEN, "LB / RB = PLAYBACK SPEED");
+	}
 	return 1;
 }
 
@@ -9155,7 +9180,7 @@ static void rp_pause_draw(volatile uint32_t *t)
 	snprintf(v, sizeof(v), "%s / %s", tm, tn);
 	sm_text(t, x0 + OPT_W - 16 - 6 * (int)strlen(v), y0 + 14, C_DIM, v);
 	sm_text(t, x0, y0 + hy, C_GREEN, "B / BACK / START = RESUME");
-	sm_text(t, x0, y0 + hy + 10, C_GREEN, "LB / RB = REPLAY SPEED"); /* test 89 */
+	sm_text(t, x0, y0 + hy + 10, C_GREEN, "LB / RB = PLAYBACK SPEED"); /* test 120 */
 }
 
 /* test 98: what the menu pages show (their rows, values, boxes, the settings): a press that changes it sounds */
@@ -11233,25 +11258,28 @@ static int turbo_frame(void)
 
 static void turbo_box(void)
 {
-	const int w = 150, h = 17, bx = (GAME_H - w) / 2, by = GAME_W / 2 - h / 2;
+	const char *label = "SKIPPING TO THE BOSS";
+	const int tw = 6 * ((int)strlen(label) - 1) + 5, w = tw + 16, h = 19;
+	const int pw = 8 * (int)strlen(label) + 16, ph = 26;
 	volatile uint32_t *t = gtex[tex_cur].texels;
 
 	if (!tr_turbo)
 		return;
-	if (menu_ps2()) { /* test 101 (user): the menus' look, JAPANESE too (a line at the text column under no title =
-		               * a foot line, which ps2menu.c translates) */
+	if (menu_ps2()) {
+		const int bx = (GAME_H - pw) / 2, by = (GAME_W - ph) / 2;
 		const struct ps2m_target tg = {t, gtex_pitch, cv1k_vram, CV1K_VRAM_STRIDE, tex_sx, tex_sy};
 		ps2m_begin();
+		ps2m_exact = 1;
 		ps2m_rec = 1;
-		sm_box(t, bx, by, w, h);
-		sm_text(t, bx + 8, by + 8, C_YELLOW, "SKIPPING TO THE BOSS");
+		sm_box(t, bx, by, pw, ph);
+		sm_text(t, bx + 8, by + (ph - 8) / 2, C_YELLOW, label);
 		ps2m_rec = 0;
 		ps2m_render(&tg, ps2m_clock++, menu_ja());
-		gtex_dirty[tex_cur] = 1;
-		return;
+	} else {
+		const int bx = (GAME_H - w) / 2, by = (GAME_W - h) / 2;
+		sm_box(t, bx, by, w, h);
+		sm_text(t, bx + (w - tw) / 2, by + (h - 7) / 2, C_YELLOW, label);
 	}
-	sm_box(t, bx, by, w, h);
-	sm_text(t, bx + 12, by + 5, C_YELLOW, "SKIPPING TO THE BOSS");
 	gtex_dirty[tex_cur] = 1;
 }
 
@@ -12270,8 +12298,8 @@ static uint32_t game_task(void *u)
 	while (!romload_scanned())
 		present();
 	settings_load(romload_scan_device()); /* test 33: the ini, before any other file work */
-	if (cfg.menu_style == MENU_PS2 && !ps2menu_ok()) /* test 98 */
-		log_printf(C_YELLOW, "MENU STYLE: PS2 IN THE INI, ARCADE MENUS (%s)", ps2menu_why());
+	if (cfg.menu_style == MENU_PS2 && !ps2menu_ok()) /* test 120 */
+		log_printf(C_YELLOW, "PS2 MENU RESOURCES UNAVAILABLE (%s)", ps2menu_why());
 	else if (cfg.menu_style == MENU_PS2 && cfg.language == LANG_JAPANESE && !ps2menu_jp_ok())
 		log_printf(C_YELLOW, "LANGUAGE: JAPANESE IN THE INI, ENGLISH HELPS (%s)", ps2menu_why());
 	layout_apply("THE INI");              /* test 48: the ini's aspect over the console's; test 53: all the layouts */
