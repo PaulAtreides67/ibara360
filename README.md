@@ -77,11 +77,11 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
   booklet).
 
 ### Menus
-- One menu from the attract (START), in the arcade style or the PS2 port's style, in English or Japanese.
+- Playstation 2's port's UI, in English or Japanese.
 - **TRAINING MODE**: any stage, skip to boss function, starting rank, hitbox viewer.
-- **SAVESTATE SUPPORT** and **INPUT PLAYBACK** within the game itself.
-- Every button can be remapped, AUTO SHOT at 10/12/15/20/30 Hz,
-  Sound Test, and a Debug menu.
+- **SAVESTATE SUPPORT** and **INPUT PLAYBACK (Replays)** within the game itself.
+- Every button can be remapped, AUTO SHOT at 10/12/15/20/30 Hz.
+- Sound Test, Debug menu.
 - **Pause screen (accessed by pressing Back during a run)** to access save/load states and options.
 
 ### Save states and replays
@@ -90,26 +90,25 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
   LB / RB to change the speed. Up to 30 replays can be saved. Loading a save state nullifies any score.
 
 ### Sound
-- The arcade's YMZ770 soundtrack at 48 kHz, or the PS2 port's soundtrack (16 streams). Mono and Stereo support.
-- Individual volume slides for Music, sound effects, voice and attract.
+- The arcade's YMZ770 soundtrack at 48 kHz, or the PS2 port's high quality soundtrack (16 streams). Mono and Stereo support.
+- Individual volume slides for music, sound effects, voice and attract.
 
 ### Launcher
 - Uses the PS2 port's front end: its title, mode select and NOW LOADING screen, in 16:9, 4:3 and TATE (LB / RB on the
-  title screen).
-- PS2 port's GALLERY mode, fully restored: 78 pictures and 5 sheets, with "Endress Train" from "Ibara Remix Tracks" playing in the background.
+  launcher screen).
+- PS2 port's GALLERY mode (horizontal orientation only), fully restored: 78 pictures and 5 sheets, with "Endress Train" from "Ibara Remix Tracks" playing in the background.
 - Each game is its own .xex; the launcher and the games hand over to each other directly.
 
 ### Achievements
 - 34 achievements across the three games.
 - Off by default (can be enabled in the Debug menu), so the games can be played on a
-  profile that goes online without the ban risk from homebrew achievements **(temporary offline account recommended)**.
+  profile that goes online without the ban risk from homebrew achievements **(temporary offline account recommended either way)**.
 
 ### Saves and the rest
 - High scores and settings are handled just like MAME with EEPROM saves in `<drive>:\ibara360`, alongside the config 
   ini, save states, replays and a small loading index.
 - The stage 6 clock support comes from the console's clock.
-- DEBUG MENU: the arcade's service menu, initialize rankings, staff roll protection; EX-DEBUG: invincibility,
-  infinite lives and bombs, hitboxes, logs.
+- DEBUG MENU: the arcade's service menu, initialize rankings, staff roll protection.
 
 ## What you need
 
