@@ -62,7 +62,7 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
 ## Features
 
 ### Games
-- **Ibara**: Normal, Harder and Extended (two loops), both pilots and all four ship types.
+- **Ibara**, The original game. Normal, Harder and Extended modes.
 - **Ibara Kuro: Black Label**, as on its arcade board.
 - **Ibara Arrange**, the PS2 port's arrange mode: a prototype version of Black Label with it's own twists and turns.
 
