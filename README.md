@@ -12,6 +12,7 @@ If the continue screen appears, press start to resume your run**
 **Version 1.02** (November 2026)
 
 **Video preview:**
+
 [![Watch the video](https://img.youtube.com/vi/lm_PT4kzotY/hqdefault.jpg)](https://www.youtube.com/embed/lm_PT4kzotY)
 
 Cave's arcade shooters **Ibara** (2005) and **Ibara Kuro: Black Label** (2006), plus the PlayStation 2 port's
