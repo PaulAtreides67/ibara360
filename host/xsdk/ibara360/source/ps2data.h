@@ -80,6 +80,8 @@ void *ps2data_load(const char *name, uint32_t *size);
 void *ps2data_load_stored(const char *name, uint32_t *size, const struct ps2_entry **e);
 /* a blob into dst, exactly n bytes; 0 = done */
 int ps2data_load_into(const char *name, void *dst, uint32_t n);
+/* test 123: n bytes of the blob's stored bytes at off into dst (not for a zlib blob; a part of a big one); 0 = done */
+int ps2data_read_part(const char *name, uint32_t off, void *dst, uint32_t n);
 
 /* The games (main.c, once, before the ROM load's NOW LOADING): the ticker, the NOW LOADING sprite and (ARRANGE) the
  * formation box and arrgfx's stream put behind the pointers card_ticker.h, card_loading.h, arrhud_art.h and

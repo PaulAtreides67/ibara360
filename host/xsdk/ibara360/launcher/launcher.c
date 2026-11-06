@@ -63,6 +63,11 @@
  *   page 5, the whole painting the landscape MODE SELECT is a faded crop of (gen/launcher/tate_art.h, mktate.py). The
  *   menu as the landscape one (header, plates, rose, leaf frame), the frame at the foot; 16:9 = the art across the
  *   width, the lattice above and below. The GALLERY stays upright, as the PS2 port's (its NOW LOADING gate too). */
+/* Test 121 (1.03, user's list, item 4): STORY, a MODE SELECT row above EXIT (only with ibaraweb.dat beside the .xex):
+ * the site's slides in English / Japanese (X on the row swaps; the label says which), the gallery's controls
+ * (LB / RB, A zoom x2, the d-pad pans zoomed, Y the label window, B back), UP / DOWN scroll the tall slides, the
+ * PS2's UNLISTED track (ps2music.bin's bgm.05) in the viewer. The viewer's and the decoder's code is after the gallery's
+ * (the load thread serves the slides and UNLISTED's decode). */
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -89,6 +94,7 @@
 #include "netlog.h"
 #include "ps2data.h"
 #include "tate_art.h" /* backlog 2e: the TATE MODE SELECT's painting (gen/launcher, tools/launcher/mktate.py) */
+#include "webdat.h"   /* test 121: ibaraweb.dat, the site's slides (STORY) */
 #include "xplat.h"
 
 /* backlog 2e: ps2data.bin's TATE title (ps2extract 2; ps2data.h has no name for it yet) */
@@ -99,8 +105,8 @@
 #define LA_TV_H 896
 
 /* test 97: the music in the .xex, the PS2 data from ps2data.bin (the plain screen without it) */
-#define XEX_VERSION "1.02" /* test 120: release version */
-#define XEX_TEST "120" /* test 120: release version */
+#define XEX_VERSION "1.03" /* test 120: release version; test 121: 1.03 */
+#define XEX_TEST "123" /* test 123: STORY plate as GALLERY / EXIT, no EN/JP tag; test 120: release version; test 122: STORY sign, label window, UNLISTED level, 鋳薔薇 */
 #define NPADS 4
 #define STICK_DEAD 16000
 
@@ -611,6 +617,354 @@ static int ps2_tex(XsdkTexture *t, const char *name, unsigned w, unsigned h)
 	return r;
 }
 
+/* test 122 (user: "see if you can change the "story" label on the launcher to fit in with the other options (gallery
+ * etc)"; "there's some stray pixels between the S and the T"): STORY's word in the PS2 plates' own letters, on the PS2's
+ * blank sign as IBARA's and Kuro BL's logos are (the plates' metal cannot be cleared of their letters with real
+ * pixels: 886 letter pixels are covered on all four plates). Made at load from sprites already in ps2data.bin's atlas
+ * (no data of its own): S (52..59), T (89..98), O (25..33) of the MODE SELECT header (the only S of the disc's
+ * pictures), R (21..29) of ARRANGE MODE, Y (82..96, with its left swirl) of GALLERY; rows 13..34; each letter = its blue outline and white
+ * body (rows 14..33) grown by one pixel (4 neighbours), cut to its columns, blobs under 8 pixels (8 neighbours) dropped
+ * (the metal's highlights); 1 pixel of overlap (the outlines on one column, as on the plates). work/g122/plate/mk.py is the reference (its preview
+ * story_prev.png). */
+#define SPL_W 47
+#define SPL_H 22
+static XsdkTexture t_splate;
+static int splate_ok;      /* test 122: STORY's word is in (else the STORY text) */
+static uint32_t spl[SPL_W * SPL_H];
+
+/* the atlas's pixel x, y of sprite id (0xAARRGGBB) */
+static uint32_t at_px(int id, int x, int y)
+{
+	const struct la_rect *r = &la_sprites[id];
+
+	return t_atlas.texels[(size_t)(r->y + y) * t_atlas.pitch + r->x + x];
+}
+
+/* a letter's core pixel: the blue outline or the white body, rows 14..33 */
+static int spl_core(int id, int x, int y)
+{
+	const struct la_rect *r = &la_sprites[id];
+	uint32_t p;
+	int cr, cg, cb;
+
+	if (x < 0 || y < 14 || x >= r->w || y >= 34 || y >= r->h)
+		return 0;
+	p = at_px(id, x, y);
+	cr = (p >> 16) & 255;
+	cg = (p >> 8) & 255;
+	cb = p & 255;
+	return (cb - cr > 45 && cb > 120) || (cr > 190 && cg > 190 && cb > 190);
+}
+
+/* test 122: the word into spl and t_splate (the atlas must be in); 0 = made */
+static int spl_make(void)
+{
+	static const struct spl_piece {
+		int from, x0, x1, ex0, ey0, ex1; /* ex0..ex1 x ey0..34: a part of another letter cut out (ex1 < ex0: none) */
+	} pieces[5] = {
+		{LS_HEADER, 52, 59, 0, 0, -1},  /* S */
+		{LS_HEADER, 89, 98, 89, 19, 91},  /* T (89: 88 is the C's outline; user: "between S and T ... look like they're
+		                                   * attached"; under its bar, 89..91 x 19.., the C's tail swirl: "the little
+		                                   * swirl connecting the S and the T should not be there") */
+		{LS_HEADER, 25, 33, 0, 0, -1},  /* O */
+		{LS_A_PLATE, 21, 29, 0, 0, -1}, /* R */
+		{LS_G_PLATE, 82, 96, 0, 0, -1}, /* Y (82: its left swirl; user: "check the Y in gallery, it's got the swirl on the left") */
+	};
+	static unsigned char m[SPL_H][16], seen[SPL_H][16];
+	static short st[SPL_H * 16][2], comp[SPL_H * 16][2];
+	int k, x, y, dx = 0, dropped = 0;
+
+	memset(spl, 0, sizeof(spl));
+	for (k = 0; k < 5; k++) {
+		const struct spl_piece *p = &pieces[k];
+		const int w = p->x1 - p->x0 + 1;
+
+		for (y = 0; y < SPL_H; y++) /* grown core, cut to the columns (rows 13..34 = y 0..21) */
+			for (x = 0; x < w; x++) {
+				const int sx = p->x0 + x, sy = 13 + y;
+				m[y][x] = spl_core(p->from, sx, sy) || spl_core(p->from, sx - 1, sy) ||
+				          spl_core(p->from, sx + 1, sy) || spl_core(p->from, sx, sy - 1) ||
+				          spl_core(p->from, sx, sy + 1);
+				if (sx >= p->ex0 && sx <= p->ex1 && sy >= p->ey0)
+					m[y][x] = 0;
+			}
+		memset(seen, 0, sizeof(seen));
+		for (y = 0; y < SPL_H; y++) /* blobs under 8 pixels out */
+			for (x = 0; x < w; x++) {
+				int ns = 0, nc = 0, i;
+
+				if (!m[y][x] || seen[y][x])
+					continue;
+				seen[y][x] = 1;
+				st[ns][0] = (short)y;
+				st[ns++][1] = (short)x;
+				while (ns) {
+					const int cy = st[--ns][0], cx = st[ns][1];
+					int ay, ax;
+
+					comp[nc][0] = (short)cy;
+					comp[nc++][1] = (short)cx;
+					for (ay = cy - 1; ay <= cy + 1; ay++)
+						for (ax = cx - 1; ax <= cx + 1; ax++)
+							if (ay >= 0 && ay < SPL_H && ax >= 0 && ax < w && m[ay][ax] && !seen[ay][ax]) {
+								seen[ay][ax] = 1;
+								st[ns][0] = (short)ay;
+								st[ns++][1] = (short)ax;
+							}
+				}
+				if (nc < 8) {
+					for (i = 0; i < nc; i++)
+						m[comp[i][0]][comp[i][1]] = 0;
+					dropped += nc;
+				}
+			}
+		for (y = 0; y < SPL_H; y++)
+			for (x = 0; x < w; x++)
+				if (m[y][x] && dx + x < SPL_W)
+					spl[y * SPL_W + dx + x] = at_px(p->from, p->x0 + x, 13 + y) | 0xFF000000u;
+		dx += w - 1; /* the outlines on one column, as the plates' letters */
+	}
+	if (make_tex(&t_splate, NULL, SPL_W, SPL_H))
+		return -1;
+	for (y = 0; y < SPL_H; y++)
+		for (x = 0; x < SPL_W; x++)
+			t_splate.texels[(size_t)y * t_splate.pitch + x] = spl[y * SPL_W + x];
+	xsdk_gpu_invalidate(t_splate.address, t_splate.size_bytes);
+	log_printf(C_WHITE, "STORY: ITS WORD MADE FROM THE PS2 ATLAS'S LETTERS (%d HIGHLIGHT PIXELS LEFT OUT)", dropped);
+	return 0;
+}
+
+/* test 122: STORY's word on the sign's face at x, y (the sign's left top), the sign K times: the word 1.4 times the
+ * sign's pixels (the plates' letter height), centred on the face 26 .. 178 x 4 .. 46 */
+static void spl_draw(float x, float y, float K, col_t c)
+{
+	const float k = 1.4f * K, w = SPL_W * k, h = SPL_H * k;
+	const float wx = x + 26 * K + (152 * K - w) / 2, wy = y + 4 * K + (42 * K - h) / 2;
+
+	use(&t_splate, 1);
+	quad(wx + 3, wy + 3, wx + 3 + w, wy + 3 + h, 0, 0, 1, 1, rgba(0, 0, 0, 0.6f));
+	quad(wx, wy, wx + w, wy + h, 0, 0, 1, 1, c);
+}
+
+/* test 123 (user: "story box is too big, have it match gallery, exit, and take out the small en/jp toggle"): STORY's
+ * plate as LS_G_PLATE, LS_EXIT and LS_A_PLATE are, 112 x 48 (t_splate2), made at load from those three sprites (the
+ * reference is work/g123/art/blank2.py + blank3_atlas.py): each plate's letters (spl_core's colour rule on rows 12..36,
+ * columns 10..99) grown by one pixel (4 neighbours), blobs under 8 pixels dropped, grown twice more = the area the
+ * letters take; where no plate has letters the three plates' pixels are averaged, the holes (all three have letters)
+ * filled along their row; then spl's word (54 x 25 at 29, 13) over its shadow (2 pixels down and right, 150 of 255) */
+#define SPL2_W 112
+#define SPL2_H 48
+#define SPL2_N 3
+#define SPL2_WW 54 /* the word on the plate */
+#define SPL2_WH 25
+static XsdkTexture t_splate2;
+static int splate2_ok;     /* test 123: STORY's plate is in (else the sign with spl's word) */
+static const int spl2_from[SPL2_N] = {LS_A_PLATE, LS_G_PLATE, LS_EXIT};
+static unsigned char spl2_m[SPL2_N][SPL2_H][SPL2_W]; /* each plate's letter area, 1 = in it */
+static float spl2_base[SPL2_H][SPL2_W][4];          /* R G B A: the average of the plates, then the holes filled */
+static unsigned char spl2_hole[SPL2_H][SPL2_W];     /* 1 = in all three letter areas */
+static uint32_t spl2_img[SPL2_H * SPL2_W];          /* the plate, 0xAARRGGBB */
+static uint32_t spl2_wd[SPL2_WH][SPL2_WW];          /* the word, scaled, 0xAARRGGBB */
+
+/* test 123: out = in grown once (the 4-neighbour cross); in and out are different arrays */
+static void spl2_grow(unsigned char in[SPL2_H][SPL2_W], unsigned char out[SPL2_H][SPL2_W])
+{
+	int x, y;
+
+	for (y = 0; y < SPL2_H; y++)
+		for (x = 0; x < SPL2_W; x++)
+			out[y][x] = in[y][x] || (x > 0 && in[y][x - 1]) || (x < SPL2_W - 1 && in[y][x + 1]) ||
+			            (y > 0 && in[y - 1][x]) || (y < SPL2_H - 1 && in[y + 1][x]);
+}
+
+/* test 123: the letter area of plate id into m (0 or 1 per pixel); the blobs are found with an iterative flood fill */
+static void spl2_letters(int id, unsigned char m[SPL2_H][SPL2_W])
+{
+	static unsigned char g[SPL2_H][SPL2_W], t[SPL2_H][SPL2_W], seen[SPL2_H][SPL2_W];
+	static unsigned short q[SPL2_H * SPL2_W];
+	static const int ox[4] = {-1, 1, 0, 0}, oy[4] = {0, 0, -1, 1};
+	int x, y, i;
+
+	for (y = 0; y < SPL2_H; y++)
+		for (x = 0; x < SPL2_W; x++) {
+			const uint32_t p = at_px(id, x, y);
+			const int cr = (p >> 16) & 255, cg = (p >> 8) & 255, cb = p & 255;
+
+			m[y][x] = y >= 12 && y <= 36 && x >= 10 && x <= 99 &&
+			          ((cb - cr > 45 && cb > 120) || (cr > 190 && cg > 190 && cb > 190));
+		}
+	spl2_grow(m, g);
+	memset(seen, 0, sizeof(seen));
+	for (y = 0; y < SPL2_H; y++)
+		for (x = 0; x < SPL2_W; x++) {
+			int h = 0, n = 0;
+
+			if (!g[y][x] || seen[y][x])
+				continue;
+			seen[y][x] = 1;
+			q[n++] = (unsigned short)(y * SPL2_W + x);
+			while (h < n) {
+				const int cy = q[h] / SPL2_W, cx = q[h] % SPL2_W;
+
+				h++;
+				for (i = 0; i < 4; i++) {
+					const int nx = cx + ox[i], ny = cy + oy[i];
+
+					if (nx >= 0 && nx < SPL2_W && ny >= 0 && ny < SPL2_H && g[ny][nx] && !seen[ny][nx]) {
+						seen[ny][nx] = 1;
+						q[n++] = (unsigned short)(ny * SPL2_W + nx);
+					}
+				}
+			}
+			if (n < 8) /* the metal's highlights */
+				for (i = 0; i < n; i++)
+					g[q[i] / SPL2_W][q[i] % SPL2_W] = 0;
+		}
+	spl2_grow(g, t);
+	spl2_grow(t, m);
+}
+
+/* test 123: a float channel to a byte (rounded, clamped) */
+static int spl2_c(float v)
+{
+	const int i = (int)(v + 0.5f);
+
+	return i < 0 ? 0 : i > 255 ? 255 : i;
+}
+
+/* test 123: the colour s (r, g, b) at alpha sa composited over the pixel d (its alpha kept) */
+static void spl2_over(uint32_t *d, int r, int g, int b, float sa)
+{
+	const uint32_t p = *d;
+	const float da = (p >> 24) / 255.0f, oa = sa + da * (1 - sa);
+	float dr, dg, db;
+
+	if (oa <= 0)
+		return;
+	dr = ((p >> 16) & 255) * da * (1 - sa);
+	dg = ((p >> 8) & 255) * da * (1 - sa);
+	db = (p & 255) * da * (1 - sa);
+	*d = (p & 0xFF000000u) | (uint32_t)spl2_c((r * sa + dr) / oa) << 16 | (uint32_t)spl2_c((g * sa + dg) / oa) << 8 |
+	     (uint32_t)spl2_c((b * sa + db) / oa);
+}
+
+/* test 123: STORY's plate into t_splate2 (after spl_make: spl is the word); 0 = made, else the sign with the word */
+static int splate2_make(void)
+{
+	int k, x, y, j, i;
+
+	for (k = 0; k < SPL2_N; k++) {
+		const struct la_rect *r = &la_sprites[spl2_from[k]];
+
+		if (r->w != SPL2_W || r->h != SPL2_H)
+			return -1;
+		spl2_letters(spl2_from[k], spl2_m[k]);
+	}
+	for (y = 0; y < SPL2_H; y++) /* the average where no plate has letters */
+		for (x = 0; x < SPL2_W; x++) {
+			float s[4] = {0, 0, 0, 0};
+			int n = 0;
+
+			for (k = 0; k < SPL2_N; k++) {
+				const uint32_t p = at_px(spl2_from[k], x, y);
+
+				if (spl2_m[k][y][x])
+					continue;
+				n++;
+				s[0] += (p >> 16) & 255;
+				s[1] += (p >> 8) & 255;
+				s[2] += p & 255;
+				s[3] += p >> 24;
+			}
+			spl2_hole[y][x] = !n;
+			for (j = 0; j < 4 && n; j++)
+				spl2_base[y][x][j] = s[j] / n;
+		}
+	for (y = 0; y < SPL2_H; y++) { /* each hole along its row, between the nearest pixels that are not */
+		x = 0;
+		while (x < SPL2_W) {
+			int a, b, l, rr, xx;
+
+			if (!spl2_hole[y][x]) {
+				x++;
+				continue;
+			}
+			a = x;
+			while (x < SPL2_W && spl2_hole[y][x])
+				x++;
+			b = x - 1;
+			l = a - 1;
+			rr = b + 1;
+			for (xx = a; xx <= b; xx++)
+				for (j = 0; j < 4; j++) {
+					float v = 0;
+
+					if (l >= 0 && rr < SPL2_W)
+						v = spl2_base[y][l][j] + (spl2_base[y][rr][j] - spl2_base[y][l][j]) * (float)(xx - l) / (float)(rr - l);
+					else if (l >= 0)
+						v = spl2_base[y][l][j];
+					else if (rr < SPL2_W)
+						v = spl2_base[y][rr][j];
+					spl2_base[y][xx][j] = v;
+				}
+		}
+	}
+	for (y = 0; y < SPL2_H; y++)
+		for (x = 0; x < SPL2_W; x++) {
+			const float *f = spl2_base[y][x];
+
+			spl2_img[y * SPL2_W + x] = (uint32_t)spl2_c(f[3]) << 24 | (uint32_t)spl2_c(f[0]) << 16 |
+			                           (uint32_t)spl2_c(f[1]) << 8 | (uint32_t)spl2_c(f[2]);
+		}
+	/* the word: spl (47 x 22, premultiplied bilinear) to 54 x 25 */
+	for (y = 0; y < SPL2_WH; y++)
+		for (x = 0; x < SPL2_WW; x++) {
+			const float sx = (x + 0.5f) * SPL_W / SPL2_WW - 0.5f, sy = (y + 0.5f) * SPL_H / SPL2_WH - 0.5f;
+			const int x0 = sx < 0 ? -1 : (int)sx, y0 = sy < 0 ? -1 : (int)sy;
+			const float fx = sx - x0, fy = sy - y0;
+			float wa = 0, wr = 0, wg = 0, wb = 0;
+
+			for (j = 0; j < 2; j++)
+				for (i = 0; i < 2; i++) {
+					const int cx = x0 + i < 0 ? 0 : x0 + i >= SPL_W ? SPL_W - 1 : x0 + i;
+					const int cy = y0 + j < 0 ? 0 : y0 + j >= SPL_H ? SPL_H - 1 : y0 + j;
+					const float wt = (i ? fx : 1 - fx) * (j ? fy : 1 - fy);
+					const uint32_t p = spl[cy * SPL_W + cx];
+					const float a = wt * (p >> 24);
+
+					wa += a;
+					wr += a * ((p >> 16) & 255);
+					wg += a * ((p >> 8) & 255);
+					wb += a * (p & 255);
+				}
+			spl2_wd[y][x] = wa > 0 ? (uint32_t)spl2_c(wa) << 24 | (uint32_t)spl2_c(wr / wa) << 16 |
+			                         (uint32_t)spl2_c(wg / wa) << 8 | (uint32_t)spl2_c(wb / wa) : 0;
+		}
+	for (y = 0; y < SPL2_WH; y++) /* the shadow: black at 150 of 255 where the word is, 2 pixels down and right */
+		for (x = 0; x < SPL2_WW; x++) {
+			const uint32_t p = spl2_wd[y][x];
+
+			if (p >> 24)
+				spl2_over(&spl2_img[(15 + y) * SPL2_W + 31 + x], 0, 0, 0, (p >> 24) / 255.0f * 150 / 255);
+		}
+	for (y = 0; y < SPL2_WH; y++) /* the word */
+		for (x = 0; x < SPL2_WW; x++) {
+			const uint32_t p = spl2_wd[y][x];
+
+			if (p >> 24)
+				spl2_over(&spl2_img[(13 + y) * SPL2_W + 29 + x], (p >> 16) & 255, (p >> 8) & 255, p & 255,
+				          (p >> 24) / 255.0f);
+		}
+	if (make_tex(&t_splate2, NULL, SPL2_W, SPL2_H))
+		return -1;
+	for (y = 0; y < SPL2_H; y++)
+		for (x = 0; x < SPL2_W; x++)
+			t_splate2.texels[(size_t)y * t_splate2.pitch + x] = spl2_img[y * SPL2_W + x];
+	xsdk_gpu_invalidate(t_splate2.address, t_splate2.size_bytes);
+	log_printf(C_WHITE, "STORY: ITS PLATE MADE FROM THE PS2 PLATES (GALLERY, EXIT, ARRANGE)");
+	return 0;
+}
+
 /* zlib data of w x h pixels as bytes A R G B into texture t at x0, y0 (test 97: Kuro BL's logo into the atlas) */
 static int unpack_into(XsdkTexture *t, const unsigned char *z, unsigned zn, unsigned x0, unsigned y0, unsigned w,
                        unsigned h)
@@ -708,6 +1062,53 @@ static volatile int music_ready;       /* 1 = the MP3 set in lsound, -1 = none *
 static volatile unsigned pic_req, pic_done, pic_ms;
 static volatile int pic_req_n, pic_req_slot;
 static volatile unsigned slot_used[2]; /* the frame each picture texture was last drawn in */
+
+/* ---- test 121 (user: "an image slide inside the main menu itself labeled "story", above the quit options ... same
+ * commands as the gallery mode; except this one will be both in english and japanese (press X to swap language when
+ * highlighting story on the launcher menu, play the unused PS2 track 17 Unlisted)"): STORY. The site's slides from
+ * ibaraweb.dat beside this .xex (webdat.c, tools/web/mkweb.py): 1280 x 720 each, a tall one as 720-high chunks; the
+ * music is UNLISTED (SEQ 11-12) from ps2music.bin's bgm.05, decoded here as ps2music.c's reader plays it.
+ * Textures: four 1280 x 720 (a tall slide's two chunks in view, and the next slide's two while it loads); the load
+ * thread decodes one request at a time into a texture the main thread has tagged free (sl_tag). */
+#define STORY_FILE "ibaraweb.dat"
+#define PS2N_MUSIC "ps2music.bin"
+#define SL_W 1280
+#define SL_H 720
+#define SL_SLOTS 4
+#define SL_LOOK 256            /* chunks read this far (source pixels) before the view reaches them */
+#define SL_STEP 12             /* UP / DOWN unzoomed, a frame (source pixels, held) */
+#define SL_PAN 4               /* the d-pad zoomed, a frame */
+#define SM_STREAM 5            /* ps2music.bin's bgm.05: UNLISTED (SEQ 11-12), ps2music.c's st_tab[5] */
+#define SM_N 7516824u          /* its samples to the end flag */
+#define SM_P 5580648u          /* its loop: at n back to n - P */
+#define SM_VOL 0x55            /* its list volume of 128 (SLPM_663.01 0x210F28); test 122: not applied (sm_decode) */
+#define SM_XFADE 220           /* the loop's crossfade (ps2music.c's XFADE) */
+#define SM_BLK 17920u          /* samples per channel in a 0x2800-byte block */
+#define SM_BLK_BYTES 0x2800u
+#define SM_DATA_AT 0x800u      /* a stream's first block, after its BG00 and VAGp headers */
+#define SM_PAIRS 3             /* block pairs a read takes */
+
+struct sl_item {
+	unsigned char group, chunks; /* group: 0 STORY, 1 SYSTEM, 2 STAGE, 3 CHARACTER */
+	char label[31];
+};
+static struct sl_item *sl_idx;   /* story.idx: the slides (the same list in both languages) */
+static unsigned sl_n;
+static volatile int story_ready; /* 1 = the index in (MODE SELECT's STORY row), -1 = no ibaraweb.dat */
+static volatile int sm_ready;    /* 1 = UNLISTED in lsound, -1 = none (a silent viewer), 0 = not yet */
+static int story_lang;           /* 0 = English, 1 = Japanese (X on STORY; the session's) */
+static XsdkTexture t_story[SL_SLOTS];
+static volatile unsigned sl_used[SL_SLOTS]; /* the frame each texture was last drawn in */
+struct sl_tag {
+	int slide, chunk, lang;      /* what the texture holds; slide -1 = none (or being decoded) */
+};
+static struct sl_tag sl_tab[SL_SLOTS]; /* the main thread's */
+static volatile unsigned sl_req, sl_done; /* one request at a time: asked, done */
+static volatile int sl_rq_slot, sl_rq_slide, sl_rq_chunk, sl_rq_lang, sl_rq_bad;
+static volatile unsigned sl_ms;  /* the last decode's time (the log) */
+static int sl_pend, sl_pend_slot, sl_pend_slide, sl_pend_chunk, sl_pend_lang; /* the main thread's copy */
+static int sl_cur, sl_target, sl_zoom, sl_overlay; /* on screen, wanted (LB / RB), zoomed, the label window */
+static float sl_vx, sl_vy;       /* the viewport's top left, in the slide's pixels */
 
 static unsigned be32(const unsigned char *p)
 {
@@ -836,6 +1237,334 @@ static int gal_unpack(const struct gal_entry *e, XsdkTexture *t)
 	return 0;
 }
 
+/* ---- test 121: STORY's loader (the load thread: its table, its slides on request, UNLISTED) ------------------------ */
+
+/* the file beside this .xex for fopen (ps2data.c's form: '\' as '/') */
+static FILE *story_file(const char *name)
+{
+	char p[260];
+	char *c;
+
+	if (launch_path(p, sizeof(p), name))
+		return NULL;
+	for (c = p; *c; c++)
+		if (*c == '\\')
+			*c = '/';
+	return fopen(p, "rb");
+}
+
+/* ibaraweb.dat's table (webdat.c) and story.idx's slides into sl_idx; story_ready 1, or -1 with the log's reason */
+static void story_table(void)
+{
+	char p[260];
+	const struct webdat_entry *e;
+	unsigned char *b;
+	uint64_t t0 = tb_read();
+	unsigned n, i;
+
+	if (launch_path(p, sizeof(p), STORY_FILE) || webdat_open(p)) {
+		log_printf(C_RED, "STORY: %s", webdat_why()[0] ? webdat_why() : "NO IBARAWEB.DAT");
+		story_ready = -1;
+		return;
+	}
+	e = webdat_find("story.idx");
+	b = e ? webdat_read(e) : NULL;
+	if (!b || e->kind != WEBDAT_KIND_RAW || e->bytes < 2 || (n = be16(b)) == 0 || n > 4096 || e->bytes < 2 + 32u * n) {
+		log_printf(C_RED, "STORY: STORY.IDX IS NOT THERE OR DAMAGED (NO STORY)");
+		free(b);
+		story_ready = -1;
+		return;
+	}
+	sl_idx = calloc(n, sizeof(*sl_idx));
+	if (!sl_idx) {
+		log_printf(C_RED, "STORY: NO MEMORY FOR ITS INDEX (NO STORY)");
+		free(b);
+		story_ready = -1;
+		return;
+	}
+	for (i = 0; i < n; i++) {
+		const unsigned char *r = b + 2 + 32 * i;
+		sl_idx[i].group = r[0];
+		sl_idx[i].chunks = r[1] ? r[1] : 1;
+		memcpy(sl_idx[i].label, r + 2, 30);
+		sl_idx[i].label[30] = 0;
+	}
+	free(b);
+	sl_n = n;
+	for (i = 0; i < SL_SLOTS; i++) /* review: no texture holds a slide yet (zero would read as slide 1, chunk 1, EN) */
+		sl_tab[i].slide = -1;
+	__sync_synchronize();
+	story_ready = 1;
+	log_printf(C_WHITE, "STORY: IBARAWEB.DAT READ, %u SLIDES, IN %u MS", n, tb_us(t0, tb_read()) / 1000);
+}
+
+/* a slide's chunk c in language lang (0 EN, 1 JA) decoded (stb_image, webdat.c) into texture slot: 1280 x 720 ARGB32.
+ * A chunk that is not there or does not decode is black (the texture cleared). 0 = done. */
+static int sl_decode(int s, int c, int lang, int slot)
+{
+	char name[32];
+	const struct webdat_entry *e;
+	unsigned char *jpg;
+	uint32_t *px;
+	int w = 0, h = 0, x, y;
+	XsdkTexture *t = &t_story[slot];
+
+	snprintf(name, sizeof(name), "st.%s.%02d.%02d", lang ? "ja" : "en", s, c);
+	e = webdat_find(name);
+	jpg = e && e->kind == WEBDAT_KIND_JPEG ? webdat_read(e) : NULL;
+	px = jpg ? webdat_jpeg_argb(jpg, e->bytes, &w, &h) : NULL;
+	free(jpg);
+	if (!px || w != SL_W || h != SL_H) {
+		log_printf(C_RED, "STORY: %s %s (BLACK)", name, e ? "DID NOT DECODE" : "IS NOT IN IBARAWEB.DAT");
+		free(px);
+		for (y = 0; y < SL_H; y++)
+			for (x = 0; x < SL_W; x++)
+				t->texels[(size_t)y * t->pitch + x] = 0;
+		__sync_synchronize();
+		return -1;
+	}
+	for (y = 0; y < SL_H; y++)
+		for (x = 0; x < SL_W; x++)
+			t->texels[(size_t)y * t->pitch + x] = px[(size_t)y * SL_W + x];
+	free(px);
+	__sync_synchronize();
+	return 0;
+}
+
+/* the main thread's one request, if any: waits until the texture's last frame is shown, decodes, logs, answers */
+static void sl_serve(void)
+{
+	const unsigned req = sl_req;
+	const int s = sl_rq_slide, c = sl_rq_chunk, k = sl_rq_slot;
+	uint64_t t0;
+	int r;
+
+	if (req == sl_done)
+		return;
+	while ((int)(frame - sl_used[k]) < SLOTS)
+		xsdk_thread_sleep(1);
+	t0 = tb_read();
+	r = sl_decode(s, c, sl_rq_lang, k);
+	sl_rq_bad = r;
+	sl_ms = tb_us(t0, tb_read()) / 1000;
+	if (!r && c == 0)
+		log_printf(C_WHITE, "STORY: SLIDE %d / %u %s (%u CHUNKS) DECODED IN %u MS", s + 1, sl_n, sl_idx[s].label,
+		           (unsigned)sl_idx[s].chunks, sl_ms);
+	else if (!r)
+		log_printf(C_WHITE, "STORY: SLIDE %d / %u CHUNK %d / %u DECODED IN %u MS", s + 1, sl_n, c + 1,
+		           (unsigned)sl_idx[s].chunks, sl_ms);
+	__sync_synchronize();
+	sl_done = req;
+}
+
+/* the sqrt for the RMS (Newton; libm is not linked) */
+static double ld_sqrt(double x)
+{
+	double r = x > 1 ? x : 1;
+	int i;
+
+	if (x <= 0)
+		return 0;
+	for (i = 0; i < 60; i++)
+		r = 0.5 * (r + x / r);
+	return r;
+}
+
+/* the ADPCM frame (28 samples, SPU) of ps2music.c's adpcm_frame: the channel's last two samples in h */
+static void sm_frame(const unsigned char *f, int *h, int16_t *out)
+{
+	static const int coef[5][2] = {{0, 0}, {60, 0}, {115, -52}, {98, -55}, {122, -60}};
+	const int shift = f[0] & 15, sh = shift <= 12 ? 12 - shift : 0;
+	int filt = f[0] >> 4, h1 = h[0], h2 = h[1], i;
+
+	if (filt > 4)
+		filt = 0;
+	for (i = 0; i < 28; i++) {
+		int nib = i & 1 ? f[2 + i / 2] >> 4 : f[2 + i / 2] & 15, s;
+		if (nib >= 8)
+			nib -= 16;
+		s = nib * (1 << sh) + ((h1 * coef[filt][0] + h2 * coef[filt][1] + 32) >> 6);
+		s = s > 32767 ? 32767 : s < -32768 ? -32768 : s;
+		out[i] = (int16_t)s;
+		h2 = h1;
+		h1 = s;
+	}
+	h[0] = h1;
+	h[1] = h2;
+}
+
+/* test 121: UNLISTED (SEQ 11-12) from ps2music.bin's bgm.05 (ps2music.c's reader: 2 channels' blocks of 0x2800 bytes,
+ * L then R, from 0x800 of the entry; SPU ADPCM 44.1 kHz). The whole stream decoded in order (SM_N samples); its loop
+ * as the reader plays it: the last SM_XFADE samples blended with the ones SM_P before them, so lsound loops from
+ * SM_N - SM_P. The volume: the stream's own (test 122: SM_VOL no longer applied). Returns frames of L R s16 (*frames, *loop_at), NULL with *why. */
+static int16_t *sm_decode(unsigned *frames, unsigned *loop_at, const char **why)
+{
+	unsigned char hd[64], ent[64], sh[0x80], *buf = NULL;
+	int16_t *out = NULL;
+	FILE *f;
+	uint32_t off, size, done = 0, b0, blocks, i;
+	int hist[2][2];
+
+	*frames = *loop_at = 0;
+	f = story_file(PS2N_MUSIC);
+	if (!f) {
+		*why = "NO PS2MUSIC.BIN BESIDE THE XEX FILES";
+		return NULL;
+	}
+	if (fread(hd, 1, 64, f) != 64 || memcmp(hd, PS2DATA_MAGIC, 8) || be32(hd + 8) != PS2DATA_VERSION ||
+	    be32(hd + 12) <= SM_STREAM || be32(hd + 16) != 64) {
+		*why = "PS2MUSIC.BIN IS NOT IBARA360'S";
+		goto end;
+	}
+	if (fseek(f, 64L + 64L * SM_STREAM, SEEK_SET) || fread(ent, 1, 64, f) != 64 ||
+	    strncmp((const char *)ent, "bgm.05", 32)) {
+		*why = "PS2MUSIC.BIN HAS NO BGM.05";
+		goto end;
+	}
+	off = be32(ent + 32);
+	size = be32(ent + 40);
+	if (be32(ent + 36) != size || size < SM_DATA_AT + 2 * SM_BLK_BYTES) {
+		*why = "PS2MUSIC.BIN'S BGM.05 IS DAMAGED";
+		goto end;
+	}
+	if (fseek(f, (long)off, SEEK_SET) || fread(sh, 1, sizeof(sh), f) != sizeof(sh) || memcmp(sh, "BG00", 4) ||
+	    memcmp(sh + 0x40, "VAGp", 4) || (be32(sh + 0x4C) / 16) * 28 - 28 != SM_N) { /* ps2music.c's checks */
+		*why = "PS2MUSIC.BIN'S BGM.05 IS NOT AS EXPECTED";
+		goto end;
+	}
+	blocks = (size - SM_DATA_AT) / (2 * SM_BLK_BYTES);
+	if ((uint64_t)blocks * SM_BLK < SM_N) {
+		*why = "PS2MUSIC.BIN'S BGM.05 IS CUT SHORT";
+		goto end;
+	}
+	out = malloc((size_t)SM_N * 2 * sizeof(int16_t));
+	buf = malloc(SM_PAIRS * 2 * SM_BLK_BYTES);
+	if (!out || !buf) {
+		*why = "NO MEMORY FOR UNLISTED";
+		free(out);
+		out = NULL;
+		goto end;
+	}
+	memset(hist, 0, sizeof(hist));
+	for (b0 = 0; b0 < blocks && done < SM_N; b0 += SM_PAIRS) {
+		const uint32_t nb = blocks - b0 < SM_PAIRS ? blocks - b0 : SM_PAIRS;
+		uint32_t j;
+
+		if (fseek(f, (long)(off + SM_DATA_AT + b0 * 2 * SM_BLK_BYTES), SEEK_SET) ||
+		    fread(buf, 1, nb * 2 * SM_BLK_BYTES, f) != nb * 2 * SM_BLK_BYTES) {
+			*why = "PS2MUSIC.BIN'S BGM.05 DID NOT READ";
+			free(out);
+			out = NULL;
+			goto end;
+		}
+		for (j = 0; j < nb && done < SM_N; j++) {
+			const unsigned char *lb = buf + j * 2 * SM_BLK_BYTES, *rb = lb + SM_BLK_BYTES;
+			uint32_t fr;
+
+			for (fr = 0; fr < SM_BLK / 28 && done < SM_N; fr++) {
+				int16_t pl[28], pr[28];
+				int k;
+
+				sm_frame(lb + fr * 16, hist[0], pl);
+				sm_frame(rb + fr * 16, hist[1], pr);
+				for (k = 0; k < 28 && done < SM_N; k++, done++) {
+					out[2 * done] = pl[k];
+					out[2 * done + 1] = pr[k];
+				}
+			}
+		}
+	}
+	if (done != SM_N) {
+		*why = "PS2MUSIC.BIN'S BGM.05 IS CUT SHORT";
+		free(out);
+		out = NULL;
+		goto end;
+	}
+	for (i = SM_N - SM_XFADE; i < SM_N; i++) { /* the loop's crossfade (ps2music.c's reader, sample for sample) */
+		const int j = (int)(i - (SM_N - SM_XFADE)), q = (int)(i - SM_P);
+		int ch;
+
+		for (ch = 0; ch < 2; ch++) {
+			const int a = out[2 * i + ch], b = out[2 * q + ch];
+			out[2 * i + ch] = (int16_t)((a * (SM_XFADE - 1 - j) + b * j) / (SM_XFADE - 1));
+		}
+	}
+	/* test 122 (user: "the music in the story gallery is too quiet, have it match the volume of the other sounds"):
+	 * the list volume (SM_VOL / 128) is no longer applied; the decoder's own s16 output is the level (the loop's
+	 * crossfade is a blend of two in-range samples, so nothing clips and no gain is added) */
+	*frames = SM_N;
+	*loop_at = SM_N - SM_P;
+end:
+	free(buf);
+	fclose(f);
+	return out;
+}
+
+/* test 121: the gallery's MP3 (gal_rms_mp3, bytes lsound keeps) measured for the log: a sibling of the load thread on
+ * its hardware thread, so the load thread's pictures and slides do not wait for the decode of a whole track */
+static const unsigned char *gal_rms_mp3;
+static unsigned gal_rms_n;
+
+static uint32_t gal_rms_task(void *u)
+{
+	unsigned gf = 0;
+	const double g = lsound_mp3_rms(gal_rms_mp3, gal_rms_n, &gf);
+
+	(void)u;
+	log_printf(C_WHITE, "GALLERY: MUSIC RMS %u PPM (THE MP3 MEASURED FOR COMPARISON, %u FRAMES)", (unsigned)(g * 1000000.0),
+	           gf);
+	return 0;
+}
+
+/* test 121: UNLISTED into lsound (sm_ready), with its RMS and the time in the log; then the gallery's MP3 (gal_rms_mp3,
+ * the bytes lsound keeps) measured for comparison, after the viewer's music is ready (so the gate does not wait for it).
+ * On a thread of its own (LOAD_THREAD's hardware thread): the load thread serves pictures and slides meanwhile. */
+static uint32_t story_music_task(void *u)
+{
+	const unsigned char *gal = gal_rms_mp3;
+	const char *why = "";
+	uint64_t t0 = tb_read();
+	unsigned frames = 0, loop = 0, i;
+	int16_t *pcm;
+	double sum = 0;
+
+	pcm = sm_decode(&frames, &loop, &why);
+	if (!pcm) {
+		sm_ready = -1;
+		log_printf(C_YELLOW, "STORY: MUSIC UNLISTED NOT HERE (%s): SILENT VIEWER", why);
+	} else {
+		const unsigned ms = tb_us(t0, tb_read()) / 1000;
+		double rms;
+		for (i = 0; i < 2 * frames; i++)
+			sum += (double)pcm[i] * (double)pcm[i];
+		rms = ld_sqrt(sum / (2.0 * frames)) / 32768.0;
+		lsound_music_set_pcm(pcm, frames, loop); /* kept for good */
+		__sync_synchronize();
+		sm_ready = 1;
+		log_printf(C_WHITE, "STORY: MUSIC UNLISTED (SEQ 11-12) DECODED, %u FRAMES, IN %u MS, RMS %u PPM", frames, ms,
+		           (unsigned)(rms * 1000000.0));
+	}
+	(void)u;
+	if (gal)
+		gal_rms_task(NULL);
+	return 0;
+}
+
+/* test 121: story_music_task started (gal: the gallery's MP3 or NULL), sm_ready -1 if it cannot start */
+static void story_music_start(const unsigned char *gal, unsigned gal_n)
+{
+	HANDLE h;
+
+	gal_rms_mp3 = gal;
+	gal_rms_n = gal_n;
+	if (NT_SUCCESS(xsdk_thread_create_on(&h, 128 * 1024, story_music_task, NULL, LOAD_THREAD))) {
+		NtClose(h);
+	} else {
+		sm_ready = -1;
+		log_printf(C_RED, "STORY: NO THREAD FOR UNLISTED (SILENT VIEWER)");
+	}
+}
+
 /* the gallery's file (its sheets unpacked), then the music's; then the pictures asked for, one at a time, each into the
  * picture texture not on screen once its last frame has been shown (SLOTS frames of vertices, two of presenting) */
 static uint32_t load_task(void *u)
@@ -847,6 +1576,7 @@ static uint32_t load_task(void *u)
 	(void)u;
 	while (!gal_textures)
 		xsdk_thread_sleep(5);
+	story_table(); /* test 121: ibaraweb.dat's index (the STORY row) */
 	gal_dat = gal_read(&gal_bytes);
 	if (!gal_dat || gal_parse()) {
 		log_printf(C_RED, "GALLERY: %s %s (NO GALLERY)", GAL_FILE, gal_dat ? "IS NOT THE GALLERY'S" : "IS NOT THERE");
@@ -879,9 +1609,10 @@ static uint32_t load_task(void *u)
 		           (unsigned)GALLERY_MP3_Z_BYTES, (unsigned)GALLERY_MP3_KBPS, hz, tb_us(t0, tb_read()) / 1000);
 	}
 	music_ready = hz ? 1 : -1;
-	while (gal_ready > 0) {
+	story_music_start(hz ? m : NULL, n); /* test 121: UNLISTED for the STORY viewer (and the gallery's MP3 measured for the log) */
+	for (;;) { /* test 121: the STORY's slides too, the gallery's pictures only with the gallery */
 		const unsigned req = pic_req;
-		if (req != pic_done) {
+		if (gal_ready > 0 && req != pic_done) {
 			const int k = pic_req_slot, pn = pic_req_n;
 			__sync_synchronize();
 			while ((int)(frame - slot_used[k]) < SLOTS)
@@ -893,6 +1624,7 @@ static uint32_t load_task(void *u)
 			__sync_synchronize();
 			pic_done = req;
 		}
+		sl_serve(); /* test 121: one STORY slide (or chunk) when asked */
 		xsdk_thread_sleep(1);
 	}
 	return 0;
@@ -970,6 +1702,11 @@ static int video_init(void)
 	xsdk_gpu_invalidate(t_title.address, t_title.size_bytes);
 	xsdk_gpu_invalidate(t_mode.address, t_mode.size_bytes);
 	xsdk_gpu_invalidate(t_atlas.address, t_atlas.size_bytes);
+	if (ps2) { /* test 122: STORY's word from the atlas (none: the STORY text) */
+		splate_ok = !spl_make();
+		/* test 123: STORY's plate from the PS2 plates (none: the sign with the word) */
+		splate2_ok = splate_ok && !splate2_make();
+	}
 	if (ps2) { /* backlog 2e: TATE's pictures (none on the plain screen: no TATE there) */
 		const uint64_t t0 = tb_read();
 		title_v_ok = !ps2_tex(&t_title_v, PS2N_TITLE_V, LA_TV_W, LA_TV_H);
@@ -1008,6 +1745,13 @@ static int video_init(void)
 		log_printf(C_RED, "VIDEO: NO MEMORY FOR THE GALLERY'S TEXTURES");
 		return -1;
 	}
+	for (i = 0; i < SL_SLOTS; i++) /* test 121: the STORY's four 1280 x 720 textures */
+		if (!NT_SUCCESS(xsdk_texture_create(&t_story[i], XSDK_FORMAT_A8R8G8B8, SL_W, SL_H, 1, false)))
+			break;
+	if (i < SL_SLOTS) {
+		log_printf(C_RED, "VIDEO: NO MEMORY FOR THE STORY'S TEXTURES");
+		return -1;
+	}
 	__sync_synchronize();
 	gal_textures = 1;
 	vmem = xsdk_gpu_alloc(SLOTS * LQ_MAX * 6 * LV_F * 4);
@@ -1038,7 +1782,7 @@ static void present(void)
 	const unsigned words = (unsigned)nq * 6 * LV_F;
 	uint32_t address, base;
 	unsigned i;
-	int k;
+	int k, q;
 
 	for (i = 0; i < words; i++)
 		dst[i] = src[i];
@@ -1055,6 +1799,9 @@ static void present(void)
 				continue;
 			if (bt[k].t == &t_pic[0] || bt[k].t == &t_pic[1])
 				slot_used[bt[k].t == &t_pic[1]] = frame;
+			for (q = 0; q < SL_SLOTS; q++) /* test 121: the STORY textures' last frame */
+				if (bt[k].t == &t_story[q])
+					sl_used[q] = frame;
 			xsdk_gpu_set_texture(CARD_FRAG_SAMPLER_0_0, bt[k].t, bt[k].lin ? &s_linear : &s_point);
 			xsdk_gpu_set_vertices(0, base + (uint32_t)bt[k].first * 6 * LV_F * 4, (uint32_t)bt[k].n * 6 * LV_F * 4);
 			xsdk_gpu_draw(XSDK_PRIMITIVE_TRIANGLE_LIST, (uint32_t)bt[k].n * 6);
@@ -1070,7 +1817,8 @@ static void present(void)
 
 enum {
 	K_UP = 1, K_DOWN = 2, K_A = 4, K_B = 8, K_START = 16, K_BACK = 32,
-	K_LEFT = 64, K_RIGHT = 128, K_LB = 256, K_RB = 512, K_Y = 1024 /* test 75: the gallery's */
+	K_LEFT = 64, K_RIGHT = 128, K_LB = 256, K_RB = 512, K_Y = 1024 /* test 75: the gallery's */,
+	K_X = 2048 /* test 121: STORY's language */
 };
 static unsigned pad_prev[NPADS];
 static int pad_on[NPADS];
@@ -1105,6 +1853,8 @@ static unsigned pads_press(void)
 				w |= K_B;
 			if (b & INPUT_GAMEPAD_Y)
 				w |= K_Y;
+			if (b & INPUT_GAMEPAD_X) /* test 121 */
+				w |= K_X;
 			if (b & INPUT_GAMEPAD_LEFT_SHOULDER)
 				w |= K_LB;
 			if (b & INPUT_GAMEPAD_RIGHT_SHOULDER)
@@ -1153,11 +1903,43 @@ enum {
 	ST_TITLE, ST_MODE, ST_GO, ST_EXIT, ST_FAIL,
 	/* test 75, the gallery: the loading gate, its fade in, the thumbnails, a picture loading, a picture, the 2 frames
 	 * between (FUN_001cef60's states 1, 3, 4, 5, 6), its fade out (2) */
-	ST_GAL_ENTER, ST_GAL_IN, ST_GAL_GRID, ST_GAL_LOAD, ST_GAL_VIEW, ST_GAL_HAND, ST_GAL_OUT
+	ST_GAL_ENTER, ST_GAL_IN, ST_GAL_GRID, ST_GAL_LOAD, ST_GAL_VIEW, ST_GAL_HAND, ST_GAL_OUT,
+	/* test 121, STORY: the loading gate, its fade in, the viewer, its fade out (to MODE SELECT's STORY row) */
+	ST_STORY_ENTER, ST_STORY_IN, ST_STORY_VIEW, ST_STORY_OUT
 };
-/* test 77: ARRANGE MODE (ibaraarr.xex, LAUNCH_ARRANGE) after the two games, the PS2 mode select's plate */
-enum { IT_IBARA, IT_BLK, IT_ARR, IT_GALLERY, IT_EXIT, IT_N };
-static const char *const it_names[IT_N] = {"IBARA", "IBARA KURO BLACK LABEL", "ARRANGE MODE", "GALLERY", "EXIT"};
+/* test 77: ARRANGE MODE (ibaraarr.xex, LAUNCH_ARRANGE) after the two games, the PS2 mode select's plate. Test 121:
+ * STORY above EXIT (only with ibaraweb.dat: it_on) */
+enum { IT_IBARA, IT_BLK, IT_ARR, IT_GALLERY, IT_STORY, IT_EXIT, IT_N };
+static const char *const it_names[IT_N] = {"IBARA", "IBARA KURO BLACK LABEL", "ARRANGE MODE", "GALLERY", "STORY", "EXIT"};
+
+/* test 121: the STORY row is in MODE SELECT once ibaraweb.dat is in; the rows are the items there (it_row), the moves
+ * (it_move) skip the others */
+static int it_on(int i)
+{
+	return i != IT_STORY || story_ready > 0;
+}
+
+static int it_row(int i)
+{
+	int r = 0, j;
+
+	for (j = 0; j < i; j++)
+		r += it_on(j);
+	return r;
+}
+
+static int it_rows(void)
+{
+	return it_row(IT_N);
+}
+
+static int it_move(int i, int d)
+{
+	do
+		i = (i + IT_N + d) % IT_N;
+	while (!it_on(i));
+	return i;
+}
 static int state, state_t, sel;
 static int have[LAUNCH_GAMES];        /* each game's .xex beside this one */
 static struct launch_data launch_in;  /* how this title was started */
@@ -1184,14 +1966,17 @@ static int item_ok(int i)
 #define COL_W 320.0f
 static float item_y(int i)
 {
-	return rot ? 152.0f + 81.0f * (float)i : 150.0f + 106.0f * (float)i; /* backlog 2e: TATE's, 75-high plates */
+	/* test 121: six rows (STORY in) step 88 (the plates 96 high at x2: the last ends at 686, above the button line) */
+	return rot ? 152.0f + 81.0f * (float)it_row(i) /* backlog 2e: TATE's, 75-high plates */
+	           : 150.0f + (it_rows() > 5 ? 88.0f : 106.0f) * (float)it_row(i);
 }
 
 /* backlog 2e: the plates' size: x 1.5 in TATE (273 wide of the 720: D. Teresa's face, in the painting's middle, left
  * clear), else K_PLATE */
 static float kp(void)
 {
-	return rot ? 1.5f : K_PLATE;
+	/* test 121: six rows (STORY in) at x1.8: the sign 90 high, 88 apart (x2 would overlap by 12) */
+	return rot ? 1.5f : it_rows() > 5 ? 1.8f : K_PLATE;
 }
 
 /* backlog 2e: the TATE title: the flyer art (640 x 896) across the 720 width (x 1.125, 1008 tall); 16:9 (1280 tall):
@@ -1260,7 +2045,25 @@ static void draw_item(int i, int chosen)
 	const col_t c = chosen ? WHITE : rgba(0.5f, 0.48f, 0.5f, 1);
 	const float dim = item_ok(i) ? 1.0f : 0.5f;
 
-	if (i == IT_EXIT || i == IT_GALLERY || i == IT_ARR) {
+	if (i == IT_STORY && splate2_ok) { /* test 123 (user: "story box is too big, have it match gallery, exit"): the plate as
+		                                * GALLERY's and EXIT's (splate2_make); the language is X's, no tag */
+		const float px = x + (sg->w - SPL2_W) * K / 2, py = y + 2;
+
+		use(&t_splate2, 1);
+		quad(px, py, px + SPL2_W * K, py + SPL2_H * K, 0, 0, 1, 1, rgba(c.r * dim, c.g * dim, c.b * dim, 1));
+	} else if (i == IT_STORY && splate_ok) { /* test 122 (user: "fit in with the other options (gallery etc)"): the blank sign
+	                                    * with STORY's word on its face (spl_make), as the games' logos; the language (X) a
+	                                    * tag at the sign's right */
+		const col_t lc = rgba(c.r * dim, c.g * dim, c.b * dim, 1);
+
+		spr(LS_SIGN, x, y, K, c);
+		spl_draw(x, y, K, lc);
+	} else if (i == IT_STORY) { /* test 121: no plate art for it: its word in the PS2 font at x2 (test 123: no language tag) */
+		const float yt = y + 32;
+
+		text(x + 3, yt + 3, "STORY", K, rgba(0, 0, 0, 0.6f));
+		text(x, yt, "STORY", K, rgba(c.r * dim, c.g * dim, c.b * dim, 1));
+	} else if (i == IT_EXIT || i == IT_GALLERY || i == IT_ARR) {
 		const int id = i == IT_EXIT ? LS_EXIT : i == IT_GALLERY ? LS_G_PLATE : LS_A_PLATE;
 		spr(id, x + (sg->w - la_sprites[id].w) * K / 2, y + 2, K, rgba(c.r * dim, c.g * dim, c.b * dim, 1));
 	} else {
@@ -1311,6 +2114,11 @@ static void draw_about(void)
 		 * the row the lines below take when it cannot start */
 		if (item_ok(sel) && state != ST_FAIL)
 			jtext(tx, ty + 102, "2006/02/23", 1, WHITE);
+	} else if (sel == IT_STORY) { /* test 121: what STORY is, and X */
+		static const char *const st_lines[3] = {"The official site's story,", "system, stages, characters",
+		                                        "X: English / Japanese"};
+		for (i = 0; i < 3; i++)
+			jtext(tx, ty + 34 * (float)i, st_lines[i], 1, WHITE);
 	} else {
 		text(tx, ty, "EXIT", 2, YELLOW);
 		text(tx, ty + 68, "BACK TO THE DASHBOARD", 2, WHITE);
@@ -1358,7 +2166,8 @@ static void draw_mode(void)
 	}
 	spr(LS_HEADER, 0, 14, 2, WHITE);
 	for (i = 0; i < IT_N; i++)
-		draw_item(i, i == sel);
+		if (it_on(i)) /* test 121: STORY only with ibaraweb.dat */
+			draw_item(i, i == sel);
 	draw_about();
 	text(16, dh() - 30, "A SELECT  B BACK", 1.5f, GREY);
 }
@@ -1380,15 +2189,18 @@ static void draw_plain(void)
 
 	text(x0, 40, "IBARA360", 4, YELLOW);
 	for (i = 0; i < IT_N; i++) {
-		const int on = item_ok(i), chosen = i == sel;
+		const int on = item_ok(i), chosen = i == sel, row = it_row(i);
 		const col_t c = !on ? rgba(0.45f, 0.45f, 0.45f, 1) : chosen ? WHITE : GREY;
-		snprintf(t, sizeof(t), "%s%s", it_names[i], on ? "" : i == IT_GALLERY ? "  (NEEDS PS2DATA.BIN)" : "  (NOT HERE)");
+		if (!it_on(i)) /* test 121: STORY only with ibaraweb.dat */
+			continue;
+		snprintf(t, sizeof(t), "%s%s", i == IT_STORY ? (story_lang ? "STORY (JA)" : "STORY (EN)") : it_names[i],
+		         on ? "" : i == IT_GALLERY ? "  (NEEDS PS2DATA.BIN)" : "  (NOT HERE)");
 		if (chosen)
-			text(x0, 150 + 52.0f * i, ">", 3, YELLOW);
-		text(x0 + 40, 150 + 52.0f * i, t, 3, c);
+			text(x0, 150 + 52.0f * row, ">", 3, YELLOW);
+		text(x0 + 40, 150 + 52.0f * row, t, 3, c);
 	}
 	if (state == ST_FAIL)
-		text(x0 + 40, 150 + 52.0f * IT_N, "IT DID NOT START", 2, RED);
+		text(x0 + 40, 150 + 52.0f * it_rows(), "IT DID NOT START", 2, RED);
 	text(x0, 470, plain_why, 2, RED);
 	for (i = 0; i < (int)(sizeof(help) / sizeof(help[0])); i++)
 		text(x0, 510 + 34.0f * i, help[i], 2, WHITE);
@@ -1632,6 +2444,7 @@ static void gal_open(void)
 			xsdk_gpu_invalidate(t_sheet[s].address, t_sheet[s].size_bytes);
 		g_sheets_flushed = 1;
 	}
+	lsound_music_choose(0); /* test 121: the MP3 (STORY's UNLISTED is the other source) */
 	if (music_ready > 0)
 		lsound_music_play();
 	log_printf(C_WHITE, "GALLERY: OPEN, %s", music_ready > 0 ? "THE MUSIC FROM ITS START" : "NO MUSIC");
@@ -1784,6 +2597,241 @@ static void gal_step(unsigned press, unsigned rep)
 	}
 }
 
+/* ---- test 121: STORY, the viewer --------------------------------------------------------------------------------------- */
+
+/* the slide's scale on the canvas: x1 at 16:9 (1280 wide), x0.75 at 4:3 (960 wide, letterboxed), x2 zoomed */
+static float sl_k(void)
+{
+	return canvas_w / SL_W * (sl_zoom ? 2 : 1);
+}
+
+/* the viewport in the slide's pixels: 1280 x 720 (the whole width, unzoomed), half of each zoomed */
+static float sl_vw(void)
+{
+	return canvas_w / sl_k();
+}
+
+static float sl_vh(void)
+{
+	return SL_H * (canvas_w / SL_W) / sl_k();
+}
+
+/* the viewport kept on the slide (its chunks stacked: n x 720 high) */
+static void sl_clamp(void)
+{
+	const float vw = sl_vw(), vh = sl_vh(), H = (float)sl_idx[sl_cur].chunks * SL_H;
+
+	sl_vx = sl_vx > SL_W - vw ? SL_W - vw : sl_vx;
+	sl_vx = sl_vx < 0 ? 0 : sl_vx;
+	sl_vy = sl_vy > H - vh ? H - vh : sl_vy;
+	sl_vy = sl_vy < 0 ? 0 : sl_vy;
+}
+
+/* the texture holding chunk c of slide s in the language, or -1 */
+static int sl_find(int s, int c)
+{
+	int k;
+
+	for (k = 0; k < SL_SLOTS; k++)
+		if (sl_tab[k].slide == s && sl_tab[k].chunk == c && sl_tab[k].lang == story_lang)
+			return k;
+	return -1;
+}
+
+/* the chunks the view reads, SL_LOOK either side of it: c0 .. c1 of the slide on show */
+static void sl_range(int *c0, int *c1)
+{
+	const int n = sl_idx[sl_cur].chunks;
+	const float H = (float)n * SL_H;
+	float top = sl_vy - SL_LOOK, bot = sl_vy + sl_vh() + SL_LOOK;
+	int a, b;
+
+	top = top < 0 ? 0 : top;
+	bot = bot > H ? H : bot;
+	a = (int)(top / SL_H);
+	b = (int)((bot - 1) / SL_H);
+	b = b > n - 1 ? n - 1 : b;
+	a = a > b ? b : a;
+	*c0 = a;
+	*c1 = b;
+}
+
+/* a texture for a new decode: none that the view on show reads (sl_range) */
+static int sl_pick(void)
+{
+	int k, c0, c1;
+
+	sl_range(&c0, &c1);
+	for (k = 0; k < SL_SLOTS; k++) {
+		const struct sl_tag *t = &sl_tab[k];
+		if (t->slide == sl_cur && t->lang == story_lang && t->chunk >= c0 && t->chunk <= c1)
+			continue;
+		return k;
+	}
+	return -1;
+}
+
+/* asks the load thread for chunk c of slide s into a free texture (one request at a time) */
+static void sl_ask(int s, int c)
+{
+	const int k = sl_pick();
+
+	if (k < 0)
+		return;
+	sl_tab[k].slide = -1; /* not to be drawn while it is written */
+	sl_rq_slot = k;
+	sl_rq_slide = s;
+	sl_rq_chunk = c;
+	sl_rq_lang = story_lang;
+	sl_pend = 1;
+	sl_pend_slot = k;
+	sl_pend_slide = s;
+	sl_pend_chunk = c;
+	sl_pend_lang = story_lang;
+	__sync_synchronize();
+	sl_req = sl_req + 1;
+}
+
+/* every frame of STORY (and its gate): the request out (its texture tagged, uploaded, when it is done), then what is
+ * wanted next: LB / RB's slide (its first chunk, then the view moves to it), else the view's chunks read ahead */
+static void sl_pump(void)
+{
+	int c0, c1, c;
+
+	if (sl_pend && sl_done == sl_req) {
+		sl_tab[sl_pend_slot].slide = sl_pend_slide;
+		sl_tab[sl_pend_slot].chunk = sl_pend_chunk;
+		sl_tab[sl_pend_slot].lang = sl_pend_lang;
+		xsdk_gpu_invalidate(t_story[sl_pend_slot].address, t_story[sl_pend_slot].size_bytes);
+		sl_pend = 0;
+	}
+	if (sl_pend || story_ready <= 0)
+		return;
+	if (sl_target != sl_cur) {
+		if (sl_find(sl_target, 0) >= 0) {
+			sl_cur = sl_target;
+			sl_vx = sl_vy = 0;
+			sl_zoom = 0;
+		} else {
+			sl_ask(sl_target, 0);
+		}
+		return;
+	}
+	sl_range(&c0, &c1);
+	for (c = c0; c <= c1; c++)
+		if (sl_find(sl_cur, c) < 0) {
+			sl_ask(sl_cur, c);
+			return;
+		}
+}
+
+/* STORY chosen in MODE SELECT (A): slide 1 of the language, the window on, unzoomed at the top */
+static void sl_enter(void)
+{
+	sl_cur = sl_target = 0;
+	sl_zoom = 0;
+	sl_overlay = 1;
+	sl_vx = sl_vy = 0;
+}
+
+static void story_step(unsigned press, unsigned rep)
+{
+	const int n = (int)sl_n;
+
+	(void)rep;
+	sl_pump();
+	switch (state) {
+	case ST_STORY_ENTER: /* the PS2's loading gate: NOW LOADING until slide 1 and UNLISTED are in (or UNLISTED is not) */
+		if (state_t >= GAL_FADE && sm_ready && sl_find(sl_cur, 0) >= 0) {
+			log_printf(C_WHITE, "STORY: OPEN (%s)", story_lang ? "JA" : "EN");
+			if (sm_ready > 0) {
+				lsound_music_choose(1);
+				lsound_music_play();
+			} else {
+				log_printf(C_YELLOW, "STORY: NO MUSIC");
+			}
+			go(ST_STORY_IN);
+		}
+		break;
+	case ST_STORY_IN:
+		if (state_t >= GAL_FADE)
+			go(ST_STORY_VIEW);
+		break;
+	case ST_STORY_VIEW:
+		if (press & K_A) { /* zoom x2 on / off, about the middle of what is on show */
+			const float cx = sl_vx + sl_vw() / 2, cy = sl_vy + sl_vh() / 2;
+			sl_zoom ^= 1;
+			sl_vx = cx - sl_vw() / 2;
+			sl_vy = cy - sl_vh() / 2;
+			sl_clamp();
+			lsound_play(LSND_DECIDE);
+		} else if (press & (K_B | K_BACK)) {
+			lsound_play(LSND_CANCEL);
+			lsound_music_stop();
+			log_printf(C_WHITE, "STORY: CLOSED, THE MUSIC WENT ROUND %u TIMES", lsound_music_loops());
+			go(ST_STORY_OUT);
+		} else if (press & (K_LB | K_RB)) { /* the previous / next slide, wrapping */
+			sl_target = (sl_target + n + (press & K_LB ? -1 : 1)) % n;
+			lsound_play(LSND_CURSOR);
+		} else if (press & K_Y) {
+			sl_overlay ^= 1;
+		}
+		if (state == ST_STORY_VIEW) {
+			if (sl_zoom) { /* zoomed: the d-pad moves the picture (held) */
+				sl_vx += (pad_held & K_RIGHT ? SL_PAN : 0) - (pad_held & K_LEFT ? SL_PAN : 0);
+				sl_vy += (pad_held & K_DOWN ? SL_PAN : 0) - (pad_held & K_UP ? SL_PAN : 0);
+			} else { /* a tall slide: UP / DOWN scroll it (held) */
+				sl_vy += (pad_held & K_DOWN ? SL_STEP : 0) - (pad_held & K_UP ? SL_STEP : 0);
+			}
+			sl_clamp();
+		}
+		break;
+	case ST_STORY_OUT:
+		if (state_t >= GAL_FADE) {
+			sel = IT_STORY;
+			go(ST_MODE);
+		}
+		break;
+	}
+}
+
+/* the slide on show at fade f (0..1): each chunk the view reads, where the view shows it; black where it is not
+ * decoded yet */
+static void sl_draw(float f)
+{
+	const float k = sl_k(), vw = sl_vw(), vh = sl_vh(), oy = (720 - 720 * (canvas_w / SL_W)) / 2;
+	const int n = sl_idx[sl_cur].chunks;
+	int c;
+
+	for (c = 0; c < n; c++) {
+		const float top = (float)c * SL_H, bot = top + SL_H;
+		const float y0 = top > sl_vy ? top : sl_vy, y1 = bot < sl_vy + vh ? bot : sl_vy + vh;
+		const int t = sl_find(sl_cur, c);
+		if (y1 <= y0 || t < 0)
+			continue;
+		use(&t_story[t], 1);
+		quad(0, oy + (y0 - sl_vy) * k, canvas_w, oy + (y1 - sl_vy) * k, sl_vx / SL_W, (y0 - top) / SL_H,
+		     (sl_vx + vw) / SL_W, (y1 - top) / SL_H, rgba(f, f, f, 1));
+	}
+}
+
+/* the label window (Y): the slide's label and its number, in the PS2's window at the bottom left */
+static void sl_window(float f)
+{
+	/* test 122 (user: "the story guide on the lower left is too large, covering the images partially"): about half the
+	 * size, text at x1 (the label in yellow, "n / N" in grey below it), 12 px from the left and bottom edges */
+	const float x = 12, y = 720 - 12 - 56;
+	char t[24];
+	float w;
+
+	snprintf(t, sizeof(t), "%u / %u", (unsigned)sl_cur + 1, sl_n);
+	w = text_w(sl_idx[sl_cur].label, 1) > text_w(t, 1) ? text_w(sl_idx[sl_cur].label, 1) : text_w(t, 1);
+	w += 28; /* test 122: as wide as its longer line (a label is up to 29 letters) */
+	nine(x, y, w, 56, 1, 1, rgba(f, f, f, 1));
+	text(x + 14, y + 10, sl_idx[sl_cur].label, 1, rgba(YELLOW.r * f, YELLOW.g * f, YELLOW.b * f, 1));
+	text(x + 14, y + 30, t, 1, rgba(GREY.r * f, GREY.g * f, GREY.b * f, 1));
+}
+
 /* ---- the launch, the steps ----------------------------------------------------------------------------------------- */
 
 static void launch(int g)
@@ -1842,8 +2890,12 @@ static void step(unsigned press)
 		break;
 	case ST_MODE:
 	case ST_FAIL:
-		if (press & (K_UP | K_DOWN)) {
-			sel = (sel + IT_N + (press & K_UP ? -1 : 1)) % IT_N;
+		if ((press & K_X) && sel == IT_STORY) { /* test 121: STORY's language (the session's) */
+			story_lang ^= 1;
+			lsound_play(LSND_CURSOR);
+			log_printf(C_WHITE, "STORY: %s", story_lang ? "JAPANESE" : "ENGLISH");
+		} else if (press & (K_UP | K_DOWN)) {
+			sel = it_move(sel, press & K_UP ? -1 : 1);
 			lsound_play(LSND_CURSOR);
 			if (state == ST_FAIL)
 				go(ST_MODE);
@@ -1855,6 +2907,11 @@ static void step(unsigned press)
 			} else if (!item_ok(sel)) {
 				lsound_play(LSND_CANCEL);
 				log_printf(C_RED, "LAUNCHER: %s IS NOT THERE", sel == IT_GALLERY ? GAL_FILE : launch_xex[sel]);
+			} else if (sel == IT_STORY) { /* test 121 */
+				lsound_play(LSND_DECIDE);
+				log_printf(C_WHITE, "LAUNCHER: STORY (%s)", story_lang ? "JA" : "EN");
+				sl_enter();
+				go(ST_STORY_ENTER);
 			} else if (sel == IT_GALLERY) {
 				lsound_play(LSND_DECIDE);
 				log_printf(C_WHITE, "LAUNCHER: GALLERY%s", gal_ready ? "" : " (ITS FILE STILL LOADING)");
@@ -1880,6 +2937,12 @@ static void step(unsigned press)
 			lsound_stop();
 			exit(0); /* xsdk's _exit: the display and the GPU back to XAM, XamLoaderTerminateTitle */
 		}
+		break;
+	case ST_STORY_ENTER: /* test 121 */
+	case ST_STORY_IN:
+	case ST_STORY_VIEW:
+	case ST_STORY_OUT:
+		story_step(press, rep);
 		break;
 	default:
 		gal_step(press, rep);
@@ -1979,6 +3042,39 @@ static void draw_states(void)
 		ticker(1.0f - (state_t + 1) * 8 / 255.0f); /* test 93: the PS2's net -8 a frame */
 		break;
 	}
+	case ST_STORY_ENTER: { /* test 121: STORY's gate, as the gallery's: black over MODE SELECT, NOW LOADING on it */
+		const float a = (float)state_t / GAL_FADE;
+		if (state_t == 0)
+			tick_c = 0;
+		if (ps2) {
+			rot = tate;
+			draw_mode();
+			rot = 0;
+		} else {
+			draw_plain();
+		}
+		fade(a);
+		ticker((state_t + 1) * 8 / 255.0f);
+		break;
+	}
+	case ST_STORY_IN: /* the slide from black, the gate's NOW LOADING going */
+		sl_draw((float)state_t / GAL_FADE);
+		if (sl_overlay)
+			sl_window((float)state_t / GAL_FADE);
+		ticker(1.0f - (state_t + 1) * 8 / 255.0f);
+		break;
+	case ST_STORY_VIEW:
+		sl_draw(1);
+		if (sl_overlay)
+			sl_window(1);
+		break;
+	case ST_STORY_OUT: {
+		const float f = 1.0f - (float)state_t / GAL_FADE;
+		sl_draw(f);
+		if (sl_overlay)
+			sl_window(f);
+		break;
+	}
 	case ST_GAL_OUT:
 		draw_gallery(1.0f - (float)state_t / GAL_FADE);
 		break;
@@ -2006,7 +3102,7 @@ static uint32_t main_task(void *u)
 	netlog_start(1, NETLOG_PORT, "IBARA360 " XEX_VERSION " LAUNCHER XEX");
 	if (!NT_SUCCESS(xsdk_thread_create_on(&h, 256 * 1024, load_task, NULL, LOAD_THREAD))) {
 		log_printf(C_RED, "GALLERY: NO LOAD THREAD (NO GALLERY)");
-		gal_ready = music_ready = -1;
+		gal_ready = music_ready = story_ready = -1; /* test 121: no STORY either */
 	} else {
 		NtClose(h);
 	}

@@ -41,7 +41,7 @@ struct settings cfg = {.card = 0, .picture = PIC_INTEGER, .save = 1, .record = 0
                        .pic_sx = {[0 ... PIC_SHAPES - 1] = 1000}, .pic_sy = {[0 ... PIC_SHAPES - 1] = 1000}, .smooth = 0,
                        .brightness = 100, .menu_style = MENU_PS2, .language = LANG_ENGLISH,
                        .soundtrack = TRACK_ARCADE, .achievements = 0, .toast_pos = 6, .staff_keep = 1,
-                       .mono = 0, .replay_save = 1};
+                       .mono = 0, .replay_save = 1, .attract_demo = 1, .stage_map = 0};
 /* test 112 (user: "keep achievements off as the default, make bottom right toast the default"; EX-DEBUG's "record
  * (default off), frame log (default off), network log (default off)"): netlog 0 and toast_pos 6 (bottom_right) above;
  * an ini from before test 112 (no "defaults = 112") gets those five once (defaults_seen, settings_load) */
@@ -228,6 +228,12 @@ static unsigned ini_text_more(char *b, unsigned size)
 		"staff_roll = %d\n"
 		"# replay_save: 1 = SAVE REPLAY? after a run (the default), 0 = never asked, nothing saved (EX-DEBUG's REPLAY SAVE)\n"
 		"replay_save = %d\n"
+		"# attract_demo: 1 = the arcade's attract demos (the default), 0 = the title screen is held, no demo (the debug\n"
+		"#               menu's ATTRACT DEMO; ibara and Kuro BL; test 122: it takes effect only from the next power on)\n"
+		"attract_demo = %d\n"
+		"# stage_map: 1 = the 16:9 side panels show the STAGE MAP only (the stage's map with the view, the boss);\n"
+		"#             0 = off (the default; the M3 GADGETS page's STAGE MAP, it needs ibaraweb.dat beside the xex)\n"
+		"stage_map = %d\n"
 		"# defaults: the build whose defaults this file has (test 112 set record, framelog, netlog, achievements and\n"
 		"#           toast_position once to 0, 0, 0, 0, bottom_right)\n"
 		"defaults = %d\n"
@@ -243,7 +249,7 @@ static unsigned ini_text_more(char *b, unsigned size)
 		cfg.vol_voice, cfg.vol_attract, cfg.mute, cfg.soundtrack == TRACK_PS2 ? "ps2" : "arcade", cfg.mono ? "mono" : "stereo", arr_bullet_words[cfg.arr_bullets >= 0 && cfg.arr_bullets < 3 ? cfg.arr_bullets : 0],
 		pic_lines(), cfg.smooth, cfg.brightness,
 		cfg.language == LANG_JAPANESE ? "japanese" : "english", cfg.achievements, toast_words[cfg.toast_pos],
-		cfg.staff_keep, cfg.replay_save, DEFAULTS_VER);
+		cfg.staff_keep, cfg.replay_save, cfg.attract_demo, cfg.stage_map, DEFAULTS_VER);
 	int s, i, p;
 
 	for (p = 0; p < CTL_PADS; p++)
@@ -530,6 +536,24 @@ static void ini_line(char *line, unsigned n)
 		} else {
 			ini_bad++;
 			log_printf(C_YELLOW, "INI LINE %u: REPLAY_SAVE = %.20s? (0 OR 1)", n, v);
+		}
+		return;
+	}
+	if (!strcasecmp(k, "attract_demo")) { /* test 121 */
+		if (!strcmp(v, "0") || !strcmp(v, "1")) {
+			cfg.attract_demo = v[0] - '0';
+		} else {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: ATTRACT_DEMO = %.20s? (0 OR 1)", n, v);
+		}
+		return;
+	}
+	if (!strcasecmp(k, "stage_map")) { /* test 121 item 5 */
+		if (!strcmp(v, "0") || !strcmp(v, "1")) {
+			cfg.stage_map = v[0] - '0';
+		} else {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: STAGE_MAP = %.20s? (0 OR 1)", n, v);
 		}
 		return;
 	}
@@ -1010,6 +1034,8 @@ void settings_log(const char *head)
 	           toast_words[cfg.toast_pos], cfg.staff_keep ? "PROTECTED" : "SKIPPABLE"); /* test 106; test 109 */
 	if (!cfg.replay_save) /* test 118 */
 		log_printf(C_GREEN, "%s REPLAY SAVE OFF", head);
+	if (!cfg.attract_demo) /* test 121 */
+		log_printf(C_GREEN, "%s ATTRACT DEMO OFF", head);
 	log_printf(C_GREEN, "%s MENU STYLE %s, LANGUAGE %s", head, cfg.menu_style == MENU_PS2 ? "PS2" : "ARCADE",
 	           cfg.language == LANG_JAPANESE ? "JAPANESE" : "ENGLISH"); /* test 98 */
 	log_printf(C_GREEN, "%s SOUND: MUSIC %d%% SFX %d%% VOICE %d%% ATTRACT %d%%%s, SOUNDTRACK %s, %s", head,

@@ -204,8 +204,10 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/launcher/launcher.c")
 	file(GLOB LAUNCHER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/launcher/*.c")
 	# Test 97: the PS2 port's pictures and sounds from ps2data.bin (source/ps2data.c), the gallery's music inside
 	# (launcher/gallery_mp3.S: .incbin gen/launcher/gallery_mp3.z, tools/launcher/mkmp3.py)
+	# Test 121: webdat.c (ibaraweb.dat, STORY's JPEGs through source/stb_image.h). The three games take it from
+	# TITLE_SOURCES (source/*.c); listing it in their targets too would link it twice, so only the launcher lists it.
 	add_executable(ibara360 ${LAUNCHER_SOURCES} source/launch.c source/netlog.c source/xam_loader.S source/xsdk_present.c
-		source/ps2data.c source/spa.c launcher/gallery_mp3.S "${ROOT}/gen/launcher/launch_art.c" ${ZLIB_SOURCES})
+		source/ps2data.c source/spa.c source/webdat.c launcher/gallery_mp3.S "${ROOT}/gen/launcher/launch_art.c" ${ZLIB_SOURCES})
 	set_source_files_properties(launcher/gallery_mp3.S PROPERTIES COMPILE_OPTIONS "-Wa,-I${ROOT}/gen/launcher"
 		OBJECT_DEPENDS "${ROOT}/gen/launcher/gallery_mp3.z")
 	set_target_properties(ibara360 PROPERTIES C_STANDARD 11 C_EXTENSIONS ON)

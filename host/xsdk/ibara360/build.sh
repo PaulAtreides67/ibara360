@@ -1,5 +1,5 @@
 #!/bin/sh
-# ibara360 1.02 .xex build (xsdk): ibara.xex, ibarablk.xex, ibaraarr.xex (Arrange) and the launcher ibara360.xex.
+# ibara360 1.03 .xex build (xsdk): ibara.xex, ibarablk.xex, ibaraarr.xex (Arrange) and the launcher ibara360.xex.
 # From Git Bash on the PC:
 #   MSYS_NO_PATHCONV=1 docker run --rm --memory=5g --label watchdog.max=10800 -v xsdk-gcc:/opt/xsdk-gcc \
 #     -v "C:\New folder\ibara360:/p" -v "C:\New folder\xsdk-src\xsdk:/xsdk:ro" -v xsdk-ibara360:/b \

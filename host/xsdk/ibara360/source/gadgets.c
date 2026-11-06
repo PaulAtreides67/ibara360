@@ -118,6 +118,8 @@
 #include "cv1k.h"
 #include "gadgets.h"
 #include "ps2data.h" /* test 99: the 4:3 panels' PS2 layers */
+#include "launch.h" /* test 121 item 5 */
+#include "webdat.h" /* test 121 item 5: ibaraweb.dat */
 #include "zlib.h"
 #ifdef IB_ARRANGE
 #include "arrange_patch.h" /* test 79: ARRANGE's state in work RAM (ARRANGE_FORM, ...) */
@@ -790,10 +792,13 @@ void gadgets_state_save(int slot)
 		st_slot[slot] = st;
 }
 
+static int sm_hold; /* test 122: STAGE MAP's boss hold (defined with the stage map below) */
+
 void gadgets_state_load(int slot, int restart)
 {
 	if (slot < 0 || slot >= GD_STATE_SLOTS)
 		return;
+	sm_hold = 0; /* test 122: a load or a restart lets STAGE MAP's box go (the boss holds it again if it is up) */
 	st = st_slot[slot];
 	st_resync = st.idx >= 0; /* test 117 */
 	restarted = restart;
@@ -864,6 +869,129 @@ int gadgets_red(int side)
 static int lock_down(int p)
 {
 	return ARR && !(s.port_c & (0x40u << p));
+}
+
+/* test 121 item 5 (user: "a new separate gadget (turns off all other gadgets when enabled, 16:9 only) that displays the
+ * stage map on the left (and a red box that scrolls alongside the game itself), and when a boss appears, a full picture
+ * and name on the right"): STAGE MAP. The game picture is 540 wide at x 370 .. 910 in 16:9, so the side panels are
+ * x 0 .. 370 and 910 .. 1280. Left: the stage's map (ibaraweb.dat's map.N, the site's 200 px wide picture, END at the top)
+ * at 1.25x, centred, and the game's view (240 x 320) as a 2 px red box along it. Right: the boss (boss.N) and its name
+ * (bname.N.*) while it is up, fading in over SM_FADE frames, else the stage's title plate (stitle.N.*). The scroll is the
+ * stage's layer 0 scroll (the 16.16 word at +8 of the layer slot: ibara and ARRANGE 0C26CAE8, Kuro BL 0C286320), read
+ * from RAM every frame: 0 at the stage's start and sm_stop at the boss's entry. The view's bottom is at the map's bottom
+ * at the start and its top at the map's top at sm_stop, so the map's rows per game pixel are H / (sm_stop + 320).
+ * work/g121/map/REPORT.md has the measurements and the residuals. */
+#define SM_LEFT_W 370    /* the left panel's width (the game picture starts here) */
+#define SM_RIGHT_X 910   /* the right panel's left edge */
+#define SM_MAP_X 60      /* the map's left edge: (370 - 200 * 1.25) / 2 */
+#define SM_MAP_K 1.25f   /* canvas pixels a map pixel */
+#define SM_FADE 16       /* frames the boss takes to fade in and out */
+#define SM_CHUNK 2048    /* rows per map texture (stage 3's 13000 rows: 7 of them) */
+#define SM_NMAPS 6
+#define SM_NPLATES 24    /* bname.N.en/ja at 2N + lang (0 .. 11), stitle.N.en/ja at 12 + 2N + lang */
+#define SM_CHUNKS 16     /* 1 + 2 + 7 + 2 + 2 + 2 map textures */
+#define SM_RUNS 64       /* the stage map's draw runs per frame */
+
+/* the scroll where the stage stops at its boss (game pixels), stages 1..6: [0] ibara and ARRANGE, [1] Kuro BL. Ibara
+ * stage 1 measured (work/g121/map/REPORT.md: 2449.25), the others are the boss-entry states of gen/train/ib_boss.h and
+ * blk_boss.h. Kuro BL stage 1: test 122 (work/g122/map/REPORT.md) = 2449.25, the boss's entry (the old 2013.25 was a
+ * stage 1 run that froze there with no boss and cleared; its dump's 2448.5 is the boss entry). Stage 4 has no usable
+ * state (its dump's layer layout differs and Kuro BL has none): 1291.75, unverified. */
+static const float sm_stop[2][SM_NMAPS] = {
+	{2449.25f, 3264.5f, 10553.45f, 1291.75f, 4037.5f, 2834.12f},
+	{2449.25f, 3264.5f, 10269.83f, 1291.75f, 4032.5f, 2834.62f},
+};
+static const unsigned sm_rows[SM_NMAPS] = {1800, 2800, 13000, 2400, 3200, 4000}; /* the maps' heights (site) */
+
+static int sm_want, sm_ja;        /* the setting and the language (gadgets_stagemap_set) */
+static int sm_avail;              /* ibaraweb.dat's pictures are listed and their textures made (game thread) */
+static volatile int sm_ready;     /* the pictures are decoded (unpack thread, before gd_unpacked) */
+static int sm_n;                  /* the stage being played, 1..6 (0 none) */
+static float sm_scroll;           /* that stage's scroll, game pixels (test 122: clamped to [0, stop], held at the stop) */
+static int sm_pn;                 /* test 122: the stage of the last frame */
+static int sm_hold;               /* test 122: the boss came in this stage: the box is held at the map's top */
+static int sm_fade;               /* 0 .. SM_FADE: the boss's picture (the title plate shows the rest) */
+static XsdkTexture sm_map[SM_CHUNKS];  /* the maps' chunks, 200 px wide: sm_maprow[] rows each */
+static unsigned sm_maprow[SM_CHUNKS], sm_mapfirst[SM_NMAPS], sm_mapc[SM_NMAPS];
+static XsdkTexture sm_boss[SM_NMAPS], sm_plate[SM_NPLATES];
+static const struct webdat_entry *sm_me[SM_NMAPS], *sm_be[SM_NMAPS], *sm_pe[SM_NPLATES];
+static struct {
+	const XsdkTexture *t;
+	int lin;
+	unsigned first, n;   /* the quads' indices in gd_q */
+} sm_run[SM_RUNS];
+static unsigned sm_nrun;
+/* test 122 (user: "add a background (taken from official artwork) to fill in the gaps for the stage map gadget"): the
+ * site's stage background bg.stage (540 x 800, grey stage artwork), covering both side panels darkened to 65%: the
+ * left panel shows the picture's left part, the right panel its right part. Optional: without it the panels stay black */
+#define SM_BG_W 540
+#define SM_BG_H 800
+#define SM_BG_K 0.65f    /* the panels' brightness */
+#define SM_BG_U 0.76132f /* the left panel's share of the picture's width: 370 / 0.9 / 540 (scale 0.9 covers 370 x 720) */
+static XsdkTexture sm_bg;
+static int sm_bg_ok;     /* the background is decoded (unpack thread, before sm_ready) */
+static const struct webdat_entry *sm_bge;
+/* test 123 (user: "teresa's boss artwork is too small, use the artbook (or ps2) as reference instead of the website's";
+ * "for every other boss, use artbook (or ps2), with transparency so that it's seamless with the background"): the six
+ * bosses are the PS2 gallery's pictures 1-6 (Meidi .. Teresa, full length on white), cut out on the unpack thread
+ * (sm_cut); boss.N of ibaraweb.dat is the fallback. sm_boss[k] is the whole picture fitted into SM_BOSS_W x SM_BOSS_H,
+ * the cut-out sits in its top-left corner: sm_buv[k] its rectangle, sm_bpw/sm_bph[k] its size in texture pixels.
+ * bg.boss (370 x 720) is the right panel's own background (sm_bgb, after bg.stage). */
+#define SM_BOSS_W 380   /* the largest boss texture (a picture fitted into 380 x 640; reviewer: 360 x 600 drew the narrow bosses under the preview's size) */
+#define SM_BOSS_H 640
+#define SM_GAL_FIRST 5  /* the gallery's entry of picture 0 (the IBGL header's 5 sheets come first) */
+#define SM_GAL_MAX 896  /* a gallery picture's largest side */
+#define SM_BB_W 370
+#define SM_BB_H 720
+static struct {
+	uint32_t off, zn;  /* the picture's zlib bytes in the gallery blob */
+	unsigned w, h;
+} sm_gal[SM_NMAPS];
+static int sm_gal_ok;               /* the six pictures are in (game thread, sm_begin): the bosses come from the gallery */
+static char sm_gal_why[96];         /* why not (the log's fallback line) */
+static unsigned sm_bw[SM_NMAPS], sm_bh[SM_NMAPS];   /* sm_boss[k]'s texture size */
+static float sm_buv[SM_NMAPS][4];   /* the cut-out's rectangle in sm_boss[k] (u0, v0, u1, v1) */
+static float sm_bpw[SM_NMAPS], sm_bph[SM_NMAPS];    /* the cut-out's size in texture pixels */
+static XsdkTexture sm_bgb;          /* bg.boss */
+static int sm_bgb_ok;               /* bg.boss is decoded (unpack thread, after bg.stage) */
+static const struct webdat_entry *sm_bbe;
+
+/* game thread, every emulated vblank (after the boss's state): the stage being played, its scroll and the boss's fade
+ * (the boss's own rule, gadgets_boss_fight). The scroll is read, never integrated: a save state or a restart brings it
+ * back by itself */
+static void stagemap_frame(void)
+{
+	const unsigned b = *RAMP(M->stage);
+	const int up = s.boss >= 0 && (s.boss_tier < 3 || s.boss_on);
+	const uint32_t lay = M == &map_blk ? 0x0C286318u : 0x0C26CAE0u; /* the layer slots (8 x 0x4C, +8 the scroll) */
+	const float raw = (float)be32(lay + 8) / 65536.0f;
+
+	/* the stage byte's mapping of stages_frame: 2-7 = stages 1-6; 8-13 = the extended mode's second loop */
+	sm_n = b >= 2 && b < 8 ? (int)b - 1 : b >= 8 && b < 14 && M->modes && s.mode == 2 ? (int)b - 7 : 0;
+	/* test 122 (user: "the stage map gadget's red box scrolls kinda funky when reaching a boss"; work/g122/map/REPORT.md):
+	 * the layer's scroll goes on past the stop once the boss comes (Kuro BL stage 1: 2449 -> 3058, then the arena wraps
+	 * to 547 and runs on to 797, frozen there until the stage clears) and the box ran off the map's top. The box is held
+	 * at the map's top (the scroll at the stop) from the boss's arrival (s.boss) until the stage changes or a save state,
+	 * restart or quit is loaded (gadgets_state_load; reviewer: a jump test let it go at the stage clear's reset to 0, the
+	 * box falling to the map's bottom before the next stage). Otherwise the scroll is clamped to [0, stop]. No easing:
+	 * the box snaps, and nothing here is integrated */
+	if (sm_n != sm_pn)
+		sm_hold = 0;
+	if (s.boss >= 0)
+		sm_hold = 1;
+	sm_pn = sm_n;
+	if (sm_n >= 1 && sm_n <= SM_NMAPS) {
+		const float stop = sm_stop[M == &map_blk][sm_n - 1];
+		sm_scroll = sm_hold ? stop : raw < 0.0f ? 0.0f : raw > stop ? stop : raw;
+	} else {
+		sm_scroll = raw;
+	}
+	if (up) {
+		if (sm_fade < SM_FADE)
+			sm_fade++;
+	} else if (sm_fade > 0) {
+		sm_fade--;
+	}
 }
 
 void gadgets_frame(const struct gd_input *in)
@@ -991,6 +1119,7 @@ void gadgets_frame(const struct gd_input *in)
 	stages_frame();
 	s.bullets = bullets_read();
 	s.boss_on = M->boss_music(s.bgm);
+	stagemap_frame(); /* test 121 item 5 */
 	s.port[0] = in->port_d;
 	s.port[1] = in->port_l;
 	s.port_c = in->port_c;
@@ -2380,7 +2509,478 @@ static volatile int gd_unpacked; /* 0 running, 1 done, -1 failed */
 static volatile unsigned gd_unpack_ms;
 static int gd_started;
 
+static int gd_unpack_main(void);
+
+/* test 123: the scale that fits a w x h picture into SM_BOSS_W x SM_BOSS_H, at most 1 (sm_fit's rule) */
+static float sm_boss_s(unsigned w, unsigned h)
+{
+	const float a = (float)SM_BOSS_W / w, b = (float)SM_BOSS_H / h, s = a < b ? a : b;
+
+	return s < 1 ? s : 1;
+}
+
+static uint32_t sm_u32(const unsigned char *p)
+{
+	return (uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 | (uint32_t)p[2] << 8 | p[3];
+}
+
+static unsigned sm_u16(const unsigned char *p)
+{
+	return (unsigned)p[0] << 8 | p[1];
+}
+
+/* test 123: the gallery's header and the six boss pictures' entries (IBGL: "IBGL", u32 1, u32 5 sheets, u32 pictures; then
+ * 24 bytes an entry, big-endian: u32 offset, u32 zlib bytes, u16 w, h, format, colours, whole w, h, x, y; picture n is
+ * entry 5 + n, format 1 = zlib of w x h u16 R << 10 | G << 5 | B; tools/launcher/mkgallery.py). 0 = the six are there */
+static int sm_gal_read(void)
+{
+	unsigned char hd[16 + 24 * (SM_GAL_FIRST + SM_NMAPS)];
+	unsigned k;
+
+	if (ps2data_open()) {
+		snprintf(sm_gal_why, sizeof(sm_gal_why), "%s", ps2data_why());
+		return -1;
+	}
+	if (ps2data_read_part(PS2N_GALLERY, 0, hd, sizeof(hd))) {
+		snprintf(sm_gal_why, sizeof(sm_gal_why), "PS2DATA.BIN HAS NO GALLERY");
+		return -1;
+	}
+	if (memcmp(hd, "IBGL", 4) || sm_u32(hd + 4) != 1 || sm_u32(hd + 8) != 5 ||
+	    sm_u32(hd + 12) < SM_GAL_FIRST + SM_NMAPS) {
+		snprintf(sm_gal_why, sizeof(sm_gal_why), "THE GALLERY IS NOT AN IBGL FILE");
+		return -1;
+	}
+	for (k = 0; k < SM_NMAPS; k++) {
+		const unsigned char *e = hd + 16 + 24 * (SM_GAL_FIRST + k);
+
+		sm_gal[k].off = sm_u32(e);
+		sm_gal[k].zn = sm_u32(e + 4);
+		sm_gal[k].w = sm_u16(e + 8);
+		sm_gal[k].h = sm_u16(e + 10);
+		if (sm_u16(e + 12) != 1 || !sm_gal[k].zn || !sm_gal[k].w || !sm_gal[k].h || sm_gal[k].w > SM_GAL_MAX ||
+		    sm_gal[k].h > SM_GAL_MAX) {
+			snprintf(sm_gal_why, sizeof(sm_gal_why), "GALLERY PICTURE %u IS NOT FORMAT 1 OR TOO BIG", k + 1);
+			return -1;
+		}
+	}
+	return 0;
+}
+
+/* test 123 (tools/card/ps2art.py's key_white and _cut; the reference work/g123/art/mockboss.py): picture k of the gallery
+ * cut out onto sm_boss[k]. 1: bgm = min(R, G, B) >= 232; 2: bg = the bgm components (4 neighbours, an explicit queue: no
+ * recursion) that touch the picture's edge or have over 1500 pixels; 3: fig = not bg, eroded once (4 neighbours, outside
+ * is not fig); 4: alpha = fig blurred (sigma 0.7, a 5-tap kernel) x 255, truncated; 5: the crop = the bounding box of
+ * alpha > 8; 6: the crop scaled by sm_boss_s (the picture's own scale) into sm_boss[k]'s top-left, box filtered
+ * premultiplied by alpha and un-premultiplied after; the rest of the texture 0. sm_buv, sm_bpw, sm_bph get the crop. Every
+ * buffer is malloc'd (the unpack thread's stack is 64 KB) and freed on every path. 0 = done */
+static int sm_cut(unsigned k)
+{
+	static const float kern[5] = {0.00962f, 0.2055f, 0.5698f, 0.2055f, 0.00962f};
+	static const int dx[4] = {-1, 1, 0, 0}, dy[4] = {0, 0, -1, 1};
+	const unsigned w = sm_gal[k].w, h = sm_gal[k].h, n = w * h;
+	XsdkTexture *t = &sm_boss[k];
+	unsigned char *z = NULL, *raw = NULL, *bgm = NULL, *bg = NULL, *fig = NULL, *al = NULL;
+	unsigned *q = NULL;
+	float *ft = NULL;
+	unsigned i, x, y, j, qh, qn, bx0 = 0, bx1 = 0, by0 = 0, by1 = 0, cw, ch, cwt, cht, tw = sm_bw[k], th = sm_bh[k];
+	int d, found = 0, r = -1;
+	float s;
+
+	z = malloc(sm_gal[k].zn);
+	raw = malloc((size_t)n * 2);
+	if (!z || !raw || ps2data_read_part(PS2N_GALLERY, sm_gal[k].off, z, sm_gal[k].zn))
+		goto done;
+	{
+		z_stream st;
+		int zr;
+
+		memset(&st, 0, sizeof(st));
+		st.next_in = z;
+		st.avail_in = sm_gal[k].zn;
+		st.next_out = raw;
+		st.avail_out = n * 2;
+		if (inflateInit(&st) != Z_OK)
+			goto done;
+		zr = inflate(&st, Z_FINISH);
+		inflateEnd(&st);
+		if (zr != Z_STREAM_END || st.avail_out)
+			goto done;
+	}
+	free(z);
+	z = NULL;
+	bgm = malloc(n);
+	bg = calloc(n, 1);
+	fig = calloc(n, 1);
+	q = malloc((size_t)n * sizeof(*q));
+	if (!bgm || !bg || !fig || !q)
+		goto done;
+	for (i = 0; i < n; i++) {
+		const unsigned p = sm_u16(raw + 2 * (size_t)i);
+		const unsigned c1 = ((p >> 10) & 31) << 3, c2 = ((p >> 5) & 31) << 3, c3 = (p & 31) << 3;
+		const unsigned mn = c1 < c2 ? (c1 < c3 ? c1 : c3) : (c2 < c3 ? c2 : c3);
+
+		bgm[i] = mn >= 232;
+	}
+	for (i = 0; i < n; i++) { /* the components (fig = seen here) */
+		if (!bgm[i] || fig[i])
+			continue;
+		fig[i] = 1;
+		qh = 0;
+		qn = 0;
+		q[qn++] = i;
+		{
+			unsigned border = 0;
+
+			while (qh < qn) {
+				const unsigned c = q[qh++], cx = c % w, cy = c / w;
+
+				if (cx == 0 || cy == 0 || cx == w - 1 || cy == h - 1)
+					border = 1;
+				for (d = 0; d < 4; d++) {
+					const int nx = (int)cx + dx[d], ny = (int)cy + dy[d];
+
+					if (nx >= 0 && ny >= 0 && nx < (int)w && ny < (int)h) {
+						const unsigned o = (unsigned)ny * w + (unsigned)nx;
+
+						if (bgm[o] && !fig[o]) {
+							fig[o] = 1;
+							q[qn++] = o;
+						}
+					}
+				}
+			}
+			if (border || qn > 1500)
+				for (j = 0; j < qn; j++)
+					bg[q[j]] = 1;
+		}
+	}
+	free(q);
+	q = NULL;
+	free(fig);
+	fig = NULL;
+	for (y = 0; y < h; y++) /* 3: fig eroded once into bgm (the cross; outside is not fig) */
+		for (x = 0; x < w; x++) {
+			const unsigned o = y * w + x;
+
+			bgm[o] = !bg[o] && x > 0 && !bg[o - 1] && x < w - 1 && !bg[o + 1] && y > 0 && !bg[o - w] &&
+			         y < h - 1 && !bg[o + w];
+		}
+	free(bg);
+	bg = NULL;
+	ft = malloc((size_t)n * sizeof(*ft));
+	al = malloc(n);
+	if (!ft || !al)
+		goto done;
+	for (y = 0; y < h; y++) /* 4: the blur, across then down */
+		for (x = 0; x < w; x++) {
+			float v = 0;
+
+			for (d = -2; d <= 2; d++) {
+				const int xx = (int)x + d;
+
+				if (xx >= 0 && xx < (int)w)
+					v += kern[d + 2] * bgm[y * w + (unsigned)xx];
+			}
+			ft[y * w + x] = v;
+		}
+	for (y = 0; y < h; y++)
+		for (x = 0; x < w; x++) {
+			float v = 0;
+			int av;
+
+			for (d = -2; d <= 2; d++) {
+				const int yy = (int)y + d;
+
+				if (yy >= 0 && yy < (int)h)
+					v += kern[d + 2] * ft[(unsigned)yy * w + x];
+			}
+			av = v <= 0 ? 0 : v >= 1 ? 255 : (int)(v * 255);
+			al[y * w + x] = (unsigned char)av;
+		}
+	for (y = 0; y < h; y++) /* 5: the crop */
+		for (x = 0; x < w; x++)
+			if (al[y * w + x] > 8) {
+				if (!found) {
+					bx0 = bx1 = x;
+					by0 = by1 = y;
+					found = 1;
+				}
+				if (x < bx0)
+					bx0 = x;
+				if (x > bx1)
+					bx1 = x;
+				if (y < by0)
+					by0 = y;
+				if (y > by1)
+					by1 = y;
+			}
+	if (!found) {
+		log_printf(C_RED, "STAGE MAP: BOSS %u HAS NO FIGURE IN ITS GALLERY PICTURE", k + 1);
+		goto done;
+	}
+	cw = bx1 - bx0 + 1;
+	ch = by1 - by0 + 1;
+	s = sm_boss_s(w, h);
+	cwt = (unsigned)(cw * s + 0.5f);
+	cht = (unsigned)(ch * s + 0.5f);
+	cwt = cwt < 1 ? 1 : cwt > tw ? tw : cwt;
+	cht = cht < 1 ? 1 : cht > th ? th : cht;
+	for (y = 0; y < th; y++) /* 6: the texture, the rest 0 */
+		for (x = 0; x < tw; x++)
+			t->texels[(size_t)y * t->pitch + x] = 0;
+	for (y = 0; y < cht; y++) { /* the crop's texel rows and columns: the source boxes between its edges */
+		const unsigned sy0 = by0 + y * ch / cht, sy1 = by0 + (y + 1) * ch / cht > sy0 ? by0 + (y + 1) * ch / cht : sy0 + 1;
+
+		for (x = 0; x < cwt; x++) {
+			const unsigned sx0 = bx0 + x * cw / cwt, sx1 = bx0 + (x + 1) * cw / cwt > sx0 ? bx0 + (x + 1) * cw / cwt : sx0 + 1;
+			float sa = 0, sr = 0, sg = 0, sb = 0;
+			unsigned yy, xx, cnt = 0;
+
+			for (yy = sy0; yy < sy1; yy++)
+				for (xx = sx0; xx < sx1; xx++) {
+					const unsigned o = yy * w + xx, p = sm_u16(raw + 2 * (size_t)o);
+					const float a = al[o];
+
+					sa += a;
+					sr += a * (float)(((p >> 10) & 31) << 3);
+					sg += a * (float)(((p >> 5) & 31) << 3);
+					sb += a * (float)((p & 31) << 3);
+					cnt++;
+				}
+			if (sa > 0)
+				t->texels[(size_t)y * t->pitch + x] = (uint32_t)(sa / cnt + 0.5f) << 24 |
+				                                      (uint32_t)(sr / sa + 0.5f) << 16 |
+				                                      (uint32_t)(sg / sa + 0.5f) << 8 | (uint32_t)(sb / sa + 0.5f);
+		}
+	}
+	xsdk_gpu_invalidate(t->address, t->size_bytes);
+	sm_buv[k][0] = 0;
+	sm_buv[k][1] = 0;
+	sm_buv[k][2] = (float)cwt / tw;
+	sm_buv[k][3] = (float)cht / th;
+	sm_bpw[k] = (float)cwt;
+	sm_bph[k] = (float)cht;
+	r = 0;
+done:
+	free(z);
+	free(raw);
+	free(bgm);
+	free(bg);
+	free(fig);
+	free(q);
+	free(ft);
+	free(al);
+	if (r)
+		log_printf(C_RED, "STAGE MAP: BOSS %u DID NOT CUT OUT OF ITS GALLERY PICTURE", k + 1);
+	return r;
+}
+
+/* test 121 item 5: ibaraweb.dat beside the .xex files (webdat.c). The table is read once here on the game thread (gd_begin),
+ * which makes the textures; their pictures are decoded on the unpack thread (sm_unpack, from gd_unpack). Without the
+ * file, or with a picture that does not decode, sm_avail stays 0: the M3 GADGETS row is OFF and nothing else changes */
+static void sm_begin(void)
+{
+	char path[260], nm[40];
+	unsigned k, l, i, c = 0;
+	const char *why;
+
+	sm_avail = 0;
+	if (launch_path(path, sizeof(path), "ibaraweb.dat") || webdat_open(path) || !webdat_ok()) {
+		why = webdat_why();
+		log_printf(C_YELLOW, "STAGE MAP: OFF (%s)", why && *why ? why : "NO PATH");
+		return;
+	}
+	for (k = 0; k < SM_NMAPS; k++) {
+		snprintf(nm, sizeof(nm), "map.%u", k + 1);
+		sm_me[k] = webdat_find(nm);
+		snprintf(nm, sizeof(nm), "boss.%u", k + 1);
+		sm_be[k] = webdat_find(nm);
+		for (l = 0; l < 2; l++) {
+			snprintf(nm, sizeof(nm), "bname.%u.%s", k + 1, l ? "ja" : "en");
+			sm_pe[2 * k + l] = webdat_find(nm);
+			snprintf(nm, sizeof(nm), "stitle.%u.%s", k + 1, l ? "ja" : "en");
+			sm_pe[12 + 2 * k + l] = webdat_find(nm);
+		}
+		if (!sm_me[k] || !sm_be[k] || !sm_pe[2 * k] || !sm_pe[2 * k + 1] || !sm_pe[12 + 2 * k] ||
+		    !sm_pe[13 + 2 * k] || sm_me[k]->w != 200 || sm_me[k]->h != sm_rows[k]) {
+			log_printf(C_YELLOW, "STAGE MAP: OFF (IBARAWEB.DAT HAS NO STAGE %u PICTURES OF THE RIGHT SIZE)", k + 1);
+			return;
+		}
+	}
+	for (k = 0; k < SM_NMAPS; k++) { /* the map in chunks of SM_CHUNK rows */
+		sm_mapfirst[k] = c;
+		sm_mapc[k] = 0;
+		for (i = 0; i < sm_rows[k]; i += SM_CHUNK) {
+			const unsigned n = sm_rows[k] - i < SM_CHUNK ? sm_rows[k] - i : SM_CHUNK;
+			if (c >= SM_CHUNKS || !NT_SUCCESS(xsdk_texture_create(&sm_map[c], XSDK_FORMAT_A8R8G8B8, 200, n, 1, false)))
+				goto fail;
+			sm_maprow[c++] = n;
+			sm_mapc[k]++;
+		}
+	}
+	/* test 123: the gallery's six pictures (none: the site's boss.N, as before, and the log says why once) */
+	sm_gal_ok = !sm_gal_read();
+	if (!sm_gal_ok)
+		log_printf(C_YELLOW, "STAGE MAP: BOSS PICTURES FROM IBARAWEB.DAT (%s)", sm_gal_why);
+	for (k = 0; k < SM_NMAPS; k++) { /* sm_boss[k]: the site's size, or the gallery's picture fitted into SM_BOSS_W x _H */
+		sm_bw[k] = sm_be[k]->w;
+		sm_bh[k] = sm_be[k]->h;
+		if (sm_gal_ok) {
+			const float s = sm_boss_s(sm_gal[k].w, sm_gal[k].h);
+
+			sm_bw[k] = (unsigned)(sm_gal[k].w * s + 0.5f);
+			sm_bh[k] = (unsigned)(sm_gal[k].h * s + 0.5f);
+			sm_bw[k] = sm_bw[k] ? sm_bw[k] : 1;
+			sm_bh[k] = sm_bh[k] ? sm_bh[k] : 1;
+		}
+		if (!NT_SUCCESS(xsdk_texture_create(&sm_boss[k], XSDK_FORMAT_A8R8G8B8, sm_bw[k], sm_bh[k], 1, false)))
+			goto fail;
+	}
+	for (i = 0; i < SM_NPLATES; i++)
+		if (!NT_SUCCESS(xsdk_texture_create(&sm_plate[i], XSDK_FORMAT_A8R8G8B8, sm_pe[i]->w, sm_pe[i]->h, 1, false)))
+			goto fail;
+	/* test 122: the background (optional; a file without it keeps the panels black) */
+	sm_bg_ok = 0;
+	sm_bge = webdat_find("bg.stage");
+	if (sm_bge && sm_bge->w == SM_BG_W && sm_bge->h == SM_BG_H &&
+	    NT_SUCCESS(xsdk_texture_create(&sm_bg, XSDK_FORMAT_A8R8G8B8, SM_BG_W, SM_BG_H, 1, false)))
+		sm_bg_ok = 1;
+	/* test 123: bg.boss, the right panel's own background (optional, as bg.stage) */
+	sm_bgb_ok = 0;
+	sm_bbe = webdat_find("bg.boss");
+	if (sm_bbe && sm_bbe->w == SM_BB_W && sm_bbe->h == SM_BB_H &&
+	    NT_SUCCESS(xsdk_texture_create(&sm_bgb, XSDK_FORMAT_A8R8G8B8, SM_BB_W, SM_BB_H, 1, false)))
+		sm_bgb_ok = 1;
+	sm_avail = 1;
+	return;
+fail:
+	log_printf(C_RED, "STAGE MAP: OFF (ITS TEXTURES FAILED)");
+}
+
+/* w x h pixels of argb (rows row0 .. from src_w wide) into t's texels (0xAARRGGBB, as put_texels) */
+static void sm_put(XsdkTexture *t, const uint32_t *argb, unsigned w, unsigned h, unsigned row0, unsigned src_w)
+{
+	unsigned x, y;
+
+	for (y = 0; y < h; y++)
+		for (x = 0; x < w; x++)
+			t->texels[(size_t)y * t->pitch + x] = argb[(size_t)(row0 + y) * src_w + x];
+	xsdk_gpu_invalidate(t->address, t->size_bytes);
+}
+
+/* test 122: the background on the unpack thread (sm_unpack's last step); one that does not decode only leaves the panels
+ * black (sm_bg_ok 0), it does not turn the feature off */
+static void sm_unpack_bg(void)
+{
+	void *b = webdat_read(sm_bge);
+	uint32_t *argb = NULL;
+	int w = 0, h = 0;
+
+	if (b)
+		argb = webdat_jpeg_argb(b, sm_bge->bytes, &w, &h);
+	free(b);
+	if (!argb || w != SM_BG_W || h != SM_BG_H) {
+		sm_bg_ok = 0;
+		log_printf(C_YELLOW, "STAGE MAP: NO BACKGROUND (bg.stage DID NOT DECODE)");
+	} else {
+		sm_put(&sm_bg, argb, SM_BG_W, SM_BG_H, 0, SM_BG_W);
+	}
+	free(argb);
+}
+
+/* test 123: bg.boss (370 x 720) on the unpack thread, after bg.stage; one that does not decode leaves the right panel the
+ * stage's background (sm_bgb_ok 0), it does not turn the feature off */
+static void sm_unpack_bgb(void)
+{
+	void *b = webdat_read(sm_bbe);
+	uint32_t *argb = NULL;
+	int w = 0, h = 0;
+
+	if (b)
+		argb = webdat_jpeg_argb(b, sm_bbe->bytes, &w, &h);
+	free(b);
+	if (!argb || w != SM_BB_W || h != SM_BB_H) {
+		sm_bgb_ok = 0;
+		log_printf(C_YELLOW, "STAGE MAP: NO BOSS BACKGROUND (bg.boss DID NOT DECODE)");
+	} else {
+		sm_put(&sm_bgb, argb, SM_BB_W, SM_BB_H, 0, SM_BB_W);
+	}
+	free(argb);
+}
+
+/* the stage map's pictures, on the unpack thread (gd_unpack): a picture that does not decode turns the feature off */
+static void sm_unpack(void)
+{
+	const uint64_t t0 = tb_read();
+	uint32_t *argb;
+	unsigned k, i, idx, r0;
+	int w, h;
+	void *b;
+
+	if (!sm_avail)
+		return;
+	for (k = 0; k < SM_NMAPS; k++) {
+		b = webdat_read(sm_me[k]);
+		argb = b ? webdat_jpeg_argb(b, sm_me[k]->bytes, &w, &h) : NULL;
+		free(b);
+		if (!argb || w != 200 || h != (int)sm_rows[k])
+			goto bad;
+		for (i = 0, r0 = 0; i < sm_mapc[k]; i++) {
+			idx = sm_mapfirst[k] + i;
+			sm_put(&sm_map[idx], argb, 200, sm_maprow[idx], r0, 200);
+			r0 += sm_maprow[idx];
+		}
+		free(argb);
+		argb = NULL;
+		if (sm_gal_ok) { /* test 123 (user: "teresa's boss artwork is too small, use the artbook (or ps2)"): the gallery's, cut out */
+			if (sm_cut(k))
+				goto bad;
+		} else {
+			b = webdat_read(sm_be[k]);
+			argb = b ? webdat_jpeg_argb(b, sm_be[k]->bytes, &w, &h) : NULL;
+			free(b);
+			if (!argb || w != sm_be[k]->w || h != sm_be[k]->h)
+				goto bad;
+			sm_put(&sm_boss[k], argb, (unsigned)w, (unsigned)h, 0, (unsigned)w);
+			free(argb);
+		}
+	}
+	for (i = 0; i < SM_NPLATES; i++) {
+		argb = webdat_zlib_argb(sm_pe[i]);
+		if (!argb)
+			goto bad;
+		sm_put(&sm_plate[i], argb, sm_pe[i]->w, sm_pe[i]->h, 0, sm_pe[i]->w);
+		free(argb);
+	}
+	if (sm_bg_ok) /* test 122 */
+		sm_unpack_bg();
+	if (sm_bgb_ok) /* test 123 */
+		sm_unpack_bgb();
+	if (sm_gal_ok) /* test 123: the cut-outs (sm_cut) */
+		log_printf(C_GREEN, "STAGE MAP: BOSS PICTURES FROM PS2DATA.BIN'S GALLERY (%u CUT OUT IN %u MS)", SM_NMAPS,
+		           (unsigned)(tb_us(t0, tb_read()) / 1000));
+	__sync_synchronize(); /* the texels before the flag */
+	sm_ready = 1;
+	log_printf(C_GREEN, "STAGE MAP: READY (%u MAP TEXTURES, %u PLATES)", (unsigned)sm_mapc[0] + sm_mapc[1] + sm_mapc[2] +
+	           sm_mapc[3] + sm_mapc[4] + sm_mapc[5], SM_NPLATES);
+	return;
+bad:
+	free(argb);
+	sm_avail = 0;
+	log_printf(C_RED, "STAGE MAP: OFF (ITS PICTURES DID NOT DECODE)");
+}
+
+/* the gadget's unpacking (before the picture unpacking's final flag): the stage map is optional */
 static int gd_unpack(void)
+{
+	const int r = gd_unpack_main();
+
+	if (!r)
+		sm_unpack();
+	return r;
+}
+
+static int gd_unpack_main(void)
 {
 	return unpack(&gd_bg, gd_bgz, gd_bgn, CARD_BG_W, CARD_BG_H) ||
 	       unpack(&gd_atlas, card_atlas_z, card_atlas_z_size, CARD_ATLAS_W, CARD_ATLAS_H) ||
@@ -2479,6 +3079,7 @@ static int gd_begin(int blk)
 		log_printf(C_RED, "GADGETS: NO GPU MEMORY FOR ITS QUADS");
 		return -1;
 	}
+	sm_begin(); /* test 121 item 5 (optional: no file, no stage map) */
 	gd_blk = blk;
 	gd_bgz = bgz;
 	gd_bgn = bgn;
@@ -3034,6 +3635,175 @@ static void draw_43(const struct gd_lay *L)
 	}
 }
 
+/* test 121 item 5: one quad of the stage map on texture t, recorded as a draw run (gadgets_draw draws each run with its own
+ * texture after the atlas quads) */
+static void sm_add(const XsdkTexture *t, int lin, float x0, float y0, float x1, float y1, float u0, float v0, float u1,
+                   float v1, col_t c)
+{
+	const unsigned before = gd_nq;
+	const unsigned k = sm_nrun;
+
+	quad(x0, y0, x1, y1, u0, v0, u1, v1, c);
+	if (gd_nq == before)
+		return;
+	if (k && sm_run[k - 1].t == t && sm_run[k - 1].lin == lin && sm_run[k - 1].first + sm_run[k - 1].n == before) {
+		sm_run[k - 1].n++;
+		return;
+	}
+	if (k < SM_RUNS) {
+		sm_run[k].t = t;
+		sm_run[k].lin = lin;
+		sm_run[k].first = before;
+		sm_run[k].n = 1;
+		sm_nrun++;
+	}
+}
+
+/* the scale that fits w x h into maxw x maxh, at most 1 */
+static float sm_fit(float w, float h, float maxw, float maxh)
+{
+	const float a = maxw / w, b = maxh / h, s = a < b ? a : b;
+
+	return s < 1 ? s : 1;
+}
+
+/* a picture (texture t, w x h) centred at (cx, cy), fitted into maxw x maxh and at alpha a; returns the height drawn */
+static float sm_pic(const XsdkTexture *t, float w, float h, float cx, float cy, float maxw, float maxh, float a)
+{
+	const float s = sm_fit(w, h, maxw, maxh), hw = w * s / 2, hh = h * s / 2;
+	col_t c = {1, 1, 1, a};
+
+	sm_add(t, 1, cx - hw, cy - hh, cx + hw, cy + hh, 0, 0, 1, 1, c);
+	return h * s;
+}
+
+/* test 123: sm_pic for a part of texture t: the rectangle uv (u0, v0, u1, v1) of it, w x h texture pixels, fitted into
+ * maxw x maxh (up as well as down: the reference's fit, work/g123/art/mockboss.py), centred at (cx, cy), alpha a */
+static float sm_pic_uv(const XsdkTexture *t, const float *uv, float w, float h, float cx, float cy, float maxw, float maxh,
+                       float a)
+{
+	const float p = maxw / w, q = maxh / h, s = p < q ? p : q, hw = w * s / 2, hh = h * s / 2;
+	col_t c = {1, 1, 1, a};
+
+	sm_add(t, 1, cx - hw, cy - hh, cx + hw, cy + hh, uv[0], uv[1], uv[2], uv[3], c);
+	return h * s;
+}
+
+/* test 121 item 5: the 16:9 side panels with STAGE MAP on (gadgets_draw's layer 1; every other gadget off). The left
+ * panel: black, the map (its chunks), the red box = the view; the right panel: the title plate, or the boss and its
+ * name fading in over SM_FADE frames. The map's rows follow the scroll (see stagemap_frame) and the map is moved so
+ * the box's centre sits at 60% of the panel's height (432 of 720), as far as the map's ends allow */
+/* test 122: a quad of the white (or any) texel at x0..x1, y0..y1 clipped to the canvas, colour c (sm_draw's border) */
+static void sm_rect(float x0, float y0, float x1, float y1, col_t c, float wu, float wv)
+{
+	if (x0 < 0.0f)
+		x0 = 0.0f;
+	if (x1 > 1280.0f)
+		x1 = 1280.0f;
+	if (y0 < 0.0f)
+		y0 = 0.0f;
+	if (y1 > 720.0f)
+		y1 = 720.0f;
+	if (x1 > x0 && y1 > y0)
+		sm_add(&gd_atlas, 1, x0, y0, x1, y1, wu, wv, wu, wv, c);
+}
+
+/* test 122: the border's three bands from the edge e going dir (-1 or +1) outward: 1 px black next to the map, 3 px
+ * light gold (200, 180, 130), 2 px black outside. vert: e is an x edge and s0 .. s1 a y span; else e is a y edge and
+ * s0 .. s1 an x span */
+static void sm_bands(float e, float dir, float s0, float s1, int vert, float wu, float wv)
+{
+	static const col_t black = {0, 0, 0, 1}, gold = {0.784f, 0.706f, 0.510f, 1};
+	const float p[4] = {e, e + dir, e + 4 * dir, e + 6 * dir};
+	const col_t cols[3] = {black, gold, black};
+	int i;
+
+	for (i = 0; i < 3; i++) {
+		const float a = p[i] < p[i + 1] ? p[i] : p[i + 1], b = p[i] < p[i + 1] ? p[i + 1] : p[i];
+		if (vert)
+			sm_rect(a, s0, b, s1, cols[i], wu, wv);
+		else
+			sm_rect(s0, a, s1, b, cols[i], wu, wv);
+	}
+}
+
+static void sm_draw(void)
+{
+	static const col_t black = {0, 0, 0, 1}, red = {1, 0, 0, 1};
+	static const col_t dark = {SM_BG_K, SM_BG_K, SM_BG_K, 1};
+	const struct card_rect *wr = &card_sprites[CS_WHITE];
+	const float wu = (wr->x + 2.0f) / CARD_ATLAS_W, wv = (wr->y + 2.0f) / CARD_ATLAS_H;
+	const int g = M == &map_blk, ja = sm_ja != 0;
+	const float a = (float)sm_fade / SM_FADE;
+	const float x1 = SM_MAP_X + 200 * SM_MAP_K;
+	float H, sk, c, top, by, bh, y0, y1, plh, area;
+	unsigned i, idx;
+	int k, bi;
+
+	sm_nrun = 0;
+	if (sm_bg_ok) { /* test 122 (user: "add a background ... to fill in the gaps"; both panels, the right one too) */
+		sm_add(&sm_bg, 1, 0, 0, SM_LEFT_W, 720, 0, 0, SM_BG_U, 1, dark);
+	} else {
+		sm_add(&gd_atlas, 1, 0, 0, SM_LEFT_W, 720, wu, wv, wu, wv, black);
+	}
+	if (sm_bgb_ok) { /* test 123 (user: the right panel's own background, bg.boss; the same 65%) */
+		sm_add(&sm_bgb, 1, SM_RIGHT_X, 0, 1280, 720, 0, 0, 1, 1, dark);
+	} else if (sm_bg_ok) {
+		sm_add(&sm_bg, 1, SM_RIGHT_X, 0, 1280, 720, 1 - SM_BG_U, 0, 1, 1, dark);
+	} else {
+		sm_add(&gd_atlas, 1, SM_RIGHT_X, 0, 1280, 720, wu, wv, wu, wv, black);
+	}
+	if (sm_n < 1 || sm_n > SM_NMAPS)
+		return;
+	k = sm_n - 1;
+	H = (float)sm_rows[k];
+	sk = H / (sm_stop[g][k] + 320.0f); /* map rows a game pixel */
+	c = H - sk * (sm_scroll + 160.0f); /* the box's centre, map rows */
+	if (c < 345.6f) /* the map's top at or above the canvas's top */
+		c = 345.6f;
+	if (c > H - 230.4f) /* its bottom at or below the canvas's bottom */
+		c = H - 230.4f;
+	top = 432.0f - SM_MAP_K * c; /* the canvas row of the map's row 0 */
+	for (i = 0; i < sm_mapc[k]; i++) {
+		idx = sm_mapfirst[k] + i;
+		y0 = top + SM_MAP_K * (float)(i * SM_CHUNK);
+		y1 = y0 + SM_MAP_K * (float)sm_maprow[idx];
+		if (y1 >= 0 && y0 <= 720)
+			sm_add(&sm_map[idx], 1, SM_MAP_X, y0, x1, y1, 0, 0, 1, 1, WHITE);
+	}
+	/* test 122 (user: "a border around the stage map itself to separate it from the background"): along the map's sides
+	 * over its visible part, and across its top / bottom edge where that end is on screen; outside the map */
+	{
+		const float mb = top + SM_MAP_K * H, yt = top < 0.0f ? 0.0f : top, yb = mb > 720.0f ? 720.0f : mb;
+
+		sm_bands(SM_MAP_X, -1.0f, yt, yb, 1, wu, wv);
+		sm_bands(x1, 1.0f, yt, yb, 1, wu, wv);
+		if (top > 0.0f)
+			sm_bands(top, -1.0f, SM_MAP_X - 6.0f, x1 + 6.0f, 0, wu, wv);
+		if (mb < 720.0f)
+			sm_bands(mb, 1.0f, SM_MAP_X - 6.0f, x1 + 6.0f, 0, wu, wv);
+	}
+	by = top + SM_MAP_K * (H - sk * (sm_scroll + 320.0f)); /* the view: its top .. bottom */
+	bh = SM_MAP_K * 320.0f * sk;
+	sm_add(&gd_atlas, 1, SM_MAP_X, by, x1, by + 2, wu, wv, wu, wv, red);
+	sm_add(&gd_atlas, 1, SM_MAP_X, by + bh - 2, x1, by + bh, wu, wv, wu, wv, red);
+	sm_add(&gd_atlas, 1, SM_MAP_X, by + 2, SM_MAP_X + 2, by + bh - 2, wu, wv, wu, wv, red);
+	sm_add(&gd_atlas, 1, x1 - 2, by + 2, x1, by + bh - 2, wu, wv, wu, wv, red);
+	/* the right panel: the title plate (the boss not up), the boss and its name (up) */
+	bi = 2 * k + ja;
+	if (sm_fade < SM_FADE)
+		sm_pic(&sm_plate[12 + bi], sm_pe[12 + bi]->w, sm_pe[12 + bi]->h, 1095.0f, 360.0f, 350.0f, 560.0f, 1 - a);
+	if (sm_fade > 0) {
+		plh = sm_pe[bi]->h * sm_fit(sm_pe[bi]->w, sm_pe[bi]->h, 350.0f, 200.0f);
+		area = 720.0f - 60.0f - plh;
+		if (sm_gal_ok) /* test 123: the cut-out's own size and rectangle (sm_cut) */
+			sm_pic_uv(&sm_boss[k], sm_buv[k], sm_bpw[k], sm_bph[k], 1095.0f, 20.0f + area / 2, 350.0f, area, a);
+		else
+			sm_pic(&sm_boss[k], sm_be[k]->w, sm_be[k]->h, 1095.0f, 20.0f + area / 2, 350.0f, area, a);
+		sm_pic(&sm_plate[bi], sm_pe[bi]->w, sm_pe[bi]->h, 1095.0f, 700.0f - plh / 2, 350.0f, 200.0f, a);
+	}
+}
+
 static int gd_slot = -1; /* the block this frame's background took (-1: none, nothing drawn) */
 
 void gadgets_draw(int layer, int view, uint32_t queued, uint32_t flips)
@@ -3082,7 +3852,8 @@ void gadgets_draw(int layer, int view, uint32_t queued, uint32_t flips)
 	{
 		const uint64_t t0 = tb_read();
 		const unsigned first = gd_nq; /* after the background's quads */
-		unsigned nmain, np;
+		const int sm = gd_v == CPV_WIDE && sm_want && sm_avail && sm_ready; /* test 121 item 5 */
+		unsigned nmain, np, pbase, ri;
 		const struct gd_lay *L = view == GV_43 ? &lay_43 : view == GV_WIDE ? &lay_wide : &lay_tate;
 		volatile uint32_t *dst;
 		const uint32_t *src;
@@ -3098,7 +3869,9 @@ void gadgets_draw(int layer, int view, uint32_t queued, uint32_t flips)
 		ctl_dx = 0;
 		/* test 64: each gadget's plate, then its values (tx_*: through the plate's place); a plate a view does not have
 		 * draws nothing (plate() 0) */
-		if (gd_v == CPV_43) {
+		if (sm) { /* test 121 item 5: 16:9 with STAGE MAP on: its side panels only */
+			sm_draw();
+		} else if (gd_v == CPV_43) {
 			draw_43(L);
 		} else if (coop_now) {
 			draw_wide_coop(L);
@@ -3178,7 +3951,8 @@ void gadgets_draw(int layer, int view, uint32_t queued, uint32_t flips)
 		P = &pl[s.side];
 		ctl_dx = 0;
 		/* test 88: the point-sampled quads after the others */
-		nmain = gd_nq - first;
+		nmain = sm ? 0 : gd_nq - first; /* test 121 item 5: the stage map's quads have their runs */
+		pbase = gd_nq - first;
 		np = gd_npq < GD_MAX_QUADS - gd_nq ? gd_npq : GD_MAX_QUADS - gd_nq;
 		memcpy(gd_q[gd_nq], gd_qp, np * sizeof(gd_qp[0]));
 		gd_nq += np;
@@ -3197,9 +3971,14 @@ void gadgets_draw(int layer, int view, uint32_t queued, uint32_t flips)
 		xsdk_gpu_set_vertices(0, addr, nmain * 6 * GD_VF * 4);
 		if (nmain)
 			xsdk_gpu_draw(XSDK_PRIMITIVE_TRIANGLE_LIST, nmain * 6);
+		for (ri = 0; sm && ri < sm_nrun; ri++) { /* test 121 item 5 */
+			gd_set(sm_run[ri].t, sm_run[ri].lin);
+			xsdk_gpu_set_vertices(0, addr + (sm_run[ri].first - first) * 6 * GD_VF * 4, sm_run[ri].n * 6 * GD_VF * 4);
+			xsdk_gpu_draw(XSDK_PRIMITIVE_TRIANGLE_LIST, sm_run[ri].n * 6);
+		}
 		if (np) { /* test 88 */
 			gd_set(&gd_atlas, 0);
-			xsdk_gpu_set_vertices(0, addr + nmain * 6 * GD_VF * 4, np * 6 * GD_VF * 4);
+			xsdk_gpu_set_vertices(0, addr + pbase * 6 * GD_VF * 4, np * 6 * GD_VF * 4);
 			xsdk_gpu_draw(XSDK_PRIMITIVE_TRIANGLE_LIST, np * 6);
 		}
 		xsdk_gpu_set_blend(&gd_none);
@@ -3219,4 +3998,22 @@ void gadgets_target(int w, int h)
 {
 	gd_fbw = w;
 	gd_fbh = h;
+}
+
+/* test 121 item 5 (main.c, every frame): the STAGE MAP setting and the menu language (1 = JAPANESE) */
+void gadgets_stagemap_set(int on, int japanese)
+{
+	sm_want = on != 0;
+	sm_ja = japanese != 0;
+}
+
+/* 1 = ibaraweb.dat's pictures are there (the M3 GADGETS row can be ON); else the reason is gadgets_stagemap_why */
+int gadgets_stagemap_avail(void)
+{
+	return sm_avail;
+}
+
+const char *gadgets_stagemap_why(void)
+{
+	return webdat_why();
 }

@@ -647,9 +647,6 @@ void sound_categories(int set)
 	int p;
 
 	snd_set = set;
-	memset(ymz_phrase_force_main, 0, sizeof(ymz_phrase_force_main));
-	ymz_phrase_force_main[128 + 44] = 1; /* 1P IKUZE, phrase 172 */
-	ymz_phrase_force_main[128 + 50] = 1; /* 2P IKUZE, phrase 178 */
 	for (p = 0; p < 256; p++)
 		ymz_phrase_cat[p] = p < 34 ? YMZ_CAT_MUSIC : p < 128 ? YMZ_CAT_SFX : YMZ_CAT_VOICE;
 	if (set == SET_IBARABLK) /* test 88 (user's todo list: "reduce the continue countdown beep volume to be the same as
@@ -664,7 +661,7 @@ static int32_t q15(int pct)
 	return pct <= 0 ? 0 : pct >= 100 ? 32768 : (int32_t)(pct * 32768 / 100);
 }
 
-void sound_levels(int music, int sfx, int voice, int attract, int in_attract, int mute, int start_voice)
+void sound_levels(int music, int sfx, int voice, int attract, int in_attract, int mute)
 {
 	const int a = in_attract ? attract : 100;
 
@@ -674,8 +671,7 @@ void sound_levels(int music, int sfx, int voice, int attract, int in_attract, in
 	ymz_gain_main[YMZ_CAT_VOICE] = mute ? 0 : q15(voice);
 	ymz_gain_att[YMZ_CAT_MUSIC] = mute ? 0 : q15(music * attract / 100);
 	ymz_gain_att[YMZ_CAT_SFX] = mute ? 0 : q15(sfx * attract / 100);
-	/* The start-of-run call ("IKUZE") uses full voice volume regardless of the attract volume. */
-	ymz_gain_att[YMZ_CAT_VOICE] = mute ? 0 : q15(voice * (start_voice ? 100 : attract) / 100);
+	ymz_gain_att[YMZ_CAT_VOICE] = mute ? 0 : q15(voice * attract / 100);
 	ymz_attract = in_attract;
 	ymz_gain_test[YMZ_CAT_MUSIC] = mute ? 0 : q15(music); /* the sound test as in a run */
 	ymz_gain_test[YMZ_CAT_SFX] = mute ? 0 : q15(sfx);

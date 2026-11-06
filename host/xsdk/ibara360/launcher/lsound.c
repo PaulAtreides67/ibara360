@@ -7,7 +7,10 @@
  * thread a frame at a time, taken to 48 kHz by a 32-tap windowed sinc (160 phases: 44.1 kHz is 147 input samples to
  * 160 output ones), in stereo, looped, faded in and out.
  * Test 97: the sounds' samples from ps2data.bin (launcher.c fills la_sounds; a sound not there is not played), the
- * music's MP3 from inside the .xex (launcher.c inflates it); the decoding as before. */
+ * music's MP3 from inside the .xex (launcher.c inflates it); the decoding as before.
+ * Test 121 (STORY): a second music source, 44.1 kHz stereo s16 in RAM (lsound_music_set_pcm, looped from its loop
+ * start), taken through the same resampler, fades and loop count as the MP3; lsound_music_choose picks the source of
+ * the next lsound_music_play. lsound_mp3_rms measures an MP3 for the log (a decode of its own, not the mixer's). */
 #include <stdint.h>
 #include <string.h>
 
@@ -78,6 +81,13 @@ static volatile unsigned mus_loops;
 static unsigned mus_cmd_seen;
 static mp3dec_t mus_dec;
 static unsigned mus_pos;                    /* the next MP3 byte */
+/* test 121 (STORY): the PCM source. The data and its size and loop start are the caller's (set once, before a play);
+ * the source playing (mus_src_pcm) and the one the next play takes (mus_want_pcm, sent with the play command) */
+static const int16_t *volatile mus_pcm_lr;
+static volatile unsigned mus_pcm_frames, mus_pcm_loop;
+static volatile int mus_want_pcm, mus_cmd_pcm;
+static int mus_src_pcm;
+static unsigned mus_pcm_pos;                /* the next frame of the PCM */
 static float mus_in[2][MUS_CAP];            /* decoded input samples, mus_n of them */
 static int mus_n, mus_at;                   /* mus_at: the next output's x[n] */
 static unsigned mus_hz, mus_acc;            /* the input's rate; the place between x[n] and x[n + 1], of OUT_HZ */
@@ -151,6 +161,26 @@ static int mus_decode(void)
 {
 	int tries;
 
+	if (mus_src_pcm) { /* test 121: the PCM in RAM, 1152 frames at a time, round to its loop start at its end */
+		const int16_t *lr = mus_pcm_lr;
+		const unsigned n = mus_pcm_frames;
+		unsigned pos = mus_pcm_pos, k, i;
+
+		if (!lr || !n)
+			return 0;
+		if (pos >= n) {
+			pos = mus_pcm_loop < n ? mus_pcm_loop : 0;
+			mus_loops = mus_loops + 1;
+		}
+		k = n - pos < 1152 ? n - pos : 1152;
+		for (i = 0; i < k; i++) {
+			mus_in[0][mus_n + i] = lr[2 * (pos + i)] * (1.0f / 32768.0f);
+			mus_in[1][mus_n + i] = lr[2 * (pos + i) + 1] * (1.0f / 32768.0f);
+		}
+		mus_n += (int)k;
+		mus_pcm_pos = pos + k;
+		return 1;
+	}
 	for (tries = 0; tries < 64; tries++) {
 		mp3dec_frame_info_t fi;
 		int ns, i;
@@ -239,8 +269,14 @@ static void mus_commands(void)
 		return;
 	__sync_synchronize();
 	mus_cmd_seen = n;
-	if (mus_cmd == MUS_PLAY && mus_data && mus_bytes) {
-		mus_restart_stream();
+	if (mus_cmd == MUS_PLAY && (mus_cmd_pcm ? mus_pcm_lr != NULL : (mus_data && mus_bytes))) {
+		mus_src_pcm = mus_cmd_pcm; /* test 121 */
+		if (mus_src_pcm) {
+			mus_pcm_pos = 0;
+			mus_hz = 44100;
+		} else {
+			mus_restart_stream();
+		}
 		memset(&mus_in[0][0], 0, sizeof(float) * RS_HALF); /* silence before the first sample */
 		memset(&mus_in[1][0], 0, sizeof(float) * RS_HALF);
 		mus_n = mus_at = RS_HALF;
@@ -422,7 +458,64 @@ static void mus_send(unsigned cmd)
 
 void lsound_music_play(void)
 {
+	mus_cmd_pcm = mus_want_pcm; /* test 121: the source chosen by lsound_music_choose */
 	mus_send(MUS_PLAY);
+}
+
+/* test 121: the PCM track (frames of L R s16 at 44.1 kHz, the caller's for good; it plays from loop_start at its end) */
+void lsound_music_set_pcm(const int16_t *lr, unsigned frames, unsigned loop_start)
+{
+	mus_pcm_frames = frames;
+	mus_pcm_loop = loop_start;
+	__sync_synchronize();
+	mus_pcm_lr = lr;
+}
+
+/* test 121: the source of the next lsound_music_play: 0 = the MP3 (lsound_music_set), 1 = the PCM */
+void lsound_music_choose(int pcm)
+{
+	mus_want_pcm = pcm ? 1 : 0;
+}
+
+/* sqrt by Newton's method (libm is not linked) */
+static double l_sqrt(double x)
+{
+	double r = x > 1 ? x : 1;
+	int i;
+
+	if (x <= 0)
+		return 0;
+	for (i = 0; i < 60; i++)
+		r = 0.5 * (r + x / r);
+	return r;
+}
+
+/* test 121: the RMS of an MP3 (full scale 1.0) over all its frames, decoded here on the caller's thread for the log;
+ * *frames = its sample frames (per channel). 0 when it has none. */
+double lsound_mp3_rms(const unsigned char *mp3, unsigned n, unsigned *frames)
+{
+	static mp3d_sample_t pcm[MINIMP3_MAX_SAMPLES_PER_FRAME];
+	static mp3dec_t d;
+	mp3dec_frame_info_t fi;
+	double sum = 0;
+	unsigned pos = 0, cnt = 0;
+
+	*frames = 0;
+	mp3dec_init(&d);
+	while (pos < n) {
+		const int ns = mp3dec_decode_frame(&d, mp3 + pos, (int)(n - pos), pcm, &fi);
+		int i;
+		if (fi.frame_bytes <= 0)
+			break;
+		pos += (unsigned)fi.frame_bytes;
+		if (ns <= 0 || fi.channels <= 0)
+			continue;
+		for (i = 0; i < ns * fi.channels; i++)
+			sum += (double)pcm[i] * (double)pcm[i];
+		cnt += (unsigned)(ns * fi.channels);
+		*frames += (unsigned)ns;
+	}
+	return cnt ? l_sqrt(sum / cnt) : 0;
 }
 
 void lsound_music_stop(void)

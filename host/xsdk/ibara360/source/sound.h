@@ -91,7 +91,7 @@ extern volatile int sound_mono;
  * again and again; loop < 0: once) or a voice phrase on a chip of its own, the game's sound faded out meanwhile */
 #define SND_BLK_BEEP 92
 void sound_categories(int set);
-void sound_levels(int music, int sfx, int voice, int attract, int in_attract, int mute, int start_voice);
+void sound_levels(int music, int sfx, int voice, int attract, int in_attract, int mute);
 void sound_test_music(int intro, int loop, int vol);
 void sound_test_voice(int phrase);
 void sound_test_stop(void);

@@ -14,7 +14,7 @@
  * mkloading.py, tools/arrange/mkhud.py, mkgfx.py with work/arrgfx's conv944.py / conv876.py / bullets/gen.py), their
  * cuts as tools/ps2extract/recipe.h (mkrecipe.py). Nothing of the disc is inside this program.
  *
- * Build: tools/ps2extract/build.sh (mingw-w64 in Docker; zlib 1.2.11 from host/xsdk/test97/zlib). */
+ * Build: tools/ps2extract/build.sh (mingw-w64 in Docker; zlib 1.2.11 from host/xsdk/ibara360/zlib). */
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -94,7 +94,7 @@ static void *xmalloc(size_t n)
 	return p;
 }
 
-/* zlib's compress2 at level 9 (compress.c is not in host/xsdk/test97/zlib): a new buffer, *zn its bytes */
+/* zlib's compress2 at level 9 (compress.c is not in host/xsdk/ibara360/zlib): a new buffer, *zn its bytes */
 static uint8_t *zcomp(const void *raw, uint32_t n, uint32_t *zn)
 {
 	z_stream z;

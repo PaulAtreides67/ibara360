@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 
 TITLE_ID = 0x49423336
-TITLE_NAME = "ibara360"
+TITLE_NAME = "鋳薔薇"  # test 122 (user: "rename ibara360 to 鋳薔薇" for the achievement game category)
 ENGLISH = 1
 TITLE_IMAGE = 0x8000
 TITLE_STRING = 0x8000

@@ -9,7 +9,7 @@
 Press Back during a run to pause the game.
 If the continue screen appears, press start to resume your run**
 
-**Version 1.02** (November 2026)
+**Version 1.03** (November 2026), see [PATCH_NOTES.md](PATCH_NOTES.md)
 
 **Video preview:**
 
@@ -79,6 +79,7 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
 - Inspired by M2 ShotTriggers. Info panels beside the game, in 16:9 and 4:3 layouts, can be individually enabled or disabled
 - Originally from Baf and Olifante's MAME artwork for Ibara and official Cave art of the pilots (taken from the PS2 port and the Insanity DVD
   booklet).
+- **STAGE MAP** (16:9): the stage's map from Cave's official Ibara website with the view on it, and the stage's boss.
 
 ### Menus
 - Playstation 2's port's UI, in English or Japanese.
@@ -103,6 +104,7 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
 - Uses the PS2 port's front end: its title, mode select and NOW LOADING screen, in 16:9, 4:3 and TATE (LB / RB on the
   launcher screen).
 - PS2 port's GALLERY mode (horizontal orientation only), fully restored: 78 pictures and 5 sheets, with "Endress Train" from "Ibara Remix Tracks" playing in the background.
+- **STORY**: the story, system, stages and characters from Cave's official Ibara website, in English or Japanese.
 - Each game is its own .xex; the launcher and the games hand over to each other directly.
 
 ### Achievements
@@ -114,7 +116,7 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
 - High scores and settings are handled just like MAME with EEPROM saves in `<drive>:\ibara360`, alongside the config 
   ini, save states, replays and a small loading index.
 - The stage 6 clock support comes from the console's clock.
-- DEBUG MENU: the arcade's service menu, initialize rankings, staff roll protection.
+- DEBUG MENU: the arcade's service menu, initialize rankings, staff roll protection, attract demos on/off.
 
 ## What you need
 
@@ -150,7 +152,7 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
 1. On a Windows PC, drag `Ibara (Japan).iso` onto `ps2extract.exe`. It checks the disc's files, and writes `ps2data.bin` and `ps2music.bin`
    into a folder `ibara360 ps2data` beside the ISO.
 3. Put the four .xex files (`ibara360.xex`, `ibara.xex`, `ibarablk.xex`, `ibaraarr.xex`), `ps2data.bin` and
-   `ps2music.bin` in one folder on the Xbox 360's hard disk or a USB drive (for example `Hdd1:\apps\ibara360`).
+   `ps2music.bin` (and `ibaraweb.dat` from the release zip, for STORY and STAGE MAP) in one folder on the Xbox 360's hard disk or a USB drive (for example `Hdd1:\apps\ibara360`).
 4. Put the arcade ROMs `ibara.zip` and `ibarablk.zip` in the same folder as the .xex files.
 5. Start `ibara360.xex` in Aurora. The first start of each game also writes its loading index, so later starts are a little
    faster.
@@ -174,6 +176,7 @@ The .xex files land in `host/xsdk/ibara360/out`.
 - `gen`: generated sources: the recompiled programs (`ibara_drc`, `ibarablk_drc`, `ibaraarr_drc`), the Arrange
   patch, the GADGETS art and the launcher's music
 - `tools/ps2extract`: the PS2 disc extractor (`build.sh` builds the .exe in Docker)
+- `tools/web`: builds `ibaraweb.dat` from a mirror of Cave's official Ibara website
 
 ## Credits
 
@@ -182,7 +185,8 @@ The .xex files land in `host/xsdk/ibara360/out`.
 - GADGETS background: Baf and Olifante's MAME artwork for Ibara
 - YMZ770 decoder: after MAME's (BSD-3-Clause; Olivier Galibert, R. Belmont, MetalliC)
 - Buffi's CV1000 reseach for blitter and slowdown
-- [xsdk](https://github.com/xenosworks/xsdk) (MIT), zlib, minimp3 (CC0)
+- STORY slides and STAGE MAP art: Cave's official Ibara website
+- [xsdk](https://github.com/xenosworks/xsdk) (MIT), zlib, minimp3 (CC0), stb_image (public domain)
 
 ## Sources
 

@@ -132,6 +132,11 @@ struct settings {
 	                        * 1 = both speakers get (L + R) / 2 (sound.c, the final mix) */
 	int replay_save;       /* test 118 (user: "new EX-debug option, replay save on/off"): 0 = no SAVE REPLAY? at a run's
 	                        * end (the run's inputs are still kept: the prompt is what it skips) */
+	int attract_demo;      /* test 121 (user: "attract demo toggle on/off in the debug menu, for arcade and black label"):
+	                        * 1 = the arcade's attract (the title's timeout starts the demos), 0 = the title is held
+	                        * (main.c attract_hold; ibara and Kuro BL, not ARRANGE) */
+	int stage_map;         /* test 121 item 5 (user: "stage map gadget"): 1 = the 16:9 side panels show the STAGE
+	                        * MAP only (gadgets.c's stage map); 0 = off, the other gadgets as they are */
 };
 extern struct settings cfg;
 enum { MENU_PS2 = 0 };              /* test 120: the PS2 menu is the only supported style */

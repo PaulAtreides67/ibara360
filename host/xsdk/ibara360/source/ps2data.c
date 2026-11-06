@@ -224,6 +224,26 @@ int ps2data_load_into(const char *name, void *dst, uint32_t n)
 	return 0;
 }
 
+/* test 123 (user: "teresa's boss artwork is too small, use the artbook (or ps2)"): n bytes of blob name at off of its
+ * stored bytes (not inflated: the gallery's 10 MB is read a picture at a time), into dst; refused for a zlib blob or
+ * past its end. 0 = done */
+int ps2data_read_part(const char *name, uint32_t off, void *dst, uint32_t n)
+{
+	const struct ps2_entry *e = ps2data_find(name);
+	FILE *f;
+	int r = -1;
+
+	if (!e || (e->flags & PS2F_ZLIB) || off > e->stored || n > e->stored - off)
+		return -1;
+	f = open_beside(PS2DATA_FILE);
+	if (!f)
+		return -1;
+	if (!fseek(f, (long)(e->off + off), SEEK_SET) && fread(dst, 1, n, f) == n)
+		r = 0;
+	fclose(f);
+	return r;
+}
+
 /* ---- the games' data ---------------------------------------------------------------------------------------------- */
 
 static const void *load_exact(const char *name, uint32_t n, int *missing)

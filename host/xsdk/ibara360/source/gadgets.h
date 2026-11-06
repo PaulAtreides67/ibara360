@@ -123,6 +123,14 @@ int gadgets_boss_fight(void);
 /* test 86: side s's SCORE is red now (a restart, a DIP SWITCHES setting, a continue): a replay's asterisk */
 int gadgets_red(int side);
 
+/* test 121 item 5: STAGE MAP (16:9 only): the side panels show the stage's map with the game's view (a red box
+ * along it) on the left and the boss (its picture and name, fading in while it is up) or the stage title on the
+ * right, every other gadget off. gadgets_stagemap_set each frame (on = the setting, japanese = LANGUAGE); avail =
+ * ibaraweb.dat's pictures are there (the GADGETS row is OFF without them); why = webdat_why() */
+void gadgets_stagemap_set(int on, int japanese);
+int gadgets_stagemap_avail(void);
+const char *gadgets_stagemap_why(void);
+
 /* for the log and the debug card */
 struct gd_stats {
 	int ready;

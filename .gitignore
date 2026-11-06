@@ -299,3 +299,13 @@
 !/work/g105/icons/out/8000.png
 !/work/g105/icons/out/9.png
 !/work/g105/icons/out/_sheet.png
+# 1.03: ibaraweb.dat (STORY, STAGE MAP)
+!/PATCH_NOTES.md
+!/host/xsdk/ibara360/source/webdat.c
+!/host/xsdk/ibara360/source/webdat.h
+!/host/xsdk/ibara360/source/stb_image.h
+!/tools/web/README.md
+!/tools/web/mkweb.py
+!/tools/web/en.json
+!/tools/web/mkbossbg.py
+!/tools/web/addbg.py

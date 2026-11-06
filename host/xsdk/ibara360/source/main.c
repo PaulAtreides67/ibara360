@@ -559,8 +559,10 @@ static volatile int menu_on, menu_sel;         /* the pad menu is up; the highli
  * toggle (TR_ROW_NONE; test 100: EDIT only), A opens the box on EDIT, X in a box all on / off (FORMATION: the next formation for all three
  * slots, "QUICK SWAP"), a row with none set NONE (until test 100); every game's RANK a start value, the game's own rise and falls after it (tr_rank_vblank), X on RANK holds it all the run
  * (TRR_HELD, a "*") */
-#define XEX_TEST "120"  /* test 120: release candidate; test 119: EX-DEBUG closed, ACHIEVEMENTS the debug menu's last row */
-#define XEX_VERSION "1.02" /* test 120: PS2-only menus and the 1.02 presentation fixes */
+#define XEX_TEST "123"  /* test 123 (1.03): STAGE MAP boss art from ps2data.bin's gallery cut out, bg.boss right panel; test 122 (1.03): ATTRACT DEMO help (next power on), STAGE MAP box held at the boss + background + border; test 121 (1.03): IKUZE at full volume only in a run (the attract's demos follow the attract volume); the
+ * quit to the attract's logos held black until the title (no AMI logo flash); ATTRACT DEMO ON/OFF on the debug menu (ibara,
+ * Kuro BL: the title held); test 120: release candidate; test 119: EX-DEBUG closed, ACHIEVEMENTS the debug menu's last row */
+#define XEX_VERSION "1.03" /* test 121: 1.03; test 120: PS2-only menus and the 1.02 presentation fixes */
 /* test 72: the image's game in its name (the log's first lines, the network log's session) */
 #if defined(IB_GAME) && IB_GAME == 1
 #define XEX_GAME " KURO BL"
@@ -2071,7 +2073,7 @@ enum { OPT_SPECIAL, OPT_PICTURE, OPT_TATE, OPT_ASPECT, OPT_SCANLINES, OPT_STRENG
        OPT_FRAMELOG, OPT_NETLOG, OPT_GAME, OPT_AUTOFIRE, OPT_BACK, OPT_CONTROLS, OPT_PLAYER, OPT_GADGETS, OPT_M3,
        OPT_DEBUG, OPT_SOUND, OPT_SCREEN, OPT_CONTROLS2, OPT_GSEL, OPT_PLAY, OPT_BULLETS, OPT_LOAD, OPT_SERVICE, OPT_REPLAYS,
        OPT_OPTIONS, OPT_PSIZE, OPT_PXSIZE, OPT_PYSIZE, OPT_PXPOS, OPT_PYPOS, OPT_SMOOTH, OPT_TRAIN, OPT_BRIGHT, OPT_STYLE, OPT_LANG, OPT_RANKS, OPT_ACH, OPT_TOAST,
-       OPT_STAFF, OPT_EXINV, OPT_EXINFB, OPT_EXHIT, OPT_EXLIVES, OPT_EXREPLAY, OPT_N }; /* test 108: EX-DEBUG's; test 110:
+       OPT_STAFF, OPT_EXINV, OPT_EXINFB, OPT_EXHIT, OPT_EXLIVES, OPT_EXREPLAY, OPT_ATTRACT, OPT_N }; /* test 108: EX-DEBUG's; test 110:
                                                                                          * LIVES; test 118: REPLAY SAVE */
 static const char *const opt_names[OPT_N] = { /* "*" = from the next power-on */
 	"SPECIAL MODE", "PICTURE SIZE", "ROTATION", "ASPECT RATIO", "SCANLINES", "SCAN STRENGTH", "DEBUG CARD",
@@ -2108,6 +2110,7 @@ static const char *const opt_names[OPT_N] = { /* "*" = from the next power-on */
 	"INVINCIBLE", "INFINITE BOMBS", "HITBOXES", /* test 110: the user's "hitboxes" */
 	"INFINITE LIVES", /* test 110 (user: "add infinite lives to ex-debug") */
 	"REPLAY SAVE",    /* test 118 (user: "new EX-debug option, replay save on/off, above debug card") */
+	"ATTRACT DEMO",   /* test 121 (user: "attract demo toggle on/off in the debug menu, for arcade and black label") */
 };
 static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most (the box); "\n" = a second line (test 70) */
 	"IBARA'S SPECIAL VER. (PCB DIP S2-2)",
@@ -2166,6 +2169,8 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
 	"PLAYER = THE SHIP'S HITBOX\nALL = ENEMIES, BULLETS, SHOTS TOO",
 	"LIVES NEVER RUN OUT\nACHIEVEMENTS STILL COUNT",                 /* test 110 */
 	"ENABLE/DISABLE REPLAY SAVING",                                  /* test 118: the user's */
+	"ENABLE/DISABLE THE ATTRACT DEMOS\nONLY FROM THE NEXT POWER ON", /* test 121: the user's (ibara, Kuro BL); test 122 (user:
+	                                                                * "indicate it only takes effect after the next power on") */
 };
 /* test 67: [0] the options, [1] the debug menu; ending at OPT_N; test 68: SOUND after CONTROLS. Test 69 (user: "gadgets
  * on/off option is obsolete since the M3 gadgets options have an all/off toggle", "back in a run option is obsolete"):
@@ -2214,7 +2219,8 @@ static const unsigned char opt_rows_ib[OPT_PAGES][18] = { /* test 71: P2 CONTROL
 	 * bottom, staff roll to the top after special mode"). Test 112 (user: "move service menu to the bottom of the debug
 	 * menu, before initialize rankings", "move achivements and toast options in the ex-debug menu", "move EEPROM save,
 	 * record, framelog and network log on the ex-debug menu"; DEBUG CARD is in their EX-DEBUG order too) */
-	{OPT_SPECIAL, OPT_STAFF, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_ACH, OPT_N}, /* test 119 (user): ACHIEVEMENTS last */
+	{OPT_SPECIAL, OPT_STAFF, OPT_ATTRACT, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_ACH, OPT_N}, /* test 119 (user): ACHIEVEMENTS last;
+	                                                         * test 121: ATTRACT DEMO after STAFF ROLL (not ARRANGE: no demos) */
 	{OPT_SCREEN_ROWS, OPT_N}, /* test 100: M3 GADGETS on the pause's OPTIONS page */
 	{OPT_GENERAL_ROWS, OPT_N},
 	{OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_DEBUG, OPT_LANG, OPT_N}, /* test 102: LANGUAGE */
@@ -2241,7 +2247,7 @@ static const unsigned char opt_rows_arr[OPT_PAGES][18] = {
 };
 static const unsigned char opt_rows_blk[OPT_PAGES][18] = { /* test 60: GADGETS; 64: M3; 70: PLAYER in the start menu */
 	{OPT_PLAY, OPT_TRAIN, OPT_LOAD, OPT_REPLAYS, OPT_OPTIONS, OPT_GSEL_ROW OPT_N},
-	{OPT_STAFF, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_ACH, OPT_N}, /* test 119: ACHIEVEMENTS last; test 110: STAFF ROLL first (Kuro BL's addresses found),
+	{OPT_STAFF, OPT_ATTRACT, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_ACH, OPT_N}, /* test 121: ATTRACT DEMO after STAFF ROLL; test 119: ACHIEVEMENTS last; test 110: STAFF ROLL first (Kuro BL's addresses found),
 	                                                         * INITIALIZE RANKINGS last; test 112: SERVICE MENU before it,
 	                                                         * the rest on EX-DEBUG */
 	{OPT_SCREEN_ROWS, OPT_N}, /* test 100: M3 GADGETS on the pause's OPTIONS page */
@@ -2406,6 +2412,7 @@ static void opt_value(int i, char *s, size_t n)
 	case OPT_ACH: snprintf(s, n, "%s", cfg.achievements ? "ON" : "OFF"); break; /* test 106 */
 	case OPT_TOAST: snprintf(s, n, "%s", achx_toast_name(cfg.toast_pos)); break;
 	case OPT_STAFF: snprintf(s, n, "%s", cfg.staff_keep ? "PROTECTED" : "SKIPPABLE"); break; /* test 109 */
+	case OPT_ATTRACT: snprintf(s, n, "%s", cfg.attract_demo ? "ON" : "OFF"); break; /* test 121 */
 	case OPT_EXINV: snprintf(s, n, "%s", ex_inv ? "ON" : "OFF"); break; /* test 108 */
 	case OPT_EXINFB: snprintf(s, n, "%s", ex_infb ? "ON" : "OFF"); break;
 	case OPT_EXLIVES: snprintf(s, n, "%s", ex_lives ? "ON" : "OFF"); break; /* test 110 */
@@ -2483,6 +2490,7 @@ static void opt_step(int i, int d)
 	case OPT_ACH: cfg.achievements ^= 1; break; /* test 106: ach_step reads it (ON only after sm_frame's question) */
 	case OPT_TOAST: cfg.toast_pos = (cfg.toast_pos + ACHX_TOAST_N + d) % ACHX_TOAST_N; break;
 	case OPT_STAFF: cfg.staff_keep ^= 1; break; /* test 109: sm_frame reads it */
+	case OPT_ATTRACT: cfg.attract_demo ^= 1; break; /* test 121: attract_hold reads it (the title's timeout) */
 	case OPT_EXREPLAY: cfg.replay_save ^= 1; break; /* test 118: an ini setting (a run's end reads it) */
 	case OPT_EXINV: case OPT_EXINFB: case OPT_EXHIT: case OPT_EXLIVES: /* test 108: not ini settings (no opt_changes,
 	                                                                     * no save) */
@@ -2760,11 +2768,12 @@ static void ctl_step(int row, int d)
  * option as well, by pressing left/right instead of A"): the ALL row's LEFT / RIGHT turn every gadget of the game off
  * when all are on, else on (its value ON / OFF / MIXED); A does nothing there. */
 static int gp_sel;
+#define GP_STAGE (GD_N + 2) /* test 121 item 5: the STAGE MAP row, the page's first */
 #define GP_COOP (GD_N + 1) /* test 71: the CO-OP row (user: "co-op gadgets, to be a separate toggle in the gadgets menu") */
 
 static int gp_nrows(void)
 {
-	int g, n = 2; /* + CO-OP, ALL */
+	int g, n = 3; /* + STAGE MAP, CO-OP, ALL (test 121 item 5) */
 
 	for (g = 0; g < GD_N; g++)
 		n += gadgets_in_game(g, game_set != SET_IBARA); /* test 76: XTC Kuro BL's */
@@ -2775,6 +2784,10 @@ static int gp_nrows(void)
 static int gp_row(int k)
 {
 	int g;
+
+	if (k == 0) /* test 121 item 5: the page's first row */
+		return GP_STAGE;
+	k--;
 
 	for (g = 0; g < GD_N; g++)
 		if (gadgets_in_game(g, game_set != SET_IBARA) && k-- == 0)
@@ -2826,7 +2839,14 @@ static void gp_step(int k, int d)
 	const int g = gp_row(k);
 	int i;
 
-	if (g == GP_COOP) { /* test 71: both players' gadgets while two play */
+	if (g == GP_STAGE) { /* test 121 item 5: 16:9 only; the file must be beside the xex */
+		if (!gadgets_stagemap_avail()) {
+			log_printf(C_YELLOW, "M3 GADGETS: STAGE MAP NEEDS IBARAWEB.DAT (EMU %u)", (unsigned)frame_count);
+			return;
+		}
+		cfg.stage_map ^= 1;
+		log_printf(C_WHITE, "M3 GADGETS: STAGE MAP %s (EMU %u)", cfg.stage_map ? "ON" : "OFF", (unsigned)frame_count);
+	} else if (g == GP_COOP) { /* test 71: both players' gadgets while two play */
 		cfg.coop ^= 1;
 		log_printf(C_WHITE, "M3 GADGETS: CO-OP %s (EMU %u)", cfg.coop ? "ON" : "OFF", (unsigned)frame_count);
 	} else if (g == GD_N) { /* test 68: every one of the game's off when all are on, else on */
@@ -3158,11 +3178,14 @@ static void snd_frame(void)
 		snd_att = 0;
 	else if (sm_idle >= SM_IDLE || (sm_after && sm_logo))
 		snd_att = 1;
+	/* test 121 (user: "IKUZE in the demos follows the attract volume, only a real start is at full volume"): the
+	 * start voices (phrases 172 / 178, 1P / 2P IKUZE) are main-gain only while no attract demo plays (the game's demo
+	 * byte 0); in a demo they take the attract gain like the rest of the attract's voices */
+	ymz_phrase_force_main[128 + 44] = ymz_phrase_force_main[128 + 50] =
+	    *RAMP(game_set == SET_IBARA ? IB_DEMO : BLK_DEMO) == 0;
 	sound_levels(cfg.vol_music, cfg.vol_sfx, cfg.vol_voice, cfg.vol_attract, snd_att,
-	             cfg.mute || tr_turbo || boot_turbo || snd_hush, sm_state == SM_SENDING); /* IKUZE stays at 100%; test
-	                                                                                      * 89: START AT BOSS's skip
-	                                                                                      * is silent; test 112: the
-	                                                                                      * boot's too */
+	             cfg.mute || tr_turbo || boot_turbo || snd_hush); /* test 89: START AT BOSS's skip is silent; test 112:
+	                                                                * the boot's too */
 }
 
 /* the start menu's play: ibara's command on the chosen side's port, Kuro BL's Start on the pad's;
@@ -5671,6 +5694,31 @@ static int cr_side, cr_type, cr_mode;
 static int state_load_red, state_load_play;
 static int state_load_full; /* test 84: the load is FULL RESTART's (the recording's "# load ... full") */
 static int state_load_tr;   /* test 91: the training pause's QUIT TO TRAINING MODE: the TRAINING page after the load */
+/* test 121 (user: "snappier return to menu from training/others, preventing the flash of the AMI logo on screen"): the
+ * attract's slot is taken on the logos, so its load brings the logos' picture back for the vblanks before the menu is
+ * up and while it covers it. From such a load until the attract has left the logos (or LOGO_HOLD_MAX vblanks), the
+ * game's picture is painted black after the conversion (display only: the hash, the recording and the RAM are as
+ * they were; tex_ok goes back to 0 when the hold ends, so the next frame converts the screen again) */
+static int logo_hold;
+static unsigned logo_hold_n;
+#define LOGO_HOLD_MAX 1800 /* vblanks (30 s) */
+static void logo_hold_frame(void)
+{
+	volatile uint32_t *t = gtex[tex_cur].texels;
+	const unsigned scene = *RAMP(game_set == SET_IBARA ? IB_SCENE : BLK_SCENE);
+
+	if (!logo_hold)
+		return;
+	if (scene != SCENE_LOGOS || ++logo_hold_n > LOGO_HOLD_MAX) {
+		logo_hold = 0;
+		tex_ok = 0;
+		return;
+	}
+	for (int y = 0; y < GAME_H; y++)
+		for (int x = 0; x < GAME_W; x++)
+			t[(size_t)y * gtex_pitch + x] = 0xFF000000u;
+	gtex_dirty[tex_cur] = 1;
+}
 
 /* the stage being played (0-5, 6-11 the extended mode's second loop) or -1 */
 static int stage_now(void)
@@ -6481,12 +6529,15 @@ static int sm_pages(volatile uint32_t *t)
 			const int y = y0 + 14 + 10 * i, sel = i == gp_sel, r = gp_row(i);
 			if (sel)
 				sm_text(t, x0, y, C_YELLOW, ">");
-			sm_text(t, x0 + 6, y, sel ? C_YELLOW : C_WHITE, r < GD_N ? gadgets_name(r) : r == GP_COOP ? "CO-OP" : "ALL");
+			sm_text(t, x0 + 6, y, sel ? C_YELLOW : C_WHITE, r < GD_N ? gadgets_name(r) : r == GP_STAGE ? "STAGE MAP" : r == GP_COOP ? "CO-OP" : "ALL");
 			if (r < GD_N) /* test 67: CONTROLS STICK / TEXT / OFF; test 88: XTC SMALL / FULL / OFF, the stick dim under
 			               * XTC FULL (not drawn) */
 				sm_text(t, x0 + 6 * 20, y, sel ? C_YELLOW : cfg.gadget[r] ?
 				        C_GREEN : C_DIM, !cfg.gadget[r] ? "OFF" : r == GD_XTC ? (cfg.xtc_full ? "FULL" : "SMALL") :
 				        r != GD_CONTROLS ? "ON" : ctl_text_now() ? "TEXT" : "STICK");
+			else if (r == GP_STAGE) /* test 121 item 5: OFF without the file */
+				sm_text(t, x0 + 6 * 20, y, sel ? C_YELLOW : cfg.stage_map && gadgets_stagemap_avail() ? C_GREEN : C_DIM,
+				        cfg.stage_map && gadgets_stagemap_avail() ? "ON" : "OFF");
 			else if (r == GP_COOP) /* test 71 */
 				sm_text(t, x0 + 6 * 20, y, sel ? C_YELLOW : cfg.coop ? C_GREEN : C_DIM, cfg.coop ? "ON" : "OFF");
 			else /* test 68 */
@@ -6495,6 +6546,8 @@ static int sm_pages(volatile uint32_t *t)
 		}
 		sm_help(t, x0, y0 + hy, C_CYAN, ARR && g == GD_FORMATION ? "FORMATIONS INFO" /* test 83 */ :
 		        g == GD_CONTROLS && ctl_stick_off() ? "TEXT OR OFF WHILE XTC IS FULL" /* test 88; test 89 */ :
+		        g == GP_STAGE ? (gadgets_stagemap_avail() ? "16:9 ONLY: MAP AND VIEW LEFT, BOSS RIGHT, OTHER GADGETS OFF"
+		        : "NO IBARAWEB.DAT BESIDE THE XEX FILES") /* test 121 item 5 */ :
 		        g < GD_N ? helps[g] : g == GP_COOP ? "P1 AND P2 GADGETS WHILE CO-OP\n"
 		        "PLAY IS ACTIVE" : "TOGGLE ALL GADGETS ON/OFF", 35); /* test 82: CO-OP's the user's */
 		if (cfg.picture == PIC_CUSTOM) /* test 88: the picture resize turns them off */
@@ -6932,6 +6985,7 @@ static void present(void)
 		/* test 58: GADGETS: the artwork under the game alone; test 60: both games, 16:9 or tate on 16:9 or 4:3 */
 		view = !show && !load_pic && cfg.gadgets && gd_stats.ready && cfg.picture != PIC_CUSTOM ? gadgets_view() : GV_NONE;
 		gadgets_mask(settings_gadget_mask()); /* test 64: the M3 GADGETS page's */
+		gadgets_stagemap_set(cfg.stage_map, cfg.language == LANG_JAPANESE); /* test 121 item 5 */
 		/* test 71: every frame (the pause's changes at once); test 88: XTC FULL and the picture's scale on the 720-line
 		 * canvas (FULL 720 / 320, INTEGER its whole number) */
 		gadgets_style(ctl_text_now(), cfg.coop, game_set != SET_IBARA && cfg.xtc_full,
@@ -7654,6 +7708,8 @@ static void state_load_now(void)
 	}
 	run_left = 0;
 	tex_ok = 0;
+	logo_hold = s == SLOT_ATTRACT; /* test 121: its logos' picture black until the attract leaves them (logo_hold_frame) */
+	logo_hold_n = 0;
 	t_resume = tb_read();
 	rt_state_load(s);
 }
@@ -11411,6 +11467,33 @@ static void boot_check(void)
 	           (unsigned)((tb_read() - boot_t0) * 1000 / PPC_TIMEBASE_FREQ));
 }
 
+/* test 121 (user: "attract demo toggle on/off in the debug menu, for arcade and black label"; ARRANGE's way, arrange/logo.c:
+ * its title's 300-frame timeout never fires): the title routine (ibara 0C0588C0, Kuro BL 0C06A3C0) counts its title
+ * frames in a stack local, @(4,r14) with r14 = r15 - 40 after its prologue, and starts a demo when the count passes
+ * 0x12B (the title's timeout, 300 frames). Its r15 at entry is 0C7FFFCC (ibara) / 0C7FFFC8 (Kuro BL) on every entry the
+ * PC harness made (work/g121/attract/REPORT.md), so the counter is 0C7FFFA8 / 0C7FFFA4. ATTRACT DEMO OFF: on the title
+ * (scene 6, no ARRANGE) a counter in 0..0x12C is written 0 before the game runs each vblank, so it never passes 0x12B:
+ * the title stays (its own blink) and no demo starts. Only that one word is written; ON writes nothing. */
+#define IB_TITLE_CNT 0x0C7FFFA8u  /* ibara: 0C0588C0's counter (r14+4) */
+#define BLK_TITLE_CNT 0x0C7FFFA4u /* Kuro BL: 0C06A3C0's counter (r14+4) */
+static int attract_held;          /* the title is held (its log line once per title) */
+static void attract_hold(void)
+{
+	const int ib = game_set == SET_IBARA;
+
+	if (cfg.attract_demo || ARR || *RAMP(ib ? IB_SCENE : BLK_SCENE) != SCENE_TITLE) {
+		attract_held = 0;
+		return;
+	}
+	if (BE32(RAMP(ib ? IB_TITLE_CNT : BLK_TITLE_CNT)) > 0x12Cu) /* past the timeout's 0x12B: not held (the demo's start) */
+		return;
+	wr32(ib ? IB_TITLE_CNT : BLK_TITLE_CNT, 0);
+	if (!attract_held) {
+		attract_held = 1;
+		log_printf(C_WHITE, "MENU: ATTRACT DEMO OFF: THE TITLE HELD (EMU %u)", (unsigned)frame_count);
+	}
+}
+
 /* The runtime calls this at every emulated vblank (frame_count = vblanks before it).
  * One emulated frame per displayed frame: game (CPU, waiting for the bands), screen
  * conversion, present (card, GPU, the flip), then the pads for the next frame. */
@@ -11422,6 +11505,7 @@ void host_vblank(sh3_t *c)
 	int b, late_after_load = 0, turbo;
 
 	hsum = screen_frame(); /* waits for the bands; test 14: the hash goes into the recording */
+	logo_hold_frame();     /* test 121: the attract's logos after a quit, black (after the hash) */
 	boot_check();          /* test 112: the boot unpaced (its corners before the HUD and the ticker) */
 	arrhud_frame(); /* test 79: ARRANGE's HUD: its own state a step a game frame, then over the picture, after the hash */
 	if (ARR) {
@@ -11606,6 +11690,7 @@ void host_vblank(sh3_t *c)
 		inputs_update();
 	state_frame(); /* test 69: the save states this vblank asks for */
 	tr_vblank();   /* test 89: a training run's writes */
+	attract_hold(); /* test 121: ATTRACT DEMO OFF holds the title (before the game's next frame, as the writes above) */
 	ex_vblank();   /* test 108: EX-DEBUG's */
 	rp_capture(hsum); /* test 86: and a run's replay its ports */
 	{
