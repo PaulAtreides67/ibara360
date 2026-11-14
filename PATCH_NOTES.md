@@ -8,6 +8,7 @@
 - **FILTER** (GENERAL SCREEN, replaces SMOOTHING): NEAREST, BILINEAR, BICUBIC or LANCZOS scaling for the game
   picture. Menus and gadgets stay sharp.
 - **SCREEN COLOR** (GENERAL SCREEN): STANDARD, FLAT, MONOTONE, SEPIA, OUTLINE or NEGATIVE for the game picture.
+  OUTLINE draws white edges on black, one screen pixel thin at any picture size.
 - **ROTATION UPSIDE DOWN**: the whole screen turned half round, next to OFF / LEFT / RIGHT.
 - **Hold LT to hide any menu** and see the game picture under it.
 - **STICK DEADZONE** for each player on the P1 / P2 CONTROLS pages, in 1% steps.

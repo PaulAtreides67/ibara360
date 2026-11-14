@@ -560,7 +560,7 @@ static volatile int menu_on, menu_sel;         /* the pad menu is up; the highli
  * toggle (TR_ROW_NONE; test 100: EDIT only), A opens the box on EDIT, X in a box all on / off (FORMATION: the next formation for all three
  * slots, "QUICK SWAP"), a row with none set NONE (until test 100); every game's RANK a start value, the game's own rise and falls after it (tr_rank_vblank), X on RANK holds it all the run
  * (TRR_HELD, a "*") */
-#define XEX_TEST "129"  /* test 129 (1.04): the release: logs off once, version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127 (1.04): record, frame log, network log on once for a check-up log; test 126 (1.04): menus unaffected by FILTER/SCREEN COLOR including BILINEAR, LOW LATENCY on OPTIONS page above LANGUAGE default ON, help text, INVINCIBLE gadget held; test 125 (1.04): menus unaffected by FILTER/SCREEN COLOR, per-player STICK DEADZONE on CONTROLS, FPS COUNTER on DEBUG MENU; test 124 (1.04): LOW LATENCY, LT hides menus, FILTER, SCREEN COLOR, UPSIDE DOWN, STICK DEADZONE; test 123 (1.03): STAGE MAP boss art from ps2data.bin's gallery cut out, bg.boss right panel; test 122 (1.03): ATTRACT DEMO help (next power on), STAGE MAP box held at the boss + background + border; test 121 (1.03): IKUZE at full volume only in a run (the attract's demos follow the attract volume); the
+#define XEX_TEST "130"  /* test 130: SCREEN COLOR OUTLINE = per-screen-pixel Sobel, white edges on black; test 129 (1.04): the release: logs off once, version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127 (1.04): record, frame log, network log on once for a check-up log; test 126 (1.04): menus unaffected by FILTER/SCREEN COLOR including BILINEAR, LOW LATENCY on OPTIONS page above LANGUAGE default ON, help text, INVINCIBLE gadget held; test 125 (1.04): menus unaffected by FILTER/SCREEN COLOR, per-player STICK DEADZONE on CONTROLS, FPS COUNTER on DEBUG MENU; test 124 (1.04): LOW LATENCY, LT hides menus, FILTER, SCREEN COLOR, UPSIDE DOWN, STICK DEADZONE; test 123 (1.03): STAGE MAP boss art from ps2data.bin's gallery cut out, bg.boss right panel; test 122 (1.03): ATTRACT DEMO help (next power on), STAGE MAP box held at the boss + background + border; test 121 (1.03): IKUZE at full volume only in a run (the attract's demos follow the attract volume); the
  * quit to the attract's logos held black until the title (no AMI logo flash); ATTRACT DEMO ON/OFF on the debug menu (ibara,
  * Kuro BL: the title held); test 120: release candidate; test 119: EX-DEBUG closed, ACHIEVEMENTS the debug menu's last row */
 #define XEX_VERSION "1.04" /* test 129: 1.04; test 121: 1.03; test 120: PS2-only menus and the 1.02 presentation fixes */
@@ -5499,6 +5499,7 @@ static int pic_shape(void)
 }
 
 static float pic_rc[4]; /* test 88: the CUSTOM picture's place (output pixels), for ADJUST PICTURE's box */
+static float pic_dw, pic_dh; /* test 130: the drawn picture's width / height in front-buffer pixels (OUTLINE) */
 
 static int gadgets_view(void)
 {
@@ -5556,6 +5557,7 @@ static void alone_layout(void)
 	vb_cust = make_quad(rc[0], rc[1], rc[2], rc[3], uv); /* test 88 */
 	memcpy(pic_rc, rc, sizeof(pic_rc));
 	r = cfg.picture == PIC_FULL ? rf : cfg.picture == PIC_CUSTOM ? rc : ri;
+	pic_dw = r[2] - r[0]; pic_dh = r[3] - r[1];
 	scan_quads = 0; /* test 53: none unless built again here */
 	if (cfg.scanlines && cfg.scanline_strength > 0)
 		scan_build(r[0], r[1], r[2], r[3], cfg.tate != TATE_OFF);
@@ -7212,7 +7214,7 @@ static void present(void)
 				                     flt == FILTER_BILINEAR ? &samp_linear : &samp_point);
 			} else {
 				static const float lum[3] = {0.299f, 0.587f, 0.114f};
-				float look[16] = {0}; /* rows r, g, b (times R, G, B, 1), then t = (1/320, 1/240, outline, bilinear) */
+				float look[20] = {0}; /* rows r, g, b (times R, G, B, 1), then t, then s = one screen pixel in uv (test 130) */
 				const int k = flt == FILTER_BICUBIC ? 1 : flt == FILTER_LANCZOS ? 2 : 0;
 				int r, c;
 				for (r = 0; r < 3; r++)
@@ -7238,9 +7240,16 @@ static void present(void)
 				look[13] = 1.0f / (float)GAME_H;
 				look[14] = col == COLOR_OUTLINE ? 1.0f : 0.0f;
 				look[15] = flt == FILTER_BILINEAR ? 1.0f : 0.0f; /* test 126 */
+				/* test 130: OUTLINE's Sobel step = one front-buffer pixel in uv. TATE OFF (uv_rot) shows the 320 texel columns
+				 * (u) down the screen and the 240 rows (v) across it; TATE LEFT / RIGHT show u across, v down */
+				{
+					const float dw = pic_dw > 1.0f ? pic_dw : (float)GAME_H, dh = pic_dh > 1.0f ? pic_dh : (float)GAME_W;
+					look[16] = cfg.tate != TATE_OFF ? 1.0f / dw : 1.0f / dh;
+					look[17] = cfg.tate != TATE_OFF ? 1.0f / dh : 1.0f / dw;
+				}
 				xsdk_gpu_set_shaders(&vs, &ps_look[k]);
 				xsdk_built_shader_set_literals(k == 1 ? &bicubic_frag : k == 2 ? &lanczos_frag : &game_frag);
-				xsdk_gpu_set_pixel_constants(k == 1 ? BICUBIC_FRAG_PUSH : k == 2 ? LANCZOS_FRAG_PUSH : GAME_FRAG_PUSH, look, 4);
+				xsdk_gpu_set_pixel_constants(k == 1 ? BICUBIC_FRAG_PUSH : k == 2 ? LANCZOS_FRAG_PUSH : GAME_FRAG_PUSH, look, 5);
 				xsdk_gpu_set_texture(k == 1 ? BICUBIC_FRAG_SAMPLER_0_0 : k == 2 ? LANCZOS_FRAG_SAMPLER_0_0 : GAME_FRAG_SAMPLER_0_0,
 				                     &gtex[tex_cur], &samp_point); /* test 126 */
 			}

@@ -1,6 +1,7 @@
 #version 450
 // Test 124b: the game picture, FILTER LANCZOS (Lanczos-2, 4x4 point-sampled taps), then SCREEN COLOR as game.frag.
 // Test 125: a menu pixel (alpha 0, marked by sm_draw) is the plain centre sample, no colour, filter or outline.
+// Test 130: OUTLINE = a per-screen-pixel Sobel, white edges on black.
 // L(x) = 2 sin(pi x) sin(pi x / 2) / (pi x)^2. For the taps x = k - f (k = -1..2) the sines are +-sin(pi f) and
 // +-sin(pi f / 2) or +-cos(pi f / 2), so three trig calls an axis (arguments 0..pi: xsdk's sin is only good on
 // -pi..pi), the weights divided by their sum (the constant 2 / pi^2 cancels). f kept off 0 and 1 (0 / 0 there).
@@ -13,6 +14,7 @@ layout(push_constant) uniform Look {
 	vec4 g;
 	vec4 b;
 	vec4 t;
+	vec4 s; // test 130: s.xy = one screen pixel in uv (OUTLINE)
 } look;
 
 #define TAP(PX, PY) texture(u_texture, vec2(PX, PY)).rgb
@@ -42,15 +44,21 @@ void main()
 	vec4 v = vec4(i.y - 0.5, i.y + 0.5, i.y + 1.5, i.y + 2.5) * look.t.y;
 	vec3 sum = ROW(v.x) * wy.x + ROW(v.y) * wy.y + ROW(v.z) * wy.z + ROW(v.w) * wy.w;
 	vec3 c = clamp(sum, 0.0, 1.0);
-	float ll = dot(texture(u_texture, v_uv - vec2(look.t.x, 0.0)).rgb, Y);
-	float lr = dot(texture(u_texture, v_uv + vec2(look.t.x, 0.0)).rgb, Y);
-	float lu = dot(texture(u_texture, v_uv - vec2(0.0, look.t.y)).rgb, Y);
-	float ld = dot(texture(u_texture, v_uv + vec2(0.0, look.t.y)).rgb, Y);
-	float gx = lr - ll;
-	float gy = ld - lu;
-	float e = sqrt(gx * gx + gy * gy);
+	/* test 130: OUTLINE = a per-screen-pixel Sobel, white edges on black; s = one screen pixel in uv */
+	float dx = look.s.x, dy = look.s.y; // test 130 review: not const (a push constant is not a constant expression)
+	float tl = dot(texture(u_texture, v_uv + vec2(-dx, -dy)).rgb, Y);
+	float t = dot(texture(u_texture, v_uv + vec2(0.0, -dy)).rgb, Y);
+	float tr = dot(texture(u_texture, v_uv + vec2(dx, -dy)).rgb, Y);
+	float l = dot(texture(u_texture, v_uv + vec2(-dx, 0.0)).rgb, Y);
+	float r = dot(texture(u_texture, v_uv + vec2(dx, 0.0)).rgb, Y);
+	float bl = dot(texture(u_texture, v_uv + vec2(-dx, dy)).rgb, Y);
+	float b = dot(texture(u_texture, v_uv + vec2(0.0, dy)).rgb, Y);
+	float br = dot(texture(u_texture, v_uv + vec2(dx, dy)).rgb, Y);
+	float sx = (tr + 2.0 * r + br) - (tl + 2.0 * l + bl);
+	float sy = (bl + 2.0 * b + br) - (tl + 2.0 * t + tr);
+	float mag = sqrt(sx * sx + sy * sy) / 4.0;
 	vec4 x = vec4(c, 1.0);
 	vec3 m = vec3(dot(look.r, x), dot(look.g, x), dot(look.b, x));
-	m = m * (1.0 - look.t.z * smoothstep(0.12, 0.35, e));
+	m = mix(m, vec3(smoothstep(0.10, 0.45, mag)), look.t.z);
 	o_color = vec4(mix(p.rgb, clamp(m, 0.0, 1.0), p.a), 1.0);
 }
