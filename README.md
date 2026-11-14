@@ -9,7 +9,7 @@
 Press Back during a run to pause the game.
 If the continue screen appears, press start to resume your run**
 
-**Version 1.03** (November 2026), see [PATCH_NOTES.md](PATCH_NOTES.md)
+**Version 1.04** (November 2026), see [PATCH_NOTES.md](PATCH_NOTES.md)
 
 **Video preview:**
 

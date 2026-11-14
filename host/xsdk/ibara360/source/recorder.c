@@ -17,7 +17,8 @@
 #include "wgate.h"
 
 #define REC_KEEP 10              /* test 97: the newest recordings kept */
-#define REC_ENTRIES (1u << 20)   /* 20 MB of entries: 4.8 hours of game at 60 Hz */
+#define REC_MAX_ENTRIES (1u << 20) /* test 128: the total limit (renamed from REC_ENTRIES) */
+#define REC_RING (1u << 16)        /* test 128: the ring (65536 entries, 1.3 MB) */
 #define REC_TEXT (128 * 1024)    /* text waiting for the next write (test 14d: room while the gate holds) */
 #define REC_CHUNK (48 * 1024)    /* write as soon as this much text waits */
 #define REC_FLUSH_US 2000000     /* and at least this often while any text waits */
@@ -35,6 +36,7 @@ enum { RS_OFF, RS_WAIT, RS_ON, RS_ERR };
 static struct rec_entry *ents;
 static volatile uint32_t n_added;
 static volatile int full;
+static volatile uint32_t rec_lost; /* test 128: entries dropped while the ring was full (the replay breaks) */
 
 /* set by rec_begin before RS_WAIT is published, then read-only */
 static char dev_name[64]; /* xsdk port: a data root such as /Device/Mass0 */
@@ -47,7 +49,7 @@ static int off_by_choice; /* test 33: rec_off() */
 static char path[160];
 static char text[REC_TEXT];
 static unsigned tlen;
-static uint32_t n_done;                          /* entries turned into text */
+static volatile uint32_t n_done;                 /* entries turned into text (test 128: volatile, the producers read it) */
 static uint8_t last_ports[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 static uint8_t last_timing;                      /* test 17: 0 = none written yet */
 volatile uint8_t rec_timing;
@@ -65,7 +67,7 @@ void rec_begin(const char *dev, const char *hdr)
 		snprintf(why, sizeof(why), "NO STORAGE DEVICE");
 		return;
 	}
-	ents = memalign(128, REC_ENTRIES * sizeof(struct rec_entry));
+	ents = memalign(128, REC_RING * sizeof(struct rec_entry)); /* test 128: the ring */
 	if (!ents) {
 		snprintf(why, sizeof(why), "OUT OF MEMORY");
 		return;
@@ -86,16 +88,21 @@ void rec_frame(uint32_t frame, uint8_t c, uint8_t d, uint8_t l, uint8_t f, uint3
                unsigned vbl)
 {
 	uint32_t n = n_added;
+	uint32_t nd = n_done; /* test 128: the writer thread's; read once */
 	struct rec_entry *e;
 
 	if (!ents || full)
 		return;
-	if (n >= REC_ENTRIES) {
+	if (n >= REC_MAX_ENTRIES) { /* test 128: the total limit */
 		full = 1;
 		log_printf(C_RED, "REC: BUFFER FULL AT FRAME %u, RECORDING STOPS", (unsigned)frame);
 		return;
 	}
-	e = &ents[n];
+	if (n - nd >= REC_RING) { /* test 128: the ring is full */
+		rec_lost++;
+		return;
+	}
+	e = &ents[n & (REC_RING - 1)];
 	e->frame = frame;
 	e->scr = scr;
 	e->word = word;
@@ -116,11 +123,16 @@ void rec_frame(uint32_t frame, uint8_t c, uint8_t d, uint8_t l, uint8_t f, uint3
 void rec_state(uint32_t frame, int what, int slot)
 {
 	uint32_t n = n_added;
+	uint32_t nd = n_done; /* test 128: read once */
 	struct rec_entry *e;
 
-	if (!ents || full || n >= REC_ENTRIES)
+	if (!ents || full || n >= REC_MAX_ENTRIES)
 		return;
-	e = &ents[n];
+	if (n - nd >= REC_RING) { /* test 128 */
+		rec_lost++;
+		return;
+	}
+	e = &ents[n & (REC_RING - 1)];
 	memset(e, 0, sizeof(*e));
 	e->frame = frame;
 	e->pad[2] = (uint8_t)(0x80 | (what & 3) << 4 | (slot & 15));
@@ -132,11 +144,16 @@ void rec_state(uint32_t frame, int what, int slot)
 void rec_host(uint32_t frame, int what, int value)
 {
 	uint32_t n = n_added;
+	uint32_t nd = n_done; /* test 128: read once */
 	struct rec_entry *e;
 
-	if (!ents || full || n >= REC_ENTRIES)
+	if (!ents || full || n >= REC_MAX_ENTRIES)
 		return;
-	e = &ents[n];
+	if (n - nd >= REC_RING) { /* test 128 */
+		rec_lost++;
+		return;
+	}
+	e = &ents[n & (REC_RING - 1)];
 	memset(e, 0, sizeof(*e));
 	e->frame = frame;
 	e->c = (uint8_t)what;
@@ -150,11 +167,16 @@ void rec_host(uint32_t frame, int what, int value)
 void rec_hdd(uint32_t frame, int what, int slot, uint32_t crc)
 {
 	uint32_t n = n_added;
+	uint32_t nd = n_done; /* test 128: read once */
 	struct rec_entry *e;
 
-	if (!ents || full || n >= REC_ENTRIES)
+	if (!ents || full || n >= REC_MAX_ENTRIES)
 		return;
-	e = &ents[n];
+	if (n - nd >= REC_RING) { /* test 128 */
+		rec_lost++;
+		return;
+	}
+	e = &ents[n & (REC_RING - 1)];
 	memset(e, 0, sizeof(*e));
 	e->frame = frame;
 	e->c = (uint8_t)what;
@@ -169,11 +191,16 @@ void rec_hdd(uint32_t frame, int what, int slot, uint32_t crc)
 void rec_replay(uint32_t frame, int what, uint32_t num, uint32_t crc)
 {
 	uint32_t n = n_added;
+	uint32_t nd = n_done; /* test 128: read once */
 	struct rec_entry *e;
 
-	if (!ents || full || n >= REC_ENTRIES)
+	if (!ents || full || n >= REC_MAX_ENTRIES)
 		return;
-	e = &ents[n];
+	if (n - nd >= REC_RING) { /* test 128 */
+		rec_lost++;
+		return;
+	}
+	e = &ents[n & (REC_RING - 1)];
 	memset(e, 0, sizeof(*e));
 	e->frame = frame;
 	e->c = (uint8_t)what;
@@ -292,6 +319,7 @@ volatile int rec_final; /* test 72 */
 int rec_service(void)
 {
 	static uint32_t last_frame; /* the last frame in text[] */
+	static uint32_t lost_reported; /* test 128: rec_lost already written as a # line */
 	uint32_t n;
 	unsigned t0;
 
@@ -304,8 +332,15 @@ int rec_service(void)
 	n = n_added;
 	__sync_synchronize(); /* the count before the entries it covers */
 	t0 = tlen;
+	{ /* test 128: a lost entry breaks the replay: one # lost line when it first happens */
+		uint32_t lost = rec_lost;
+		if (lost != lost_reported && tlen + 32 <= REC_TEXT) {
+			tlen += (unsigned)snprintf(text + tlen, REC_TEXT - tlen, "# lost %u\n", (unsigned)last_frame);
+			lost_reported = lost;
+		}
+	}
 	while (n_done < n && tlen + 112 <= REC_TEXT) { /* timing + dsw + input + s lines (tests 17, 53) */
-		const struct rec_entry *e = &ents[n_done];
+		const struct rec_entry *e = &ents[n_done & (REC_RING - 1)]; /* test 128: the ring */
 		uint8_t p[4] = {e->c, e->d, e->l, e->f};
 		if (e->pad[2] & 0x80) { /* test 69: a save state's line; test 84: " full" for FULL RESTART's load */
 			tlen += (unsigned)snprintf(text + tlen, REC_TEXT - tlen, "# %s %u %u%s\n", e->pad[2] & 0x10 ? "load" : "save",
@@ -400,8 +435,15 @@ void rec_rows(char t[REC_ROWS][100], uint32_t color[REC_ROWS])
 		color[1] = C_DIM;
 		return;
 	}
-	snprintf(t[0], 100, "REC %s  FRAMES %u  INPUTS %u%s", path, (unsigned)n_added, inputs_written,
-	         full ? "  FULL" : "");
+	{ /* test 128: show LOST n when entries were dropped */
+		unsigned lost = rec_lost;
+		if (lost)
+			snprintf(t[0], 100, "REC %s  FRAMES %u  INPUTS %u%s  LOST %u", path, (unsigned)n_added, inputs_written,
+			         full ? "  FULL" : "", lost);
+		else
+			snprintf(t[0], 100, "REC %s  FRAMES %u  INPUTS %u%s", path, (unsigned)n_added, inputs_written,
+			         full ? "  FULL" : "");
+	}
 	for (i = 0; t[0][i]; i++)
 		if (t[0][i] >= 'a' && t[0][i] <= 'z')
 			t[0][i] -= 32;

@@ -166,6 +166,9 @@
 !/host/xsdk/ibara360/shaders/card.vert
 !/host/xsdk/ibara360/shaders/quad.frag
 !/host/xsdk/ibara360/shaders/quad.vert
+!/host/xsdk/ibara360/shaders/game.frag
+!/host/xsdk/ibara360/shaders/bicubic.frag
+!/host/xsdk/ibara360/shaders/lanczos.frag
 !/host/xsdk/ibara360/source/achieve.c
 !/host/xsdk/ibara360/source/achieve.h
 !/host/xsdk/ibara360/source/achxam.c

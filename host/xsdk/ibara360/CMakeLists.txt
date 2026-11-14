@@ -136,7 +136,9 @@ set_source_files_properties(source/xsdk_present.c PROPERTIES INCLUDE_DIRECTORIES
 set(SHADER_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders")
 set(SHADER_HEADER "${SHADER_DIR}/ibara360_shaders.h")
 set(SHADERS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/quad.vert" "${CMAKE_CURRENT_SOURCE_DIR}/shaders/quad.frag"
-	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/card.vert" "${CMAKE_CURRENT_SOURCE_DIR}/shaders/card.frag")
+	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/card.vert" "${CMAKE_CURRENT_SOURCE_DIR}/shaders/card.frag"
+	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/game.frag" "${CMAKE_CURRENT_SOURCE_DIR}/shaders/bicubic.frag"
+	"${CMAKE_CURRENT_SOURCE_DIR}/shaders/lanczos.frag") # test 124b: the game picture's FILTER / SCREEN COLOR
 set(GLSLANG_OPT "")
 if(EXISTS "${XSDK_GLSLANG}")
 	set(GLSLANG_OPT --glslang "${XSDK_GLSLANG}")

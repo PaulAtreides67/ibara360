@@ -1,5 +1,27 @@
 # ibara360 patch notes
 
+## 1.04 (November 2026)
+
+### New
+- **LOW LATENCY** (OPTIONS page, above LANGUAGE; ON by default): each frame goes straight to the screen, up to one
+  frame less input lag. The picture may tear.
+- **FILTER** (GENERAL SCREEN, replaces SMOOTHING): NEAREST, BILINEAR, BICUBIC or LANCZOS scaling for the game
+  picture. Menus and gadgets stay sharp.
+- **SCREEN COLOR** (GENERAL SCREEN): STANDARD, FLAT, MONOTONE, SEPIA, OUTLINE or NEGATIVE for the game picture.
+- **ROTATION UPSIDE DOWN**: the whole screen turned half round, next to OFF / LEFT / RIGHT.
+- **Hold LT to hide any menu** and see the game picture under it.
+- **STICK DEADZONE** for each player on the P1 / P2 CONTROLS pages, in 1% steps.
+- **FPS COUNTER** on the DEBUG MENU: frames shown / emulated, top left.
+- **AUTO SHOT 7.5 Hz** (Arcade): a press every 8 game frames, after 30 / 20 / 15 / 12 / 10 Hz
+  (ini: `autofire = 7.5`).
+- **STORY** (launcher): the slide window at the bottom left now shows "LB/RB TURN PAGE".
+
+### Fixes
+- Training's INVINCIBLE gadget no longer flickers between ON and "-".
+- With the recording, frame log and network log turned on, the save states keep their full memory, so RESTART,
+  QUIT TO ATTRACT and QUIT TO TRAINING MODE stay available and a training stage clear returns to the training page.
+- Logging (record, frame log, network log) is turned off once when 1.04 first starts.
+
 ## 1.03 (November 2026)
 
 ### New

@@ -31,8 +31,8 @@
 #define NL_SILENT_S 2             /* the card calls a PC silent after this long without a POLL */
 #define NL_RETRY_S 5              /* a socket that failed is tried again this often */
 #define NL_LOG_RING (1u << 20)    /* the log file: ~13000 lines */
-#define NL_REC_RING (8u << 20)    /* the recording: ~70 minutes of play */
-#define NL_PERF_RING (16u << 20)  /* the frame log: ~35 minutes */
+#define NL_REC_RING (2u << 20)    /* test 128: the recording: a few minutes (was ~70) */
+#define NL_PERF_RING (4u << 20)   /* test 128: the frame log: a few minutes (was ~35) */
 
 enum { NL_IDLE, NL_OFF, NL_WAIT, NL_ON, NL_ERR };
 /* INFO flags; test 74: PLANNED = the title's own choice (not a fault), HANDOFF = another title next */

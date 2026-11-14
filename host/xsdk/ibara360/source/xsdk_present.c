@@ -80,6 +80,7 @@ typedef struct {
 	volatile uint32_t first_flip_vblank;
 	volatile uint32_t last_flip_vblank;
 	bool showed_system;
+	volatile bool tear; /* test 124: LOW LATENCY */
 } Present;
 
 static Present present;
@@ -148,6 +149,13 @@ void xsdk_present_redescribe(int variant)
 	describe_display(present.width, present.height, variant);
 	xsdk_log_write("present: XAM told the display again, variant %d (%ux%u front buffer)", variant,
 		(unsigned)present.width, (unsigned)present.height);
+}
+
+// test 124: LOW LATENCY. When on, each frame resolves into the buffer the display is showing (it appears at once, with
+// a tear line) and the interrupt keeps "flipping" to that same buffer.
+void xsdk_present_set_tear(bool on)
+{
+	present.tear = on;
 }
 
 // Runs in the kernel's interrupt handling, twice a frame; it only reads registers, flips and counts.
@@ -267,7 +275,7 @@ NTSTATUS xsdk_present_begin(uint32_t *address, uint32_t timeout_ms)
 	}
 	const uint32_t waited_us = elapsed_us(&start);
 	present.longest_wait_us = waited_us > present.longest_wait_us ? waited_us : present.longest_wait_us;
-	*address = present.addresses[frame % present.buffer_count];
+	*address = present.addresses[present.tear ? 0 : frame % present.buffer_count];
 	return STATUS_SUCCESS;
 }
 
@@ -291,7 +299,7 @@ void xsdk_present_end(void)
 {
 	assert(present.open);
 	const uint32_t frame = present.queued;
-	const uint32_t index = frame % present.buffer_count;
+	const uint32_t index = present.tear ? 0 : frame % present.buffer_count;
 	Shown *const shown = &present.shown[frame % QUEUE_SLOTS];
 	*shown = (Shown){ .address = present.addresses[index], .size = present.own_size };
 	GpuSurface system;

@@ -39,7 +39,9 @@
  * the others): <set>_<button> and autofire as before for pad 0, <set>_p2_<button> and autofire_p2 for pad 1;
  * gadget_coop = 1 / 0 (GADGETS' co-op layout while both players play).
  * Test 81: arrange_bullet_design = normal / color / colorless (ARRANGE's BULLET DESIGN, its DIP SWITCHES page).
- * Test 99: soundtrack = arcade / ps2 (the SOUND page's SOUNDTRACK). */
+ * Test 99: soundtrack = arcade / ps2 (the SOUND page's SOUNDTRACK).
+ * Test 124: filter (NEAREST, BILINEAR, BICUBIC, LANCZOS), SCREEN COLOR, LOW LATENCY, ROTATION UPSIDE DOWN (flip),
+ *           STICK DEADZONE. */
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
@@ -63,6 +65,10 @@ enum { PIC_INTEGER, PIC_FULL, PIC_CUSTOM }; /* test 88: CUSTOM = ADJUST PICTURE'
 #define BRIGHT_MAX 150
 enum { TATE_OFF, TATE_LEFT, TATE_RIGHT };
 enum { ASPECT_AUTO = -1, ASPECT_4_3 = 0, ASPECT_16_9 = 1 }; /* test 48: 0 / 1 = main.c's aspect_wide */
+/* test 124: FILTER = how the game picture is scaled (the field is cfg.smooth, 0..3) */
+enum { FILTER_NEAREST, FILTER_BILINEAR, FILTER_BICUBIC, FILTER_LANCZOS };
+/* test 124: SCREEN COLOR = a colour filter for the game picture (cfg.color, 0..5) */
+enum { COLOR_STANDARD, COLOR_FLAT, COLOR_MONOTONE, COLOR_SEPIA, COLOR_OUTLINE, COLOR_NEGATIVE };
 
 /* test 55: the pad buttons the controls page maps (test 85: R3 is not the service menu's S3 any more; the D-pad and
  * stick, START, BACK stay
@@ -77,7 +83,7 @@ enum { FN_OFF, FN_B1, FN_B2, FN_B3, FN_B4, FN_AUTO, FN_CARD, FN_LOCK, FN_N };
  * buttons): ibara_..., ibarablk_..., ibaraarr_... in the ini */
 #define CTL_SET_ARR NSETS
 #define CTL_SETS (NSETS + 1)
-#define AUTOFIRE_RATES 5     /* 30, 20, 15, 12, 10 Hz = every 2nd .. 6th game logic frame */
+#define AUTOFIRE_RATES 6     /* 30, 20, 15, 12, 10, 7.5 Hz = every 2nd .. 8th game logic frame (test 129: 7.5 Hz stored as 7, its period 60 / 7 = 8) */
 
 struct settings {
 	int card;     /* the card shown once the game runs (RB on any pad shows / hides it) */
@@ -115,7 +121,7 @@ struct settings {
 	int pic_sx[PIC_SHAPES], pic_sy[PIC_SHAPES]; /* test 89: X SIZE / Y SIZE, thousandths of SIZE along the player's
 	                                             * axes (tate: X = the game's width, turned on the screen); test 89's
 	                                             * pic_x / pic_y are the player's axes too */
-	int smooth;            /* test 89: SMOOTHING, the game picture linearly filtered (1) or point-sampled (0) */
+	int smooth;            /* test 89: SMOOTHING; test 124: FILTER (FILTER_NEAREST .. FILTER_LANCZOS) */
 	int brightness;        /* test 91: BRIGHTNESS, the game picture's, percent (BRIGHT_MIN .. BRIGHT_MAX, 5% steps) */
 	int menu_style;        /* legacy INI field, retained for compatibility and forced to MENU_PS2 */
 	int language;          /* test 98: LANGUAGE: LANG_ENGLISH or LANG_JAPANESE (the helps, under MENU_PS2 only) */
@@ -137,12 +143,18 @@ struct settings {
 	                        * (main.c attract_hold; ibara and Kuro BL, not ARRANGE) */
 	int stage_map;         /* test 121 item 5 (user: "stage map gadget"): 1 = the 16:9 side panels show the STAGE
 	                        * MAP only (gadgets.c's stage map); 0 = off, the other gadgets as they are */
+	int low_lag;           /* test 124: LOW LATENCY, the game picture shown with up to 1 frame less lag (may tear) */
+	int color;             /* test 124: SCREEN COLOR (COLOR_STANDARD .. COLOR_NEGATIVE) */
+	int flip;              /* test 124: ROTATION UPSIDE DOWN, the whole 16:9 screen turned half round */
+	int deadzone[2];       /* test 125: STICK DEADZONE per player, percent 0..95 (P1 = pad 0, P2 = pads 1-3), default 50 */
+	int fps_counter;       /* test 125: FPS COUNTER on the DEBUG MENU */
 };
 extern struct settings cfg;
 enum { MENU_PS2 = 0 };              /* test 120: the PS2 menu is the only supported style */
 enum { LANG_ENGLISH, LANG_JAPANESE };
 enum { TRACK_ARCADE, TRACK_PS2 };      /* test 99 */
 extern const int autofire_rates[AUTOFIRE_RATES];
+const char *autofire_label(int hz);
 
 #define GAME_ASK -1
 

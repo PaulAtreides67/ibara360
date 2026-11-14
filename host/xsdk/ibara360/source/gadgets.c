@@ -117,6 +117,7 @@
 #include "card_layout.h"
 #include "cv1k.h"
 #include "gadgets.h"
+const char *autofire_label(int hz); /* test 129: settings.c (7 = "7.5") */
 #include "ps2data.h" /* test 99: the 4:3 panels' PS2 layers */
 #include "launch.h" /* test 121 item 5 */
 #include "webdat.h" /* test 121 item 5: ibaraweb.dat */
@@ -384,6 +385,7 @@ struct gd_pl {
 	int tr_more;              /* a Hadou of the side flies: more pieces to come (tr_left grows) */
 	int inv;                  /* test 65: the side's frames of invincibility left (0 = can be hit) */
 	int inv_max;              /* and its value when it last went up (the bar's full length) */
+	int inv_held;             /* test 126: a cheat holds it invincible (the gadget shows ON) */
 	uint8_t shot_hist[60];    /* test 61: the shot button's presses (1 = went down) in the last 60 logic frames */
 	unsigned shot_i, shot_n;  /* the next slot; their sum = presses per 60 logic frames (Hz at the game's 60) */
 	int shot_down;
@@ -1538,7 +1540,9 @@ static void status_lives(float x, float y)
 /* the frames of invincibility left (game frames, as the game counts them) as a number, "-" when it can be hit */
 static void inv_text(char *t, size_t n)
 {
-	if (P->inv > 0)
+	if (P->inv_held) /* test 126 */
+		snprintf(t, n, "ON");
+	else if (P->inv > 0)
 		snprintf(t, n, "%d", P->inv > 999 ? 999 : P->inv);
 	else
 		snprintf(t, n, "-");
@@ -1558,8 +1562,8 @@ static void draw_status(const struct gd_lay *L)
 	status_ship(x, y, 2, 14, 0);
 	status_lives(x, y + 20);
 	TEXT2(x, y + 40, "INVINCIBLE", CYAN);
-	TEXT2(x + 14 * 11, y + 40, t, P->inv > 0 ? YELLOW : GREY);
-	if (P->inv > 0 && P->inv_max > 0) { /* the frames left and a bar of them (full = its value when it last went up) */
+	TEXT2(x + 14 * 11, y + 40, t, P->inv_held || P->inv > 0 ? YELLOW : GREY); /* test 126 */
+	if (!P->inv_held && P->inv > 0 && P->inv_max > 0) { /* the frames left and a bar of them (full = its value when it last went up) */
 		box(x + 14 * 15, y + 42, 108, 12, DARK);
 		box(x + 14 * 15, y + 42, 108.0f * (float)(P->inv < P->inv_max ? P->inv : P->inv_max) / (float)P->inv_max, 12,
 		    CYAN);
@@ -1621,7 +1625,7 @@ static void draw_status_w(void)
 		cx = status_item(cx, y + 14, "MEDAL", t, WHITE, 0);
 	}
 	inv_text(t, sizeof(t));
-	status_item(cx, y + 14, "INV", t, P->inv > 0 ? YELLOW : GREY, 0);
+	status_item(cx, y + 14, "INV", t, P->inv_held || P->inv > 0 ? YELLOW : GREY, 0); /* test 126 */
 }
 
 /* test 67: the enemy bullets on screen in the score's digits, at the window's right */
@@ -1812,7 +1816,7 @@ static void draw_auto(float x, float y)
 
 	TEXT2(x, y, "AUTO", CYAN);
 	if (s.keys[CS][2][0]) {
-		snprintf(t, sizeof(t), "%dHZ", s.af_hz[CS]);
+		snprintf(t, sizeof(t), "%sHZ", autofire_label(s.af_hz[CS]));
 		TEXT2(x + 14 * 5, y, t, s.pad[CS] & s.af_bit ? YELLOW : WHITE);
 	} else {
 		TEXT2(x + 14 * 5, y, "OFF", GREY);
@@ -2333,7 +2337,7 @@ static void draw_controls(int rapid)
 	 * being there"): not in ARRANGE (CONTROLS' text plate keeps AUTO's rate) */
 	if (s.keys[p][2][0] && !rapid && !ARR) {
 		char t[40];
-		snprintf(t, sizeof(t), "%s AUTO %dHZ", s.keys[p][2], s.af_hz[p]);
+		snprintf(t, sizeof(t), "%s AUTO %sHZ", s.keys[p][2], autofire_label(s.af_hz[p]));
 		TEXT2(CTL_X(217 + 100) - 14.0f * (float)strlen(t), CTL_Y(548), t, fade(s.pad[p] & s.af_bit ? YELLOW : GREY, a));
 	}
 }
@@ -3142,9 +3146,25 @@ int gadgets_init_finish(unsigned *unpack_ms, unsigned *wait_ms)
 	return 0;
 }
 
+static int gd_flip; /* test 124: ROTATION UPSIDE DOWN */
+
+/* test 124: the whole 16:9 screen turned upside down (ROTATION UPSIDE DOWN) */
+void gadgets_flip(int on)
+{
+	gd_flip = on;
+}
+
+static void gd_set_turn(void)
+{
+	const float t[4] = {gd_flip ? -1.0f : 1.0f, 0.0f, 0.0f, 0.0f};
+
+	xsdk_gpu_set_vertex_constants(CARD_VERT_PUSH, t, 1);
+}
+
 static void gd_set(const XsdkTexture *t, int lin)
 {
 	xsdk_gpu_set_shaders(&gd_vs, &gd_ps);
+	gd_set_turn(); /* test 124 */
 	xsdk_built_shader_set_literals(&card_vert);
 	xsdk_built_shader_set_literals(&card_frag);
 	xsdk_gpu_set_texture(CARD_FRAG_SAMPLER_0_0, t, lin ? &gd_linear : &gd_point);
@@ -4005,6 +4025,13 @@ void gadgets_stagemap_set(int on, int japanese)
 {
 	sm_want = on != 0;
 	sm_ja = japanese != 0;
+}
+
+/* test 126: the INVINCIBLE gadget shows ON while a cheat holds the ship invincible */
+void gadgets_inv_held(int side, int on)
+{
+	if ((unsigned)side < 2u)
+		pl[side].inv_held = on ? 1 : 0;
 }
 
 /* 1 = ibaraweb.dat's pictures are there (the M3 GADGETS row can be ON); else the reason is gadgets_stagemap_why */

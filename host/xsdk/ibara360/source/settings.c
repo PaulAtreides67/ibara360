@@ -38,16 +38,31 @@ struct settings cfg = {.card = 0, .picture = PIC_INTEGER, .save = 1, .record = 0
                        .gadget = {[0 ... GD_N - 1] = 1}, .vol_music = 100, .vol_sfx = 100, .vol_voice = 100,
                        .vol_attract = 100, .mute = 0, .coop = 1, .arr_bullets = 0,
                        .pic_size = {[0 ... PIC_SHAPES - 1] = 1000}, .xtc_full = 0,
-                       .pic_sx = {[0 ... PIC_SHAPES - 1] = 1000}, .pic_sy = {[0 ... PIC_SHAPES - 1] = 1000}, .smooth = 0,
+                       .pic_sx = {[0 ... PIC_SHAPES - 1] = 1000}, .pic_sy = {[0 ... PIC_SHAPES - 1] = 1000}, .smooth = FILTER_NEAREST,
                        .brightness = 100, .menu_style = MENU_PS2, .language = LANG_ENGLISH,
                        .soundtrack = TRACK_ARCADE, .achievements = 0, .toast_pos = 6, .staff_keep = 1,
-                       .mono = 0, .replay_save = 1, .attract_demo = 1, .stage_map = 0};
+                       .mono = 0, .replay_save = 1, .attract_demo = 1, .stage_map = 0,
+                       .low_lag = 1, .color = COLOR_STANDARD, .flip = 0, .deadzone = {50, 50}, .fps_counter = 0}; /* test 126 */
 /* test 112 (user: "keep achievements off as the default, make bottom right toast the default"; EX-DEBUG's "record
  * (default off), frame log (default off), network log (default off)"): netlog 0 and toast_pos 6 (bottom_right) above;
  * an ini from before test 112 (no "defaults = 112") gets those five once (defaults_seen, settings_load) */
-#define DEFAULTS_VER 119 /* test 119: the release defaults (EX-DEBUG closed), once */
+#define DEFAULTS_VER 129 /* test 129: RECORD, FRAME LOG, NETWORK LOG OFF once (the 1.04 release); test 127: RECORD, FRAME LOG, NETWORK LOG ON once (final check-up log); test 126: LOW LATENCY ON once; test 119: the release defaults (EX-DEBUG closed), once */
 static int defaults_seen;
-const int autofire_rates[AUTOFIRE_RATES] = {30, 20, 15, 12, 10};
+const int autofire_rates[AUTOFIRE_RATES] = {30, 20, 15, 12, 10, 7}; /* test 129: 7 = 7.5 Hz, every 8 frames */
+
+const char *autofire_label(int hz)
+{
+	/* test 129 review: constant strings, not one static buffer (the ini write calls it twice in one printf) */
+	switch (hz) {
+	case 30: return "30";
+	case 20: return "20";
+	case 15: return "15";
+	case 12: return "12";
+	case 10: return "10";
+	case 7: return "7.5";
+	default: return "?";
+	}
+}
 /* test 106: toast_position's words, in achxam.c's toast_pos order */
 static const char *const toast_words[ACHX_TOAST_N] = {"bottom_left", "left", "top_left", "top", "top_right", "right",
                                                       "bottom_right", "bottom", "centre"};
@@ -143,6 +158,9 @@ static const char *gadget_lines(void)
 }
 
 static const char *const arr_bullet_words[3] = {"normal", "color", "colorless"}; /* test 81 */
+/* test 124 */
+static const char *const filter_words[4] = {"nearest", "bilinear", "bicubic", "lanczos"};
+static const char *const color_words[6] = {"standard", "flat", "monotone", "sepia", "outline", "negative"};
 /* test 88: PICTURE SIZE CUSTOM's per display shape (settings.h PIC_SHAPES) */
 static const char *const pic_keys[PIC_SHAPES] = {"picture_custom_16_9", "picture_custom_4_3", "picture_custom_tate_16_9",
                                                  "picture_custom_tate_4_3"};
@@ -168,11 +186,11 @@ static unsigned ini_text_more(char *b, unsigned size)
 {
 	int n = snprintf(b, size,
 		"\n"
-		"# autofire: how fast AUTO SHOT (RT) presses Ibara's shot: 30, 20, 15, 12 or 10 = a press\n"
-		"#           every 2nd, 3rd, 4th, 5th or 6th game frame (Kuro BL's stays at 30); autofire_p2 = the\n"
+		"# autofire: how fast AUTO SHOT (RT) presses Ibara's shot: 30, 20, 15, 12, 10 or 7.5 = a press\n"
+		"#           every 2nd, 3rd, 4th, 5th, 6th or 8th game frame (Kuro BL's stays at 30); autofire_p2 = the\n"
 		"#           second pad's (P2 CONTROLS)\n"
-		"autofire = %d\n"
-		"autofire_p2 = %d\n"
+		"autofire = %s\n"
+		"autofire_p2 = %s\n"
 		"\n"
 		"# gadget_...: each gadget around the game on its own (the options' M3 GADGETS page): 1 = shown,\n"
 		"#             0 = hidden (the artwork stays);\n"
@@ -206,11 +224,25 @@ static unsigned ini_text_more(char *b, unsigned size)
 		"#   turned), then the width and height in thousandths of the size (500 to 2000)\n"
 		"%s"
 		"\n"
-		"# smoothing: 1 = the game picture linearly filtered (soft), 0 = sharp pixels\n"
-		"smoothing = %d\n"
+		"# filter: how the game picture is scaled: nearest (sharp), bilinear (soft), bicubic, lanczos\n"
+		"# smoothing = 0 / 1 is read the same (0 nearest, 1 bilinear)\n"
+		"filter = %s\n"
+		"\n"
+		"# color: the SCREEN COLOR filter for the game picture: standard, flat, monotone, sepia, outline, negative\n"
+		"color = %s\n"
+		"\n"
+		"# low_latency: 1 = up to 1 frame less input lag (default), 0 = off (a tear line may show)\n"
+		"low_latency = %d\n"
+		"\n"
+		"# flip: 1 = the whole 16:9 screen turned upside down (ROTATION UPSIDE DOWN)\n"
+		"flip = %d\n"
 		"\n"
 		"# brightness: the game picture's, in percent, 50 to 150 in steps of 5 (GENERAL SCREEN's BRIGHTNESS)\n"
 		"brightness = %d\n"
+		"\n"
+		"# how far the stick moves before it counts, in percent (0-95)\n"
+		"stick_deadzone_1 = %d\n"
+		"stick_deadzone_2 = %d\n"
 		"\n"
 		"# menu_style: legacy setting, always ps2 (PS2 menu resources from ps2extract are required)\n"
 		"# language: english or japanese (the menus' help lines in the PS2 port's Japanese font)\n"
@@ -234,6 +266,8 @@ static unsigned ini_text_more(char *b, unsigned size)
 		"# stage_map: 1 = the 16:9 side panels show the STAGE MAP only (the stage's map with the view, the boss);\n"
 		"#             0 = off (the default; the M3 GADGETS page's STAGE MAP, it needs ibaraweb.dat beside the xex)\n"
 		"stage_map = %d\n"
+		"# fps_counter: 1 = show frames per second (the DEBUG MENU)\n"
+		"fps_counter = %d\n"
 		"# defaults: the build whose defaults this file has (test 112 set record, framelog, netlog, achievements and\n"
 		"#           toast_position once to 0, 0, 0, 0, bottom_right)\n"
 		"defaults = %d\n"
@@ -245,11 +279,13 @@ static unsigned ini_text_more(char *b, unsigned size)
 		"#   ARRANGE: subweapon (sub weapon change), formation (formation change), lock (aim lock);\n"
 		"#   the D-pad and left stick, START and BACK stay as they are (the service menu: the debug menu's row);\n"
 		"#   ibara_p2_..., ibarablk_p2_..., ibaraarr_p2_... = the second pad's (P2 CONTROLS)\n",
-		cfg.autofire_hz[0], cfg.autofire_hz[1], gadget_lines(), cfg.vol_music, cfg.vol_sfx,
+		autofire_label(cfg.autofire_hz[0]), autofire_label(cfg.autofire_hz[1]), gadget_lines(), cfg.vol_music, cfg.vol_sfx,
 		cfg.vol_voice, cfg.vol_attract, cfg.mute, cfg.soundtrack == TRACK_PS2 ? "ps2" : "arcade", cfg.mono ? "mono" : "stereo", arr_bullet_words[cfg.arr_bullets >= 0 && cfg.arr_bullets < 3 ? cfg.arr_bullets : 0],
-		pic_lines(), cfg.smooth, cfg.brightness,
+		pic_lines(), filter_words[cfg.smooth >= 0 && cfg.smooth < 4 ? cfg.smooth : 0],
+		color_words[cfg.color >= 0 && cfg.color < 6 ? cfg.color : 0], cfg.low_lag, cfg.flip, cfg.brightness,
+		cfg.deadzone[0], cfg.deadzone[1],
 		cfg.language == LANG_JAPANESE ? "japanese" : "english", cfg.achievements, toast_words[cfg.toast_pos],
-		cfg.staff_keep, cfg.replay_save, cfg.attract_demo, cfg.stage_map, DEFAULTS_VER);
+		cfg.staff_keep, cfg.replay_save, cfg.attract_demo, cfg.stage_map, cfg.fps_counter, DEFAULTS_VER);
 	int s, i, p;
 
 	for (p = 0; p < CTL_PADS; p++)
@@ -469,12 +505,90 @@ static void ini_line(char *line, unsigned n)
 			}
 			return;
 		}
-	if (!strcasecmp(k, "smoothing")) { /* test 89 */
-		if (!strcmp(v, "0") || !strcmp(v, "1"))
-			cfg.smooth = v[0] - '0';
+	if (!strcasecmp(k, "filter")) { /* test 124 */
+		int i;
+		for (i = 0; i < 4 && strcasecmp(v, filter_words[i]); i++)
+			;
+		if (i < 4)
+			cfg.smooth = i;
+		else {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: FILTER = %.20s? (NEAREST, BILINEAR, BICUBIC OR LANCZOS)", n, v);
+		}
+		return;
+	}
+	if (!strcasecmp(k, "smoothing")) { /* test 89; test 124: read the old key (0 nearest, 1 bilinear) */
+		if (!strcmp(v, "0"))
+			cfg.smooth = FILTER_NEAREST;
+		else if (!strcmp(v, "1"))
+			cfg.smooth = FILTER_BILINEAR;
 		else {
 			ini_bad++;
 			log_printf(C_YELLOW, "INI LINE %u: SMOOTHING = %.20s? (0 OR 1)", n, v);
+		}
+		return;
+	}
+	if (!strcasecmp(k, "color")) { /* test 124 */
+		int i;
+		for (i = 0; i < 6 && strcasecmp(v, color_words[i]); i++)
+			;
+		if (i < 6)
+			cfg.color = i;
+		else {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: COLOR = %.20s? (STANDARD, FLAT, MONOTONE, SEPIA, OUTLINE OR NEGATIVE)", n, v);
+		}
+		return;
+	}
+	if (!strcasecmp(k, "low_latency")) { /* test 124 */
+		b = boolean(v);
+		if (b < 0) {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: LOW_LATENCY = %.20s? (0 OR 1)", n, v);
+		} else {
+			cfg.low_lag = b;
+		}
+		return;
+	}
+	if (!strcasecmp(k, "flip")) { /* test 124 */
+		b = boolean(v);
+		if (b < 0) {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: FLIP = %.20s? (0 OR 1)", n, v);
+		} else {
+			cfg.flip = b;
+		}
+		return;
+	}
+	if (!strcasecmp(k, "stick_deadzone")) { /* test 124; test 125: the old key into both */
+		l = strtol(v, &end, 10);
+		if (end != v && *trim(end) == 0) {
+			int i;
+			static const int old_pct[4] = {10, 25, 50, 75};
+			for (i = 0; i < 4 && l != old_pct[i]; i++)
+				;
+			if (i < 4) {
+				cfg.deadzone[0] = cfg.deadzone[1] = old_pct[i];
+			} else {
+				l = -1;
+			}
+		} else {
+			l = -1;
+		}
+		if (l < 0) {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: STICK_DEADZONE = %.20s? (10, 25, 50 OR 75)", n, v);
+		}
+		return;
+	}
+	if (!strcasecmp(k, "stick_deadzone_1") || !strcasecmp(k, "stick_deadzone_2")) { /* test 125 */
+		const int p = k[15] - '1';
+		l = strtol(v, &end, 10);
+		if (end != v && *trim(end) == 0 && l >= 0 && l <= 95) {
+			cfg.deadzone[p] = (int)l;
+		} else {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: %.17s = %.20s? (0 TO 95)", n, k, v);
 		}
 		return;
 	}
@@ -554,6 +668,15 @@ static void ini_line(char *line, unsigned n)
 		} else {
 			ini_bad++;
 			log_printf(C_YELLOW, "INI LINE %u: STAGE_MAP = %.20s? (0 OR 1)", n, v);
+		}
+		return;
+	}
+	if (!strcasecmp(k, "fps_counter")) { /* test 125 */
+		if (!strcmp(v, "0") || !strcmp(v, "1")) {
+			cfg.fps_counter = v[0] - '0';
+		} else {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: FPS_COUNTER = %.20s? (0 OR 1)", n, v);
 		}
 		return;
 	}
@@ -651,6 +774,12 @@ static void ini_line(char *line, unsigned n)
 		return;
 	}
 	if (!strcasecmp(k, "autofire") || !strcasecmp(k, "autofire_p2")) { /* test 55; test 71: _p2 */
+		const char *tv = trim(v);
+		if (!strcasecmp(tv, "7.5")) {
+			cfg.autofire_hz[k[8] != 0] = 7;
+			af2_seen |= k[8] != 0;
+			return;
+		}
 		l = strtol(v, &end, 10);
 		for (i = 0; i < AUTOFIRE_RATES; i++)
 			if (end != v && *trim(end) == 0 && l == autofire_rates[i])
@@ -660,7 +789,7 @@ static void ini_line(char *line, unsigned n)
 			af2_seen |= k[8] != 0;
 		} else {
 			ini_bad++;
-			log_printf(C_YELLOW, "INI LINE %u: AUTOFIRE = %.20s? (30, 20, 15, 12 OR 10)", n, v);
+			log_printf(C_YELLOW, "INI LINE %u: AUTOFIRE = %.20s? (30, 20, 15, 12, 10 OR 7.5)", n, v);
 		}
 		return;
 	}
@@ -971,13 +1100,25 @@ void settings_load(const char *dev)
 				memcpy(cfg.ctl[1][s], cfg.ctl[0][s], sizeof(cfg.ctl[1][s]));
 				log_printf(C_WHITE, "INI: NO P2 CONTROLS FOR %s: P2'S BUTTONS AS P1'S", settings_ctl_set_name(s));
 			}
-		if (defaults_seen < DEFAULTS_VER) { /* test 112: the user's new defaults, once; test 119 (user: "final ex-debug
-			                                     * options as default for release"): EX-DEBUG's ini rows too, as it is closed */
+		if (defaults_seen < 119) { /* test 112: the user's new defaults, once; test 119 (user: "final ex-debug
+			                              * options as default for release"): EX-DEBUG's ini rows too, as it is closed */
 			cfg.record = cfg.framelog = cfg.netlog = cfg.achievements = cfg.card = 0;
 			cfg.save = cfg.replay_save = 1;
 			cfg.toast_pos = 6;
 			log_printf(C_WHITE, "INI: FROM BEFORE 1.01: DEBUG CARD, RECORD, FRAME LOG, NETWORK LOG, ACHIEVEMENTS OFF, "
 			           "EEPROM SAVE, REPLAY SAVE ON, TOAST BOTTOM RIGHT (THE RELEASE DEFAULTS, ONCE)");
+		}
+		if (defaults_seen < 126) { /* test 126: LOW LATENCY ON once */
+			cfg.low_lag = 1;
+			log_printf(C_WHITE, "INI: FROM BEFORE TEST 126: LOW LATENCY ON (ONCE)");
+		}
+		if (defaults_seen < 127) { /* test 127 (user: "reenable logging ... a final log for a check up"): once */
+			cfg.record = cfg.framelog = cfg.netlog = 1;
+			log_printf(C_WHITE, "INI: FROM BEFORE TEST 127: RECORD, FRAME LOG, NETWORK LOG ON (ONCE)");
+		}
+		if (defaults_seen < 129) { /* test 129: the 1.04 release, logs off again once (after 127's check-up turned them on) */
+			cfg.record = cfg.framelog = cfg.netlog = 0;
+			log_printf(C_WHITE, "INI: FROM BEFORE 1.04: RECORD, FRAME LOG, NETWORK LOG OFF (ONCE)");
 		}
 		if (!af2_seen) {
 			cfg.autofire_hz[1] = cfg.autofire_hz[0];
@@ -1026,8 +1167,16 @@ void settings_log(const char *head)
 				           head, pic_names[i], cfg.pic_size[i] / 10, cfg.pic_size[i] % 10, cfg.pic_x[i], cfg.pic_y[i],
 				           cfg.pic_sx[i] / 10, cfg.pic_sx[i] % 10, cfg.pic_sy[i] / 10, cfg.pic_sy[i] % 10);
 	}
-	if (cfg.smooth) /* test 89 */
-		log_printf(C_GREEN, "%s SMOOTHING ON", head);
+	if (cfg.smooth != FILTER_NEAREST) /* test 124: FILTER */
+		log_printf(C_GREEN, "%s FILTER %s", head, filter_words[cfg.smooth >= 0 && cfg.smooth < 4 ? cfg.smooth : 0]);
+	if (cfg.color) /* test 124 */
+		log_printf(C_GREEN, "%s SCREEN COLOR %s", head, color_words[cfg.color >= 0 && cfg.color < 6 ? cfg.color : 0]);
+	if (cfg.low_lag) /* test 124 */
+		log_printf(C_GREEN, "%s LOW LATENCY ON", head);
+	if (cfg.flip) /* test 124 */
+		log_printf(C_GREEN, "%s ROTATION UPSIDE DOWN", head);
+	if (cfg.deadzone[0] != 50 || cfg.deadzone[1] != 50) /* test 125 */
+		log_printf(C_GREEN, "%s STICK DEADZONE P1 %d%% P2 %d%%", head, cfg.deadzone[0], cfg.deadzone[1]);
 	if (cfg.brightness != 100) /* test 91 */
 		log_printf(C_GREEN, "%s BRIGHTNESS %d%%", head, cfg.brightness);
 	log_printf(C_GREEN, "%s ACHIEVEMENTS %s, TOAST %s, STAFF ROLL %s", head, cfg.achievements ? "ON" : "OFF",
@@ -1036,6 +1185,8 @@ void settings_log(const char *head)
 		log_printf(C_GREEN, "%s REPLAY SAVE OFF", head);
 	if (!cfg.attract_demo) /* test 121 */
 		log_printf(C_GREEN, "%s ATTRACT DEMO OFF", head);
+	if (cfg.fps_counter) /* test 125 */
+		log_printf(C_GREEN, "%s FPS COUNTER ON", head);
 	log_printf(C_GREEN, "%s MENU STYLE %s, LANGUAGE %s", head, cfg.menu_style == MENU_PS2 ? "PS2" : "ARCADE",
 	           cfg.language == LANG_JAPANESE ? "JAPANESE" : "ENGLISH"); /* test 98 */
 	log_printf(C_GREEN, "%s SOUND: MUSIC %d%% SFX %d%% VOICE %d%% ATTRACT %d%%%s, SOUNDTRACK %s, %s", head,
@@ -1333,9 +1484,9 @@ void settings_rows(char t[SETTINGS_ROWS][100], uint32_t color[SETTINGS_ROWS])
 
 	if (cfg.scanlines)
 		snprintf(scan, sizeof(scan), "%d%%", cfg.scanline_strength);
-	snprintf(t[0], 100, "INI %s: CARD %d PIC %s TATE %c SCAN %s SAVE %d SPEC %d", ini_state, cfg.card,
-	         cfg.picture == PIC_FULL ? "FULL" : cfg.picture == PIC_CUSTOM ? "CUST" : "INT", "-LR"[cfg.tate], scan, cfg.save,
-	         cfg.special);
+	snprintf(t[0], 100, "INI %s: CARD %d PIC %s TATE %c%c SCAN %s SAVE %d SPEC %d", ini_state, cfg.card,
+	         cfg.picture == PIC_FULL ? "FULL" : cfg.picture == PIC_CUSTOM ? "CUST" : "INT", "-LR"[cfg.tate],
+	         cfg.flip ? 'U' : ' ', scan, cfg.save, cfg.special); /* test 124: U = upside down */
 	color[0] = ini_bad || strstr(ini_state, "DEFAULTS") ? C_YELLOW : C_GREEN;
 	if (!save_on) {
 		snprintf(t[1], 100, "SAVE OFF%s", dev_name[0] ? " (SAVE = 0 IN THE INI)" : " (NO STORAGE DEVICE)");

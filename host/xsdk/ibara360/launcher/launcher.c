@@ -105,8 +105,8 @@
 #define LA_TV_H 896
 
 /* test 97: the music in the .xex, the PS2 data from ps2data.bin (the plain screen without it) */
-#define XEX_VERSION "1.03" /* test 120: release version; test 121: 1.03 */
-#define XEX_TEST "123" /* test 123: STORY plate as GALLERY / EXIT, no EN/JP tag; test 120: release version; test 122: STORY sign, label window, UNLISTED level, 鋳薔薇 */
+#define XEX_VERSION "1.04" /* test 129: 1.04; test 120: release version; test 121: 1.03 */
+#define XEX_TEST "129" /* test 129: version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127: version; test 126: version; test 125: version; test 124: card.vert turn constant; test 123: STORY plate as GALLERY / EXIT, no EN/JP tag; test 120: release version; test 122: STORY sign, label window, UNLISTED level, 鋳薔薇 */
 #define NPADS 4
 #define STICK_DEAD 16000
 
@@ -1791,6 +1791,10 @@ static void present(void)
 	if (NT_SUCCESS(xsdk_present_begin(&address, 200))) {
 		xsdk_gpu_set_target(fb_w, fb_h);
 		xsdk_gpu_set_shaders(&vs, &ps);
+		{ /* test 124: the launcher is never turned upside down */
+			const float t[4] = {1.0f, 0.0f, 0.0f, 0.0f};
+			xsdk_gpu_set_vertex_constants(CARD_VERT_PUSH, t, 1);
+		}
 		xsdk_built_shader_set_literals(&card_vert);
 		xsdk_built_shader_set_literals(&card_frag);
 		xsdk_gpu_set_blend(&b_alpha);
@@ -2818,18 +2822,23 @@ static void sl_draw(float f)
 /* the label window (Y): the slide's label and its number, in the PS2's window at the bottom left */
 static void sl_window(float f)
 {
-	/* test 122 (user: "the story guide on the lower left is too large, covering the images partially"): about half the
-	 * size, text at x1 (the label in yellow, "n / N" in grey below it), 12 px from the left and bottom edges */
-	const float x = 12, y = 720 - 12 - 56;
+	/* test 129 (user: "in the lower left window of story add small instruction LB/RB turn page"): a third
+	 * line, the window 76 px high */
+	const float x = 12, y = 720 - 12 - 76;
+	const char *hint = "LB/RB TURN PAGE";
 	char t[24];
-	float w;
+	float w, w2;
 
 	snprintf(t, sizeof(t), "%u / %u", (unsigned)sl_cur + 1, sl_n);
 	w = text_w(sl_idx[sl_cur].label, 1) > text_w(t, 1) ? text_w(sl_idx[sl_cur].label, 1) : text_w(t, 1);
-	w += 28; /* test 122: as wide as its longer line (a label is up to 29 letters) */
-	nine(x, y, w, 56, 1, 1, rgba(f, f, f, 1));
+	w2 = text_w(hint, 1);
+	if (w2 > w)
+		w = w2;
+	w += 28;
+	nine(x, y, w, 76, 1, 1, rgba(f, f, f, 1));
 	text(x + 14, y + 10, sl_idx[sl_cur].label, 1, rgba(YELLOW.r * f, YELLOW.g * f, YELLOW.b * f, 1));
 	text(x + 14, y + 30, t, 1, rgba(GREY.r * f, GREY.g * f, GREY.b * f, 1));
+	text(x + 14, y + 50, hint, 1, rgba(GREY.r * f, GREY.g * f, GREY.b * f, 1));
 }
 
 /* ---- the launch, the steps ----------------------------------------------------------------------------------------- */

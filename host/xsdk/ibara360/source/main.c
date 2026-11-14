@@ -1,4 +1,4 @@
-/* ibara360 360 test 71 .xex (user 2026-10-25, with test 70's SUCCESS: the next list): test 70 with the controls page's
+﻿/* ibara360 360 test 71 .xex (user 2026-10-25, with test 70's SUCCESS: the next list): test 70 with the controls page's
  * DEFAULTS help "A = RESTORE DEFAULT" and no "FIXED" line, the sound tests' grey lines reworded, FULL RESTART's choice
  * without its "first stage" / "new credit" line, Kuro BL's start menu's side by UP / DOWN, CONTROLS' style changed in
  * the pause shown at once; P1 CONTROLS and P2 CONTROLS (each pad its own buttons and AUTO SHOT rate, the options' and
@@ -373,6 +373,7 @@
 #include "achieve.h"  /* test 105 */
 #include "achxam.h"
 void xsdk_present_redescribe(int variant); /* test 106: xsdk_present.c's (the toast's size probe) */
+void xsdk_present_set_tear(bool on); /* test 124: LOW LATENCY */
 #include "sound.h"
 #include "state.h"
 #include "wgate.h"
@@ -559,10 +560,10 @@ static volatile int menu_on, menu_sel;         /* the pad menu is up; the highli
  * toggle (TR_ROW_NONE; test 100: EDIT only), A opens the box on EDIT, X in a box all on / off (FORMATION: the next formation for all three
  * slots, "QUICK SWAP"), a row with none set NONE (until test 100); every game's RANK a start value, the game's own rise and falls after it (tr_rank_vblank), X on RANK holds it all the run
  * (TRR_HELD, a "*") */
-#define XEX_TEST "123"  /* test 123 (1.03): STAGE MAP boss art from ps2data.bin's gallery cut out, bg.boss right panel; test 122 (1.03): ATTRACT DEMO help (next power on), STAGE MAP box held at the boss + background + border; test 121 (1.03): IKUZE at full volume only in a run (the attract's demos follow the attract volume); the
+#define XEX_TEST "129"  /* test 129 (1.04): the release: logs off once, version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127 (1.04): record, frame log, network log on once for a check-up log; test 126 (1.04): menus unaffected by FILTER/SCREEN COLOR including BILINEAR, LOW LATENCY on OPTIONS page above LANGUAGE default ON, help text, INVINCIBLE gadget held; test 125 (1.04): menus unaffected by FILTER/SCREEN COLOR, per-player STICK DEADZONE on CONTROLS, FPS COUNTER on DEBUG MENU; test 124 (1.04): LOW LATENCY, LT hides menus, FILTER, SCREEN COLOR, UPSIDE DOWN, STICK DEADZONE; test 123 (1.03): STAGE MAP boss art from ps2data.bin's gallery cut out, bg.boss right panel; test 122 (1.03): ATTRACT DEMO help (next power on), STAGE MAP box held at the boss + background + border; test 121 (1.03): IKUZE at full volume only in a run (the attract's demos follow the attract volume); the
  * quit to the attract's logos held black until the title (no AMI logo flash); ATTRACT DEMO ON/OFF on the debug menu (ibara,
  * Kuro BL: the title held); test 120: release candidate; test 119: EX-DEBUG closed, ACHIEVEMENTS the debug menu's last row */
-#define XEX_VERSION "1.03" /* test 121: 1.03; test 120: PS2-only menus and the 1.02 presentation fixes */
+#define XEX_VERSION "1.04" /* test 129: 1.04; test 121: 1.03; test 120: PS2-only menus and the 1.02 presentation fixes */
 /* test 72: the image's game in its name (the log's first lines, the network log's session) */
 #if defined(IB_GAME) && IB_GAME == 1
 #define XEX_GAME " KURO BL"
@@ -593,6 +594,17 @@ static const int band_thread[BANDS] = {2, 4}; /* one per core 1 and core 2 (test
 #define FILE_SLOW_US 100000 /* a pass this long is logged */
 #define NPADS 4
 #define STICK_DEAD 16384    /* half travel: the user's sticks drift (test 3) */
+
+/* test 125: the stick deadzone of control set c (0 = P1 / pad 0, 1 = P2 / pads 1-3), percent 0..95 */
+static int stick_dead(int c)
+{
+	int pct = c >= 0 && c < 2 ? cfg.deadzone[c] : 50;
+	if (pct < 0)
+		pct = 0;
+	if (pct > 95)
+		pct = 95;
+	return 32767 * pct / 100;
+}
 #define COIN_FRAMES 6       /* coin line held low this many emulated frames per press */
 /* xsdk's GCC makes no sibling calls, so TAIL() / JUMPD() chains nest; built that way for 32-bit
  * PowerPC (qemu), the deepest use was 27.5 KB in 30000 frames of test 38's ibarablk play and the
@@ -1298,14 +1310,17 @@ static uint32_t map_pad(int p, const INPUT_GAMEPAD *g)
 	const int c = p ? 1 : 0; /* test 71: the pad's controls */
 	uint32_t w = 0;
 
-	if ((b & INPUT_GAMEPAD_DPAD_UP) || g->thumb_ly > STICK_DEAD)
-		w |= A_UP;
-	if ((b & INPUT_GAMEPAD_DPAD_DOWN) || g->thumb_ly < -STICK_DEAD)
-		w |= A_DOWN;
-	if ((b & INPUT_GAMEPAD_DPAD_LEFT) || g->thumb_lx < -STICK_DEAD)
-		w |= A_LEFT;
-	if ((b & INPUT_GAMEPAD_DPAD_RIGHT) || g->thumb_lx > STICK_DEAD)
-		w |= A_RIGHT;
+	{
+		const int sd = stick_dead(c); /* test 125: per control set */
+		if ((b & INPUT_GAMEPAD_DPAD_UP) || g->thumb_ly > sd)
+			w |= A_UP;
+		if ((b & INPUT_GAMEPAD_DPAD_DOWN) || g->thumb_ly < -sd)
+			w |= A_DOWN;
+		if ((b & INPUT_GAMEPAD_DPAD_LEFT) || g->thumb_lx < -sd)
+			w |= A_LEFT;
+		if ((b & INPUT_GAMEPAD_DPAD_RIGHT) || g->thumb_lx > sd)
+			w |= A_RIGHT;
+	}
 	if (b & INPUT_GAMEPAD_A)
 		w |= ctl_bits[c][CTL_A] | A_MA;
 	if (b & INPUT_GAMEPAD_B)
@@ -2073,8 +2088,11 @@ enum { OPT_SPECIAL, OPT_PICTURE, OPT_TATE, OPT_ASPECT, OPT_SCANLINES, OPT_STRENG
        OPT_FRAMELOG, OPT_NETLOG, OPT_GAME, OPT_AUTOFIRE, OPT_BACK, OPT_CONTROLS, OPT_PLAYER, OPT_GADGETS, OPT_M3,
        OPT_DEBUG, OPT_SOUND, OPT_SCREEN, OPT_CONTROLS2, OPT_GSEL, OPT_PLAY, OPT_BULLETS, OPT_LOAD, OPT_SERVICE, OPT_REPLAYS,
        OPT_OPTIONS, OPT_PSIZE, OPT_PXSIZE, OPT_PYSIZE, OPT_PXPOS, OPT_PYPOS, OPT_SMOOTH, OPT_TRAIN, OPT_BRIGHT, OPT_STYLE, OPT_LANG, OPT_RANKS, OPT_ACH, OPT_TOAST,
-       OPT_STAFF, OPT_EXINV, OPT_EXINFB, OPT_EXHIT, OPT_EXLIVES, OPT_EXREPLAY, OPT_ATTRACT, OPT_N }; /* test 108: EX-DEBUG's; test 110:
-                                                                                         * LIVES; test 118: REPLAY SAVE */
+       OPT_STAFF, OPT_EXINV, OPT_EXINFB, OPT_EXHIT, OPT_EXLIVES, OPT_EXREPLAY, OPT_ATTRACT,
+       OPT_LOWLAG, OPT_COLOR, OPT_DEADZONE, /* test 124 */
+       OPT_FPS, /* test 125 */
+       OPT_N }; /* test 108: EX-DEBUG's; test 110:
+                 * LIVES; test 118: REPLAY SAVE */
 static const char *const opt_names[OPT_N] = { /* "*" = from the next power-on */
 	"SPECIAL MODE", "PICTURE SIZE", "ROTATION", "ASPECT RATIO", "SCANLINES", "SCAN STRENGTH", "DEBUG CARD",
 	"EEPROM SAVE *", "RECORD *", "FRAME LOG *", "NETWORK LOG *", "GAME MENU *", "AUTOFIRE", "BACK IN A RUN",
@@ -2092,7 +2110,7 @@ static const char *const opt_names[OPT_N] = { /* "*" = from the next power-on */
 	/* test 89 (user's todo list 2026-10-27 20:20: ADJUST PICTURE's options inside GENERAL SCREEN, "adjusted by left/right
 	 * toggle for size, X position, Y position, also add individual X and Y size adjustment toggles"; "add "smoothing"
 	 * option in "general screen"") */
-	"SIZE", "X SIZE", "Y SIZE", "X POSITION", "Y POSITION", "SMOOTHING",
+	"SIZE", "X SIZE", "Y SIZE", "X POSITION", "Y POSITION", "FILTER", /* test 124: was SMOOTHING */
 	"TRAINING",     /* test 89: the TRAINING page (the PLAY page's rows and the training ones) */
 	"BRIGHTNESS",   /* test 91 (user's todo list: "add a "brightness" setting in 5% increments") */
 	/* test 98 (user 2026-10-28 ideas, approved for test 98: "menu style: arcade / ps2", "language: english /
@@ -2111,6 +2129,8 @@ static const char *const opt_names[OPT_N] = { /* "*" = from the next power-on */
 	"INFINITE LIVES", /* test 110 (user: "add infinite lives to ex-debug") */
 	"REPLAY SAVE",    /* test 118 (user: "new EX-debug option, replay save on/off, above debug card") */
 	"ATTRACT DEMO",   /* test 121 (user: "attract demo toggle on/off in the debug menu, for arcade and black label") */
+	"LOW LATENCY", "SCREEN COLOR", "STICK DEADZONE", /* test 124 */
+	"FPS COUNTER", /* test 125 */
 };
 static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most (the box); "\n" = a second line (test 70) */
 	"IBARA'S SPECIAL VER. (PCB DIP S2-2)",
@@ -2153,7 +2173,7 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
 	"CUSTOM VERTICAL ZOOM RATE\nA = RESET",
 	"CUSTOM HORIZONTAL PLACEMENT\nA = RESET",
 	"CUSTOM VERTICAL PLACEMENT\nA = RESET",
-	"SOFTEN THE GAME PICTURE'S PIXELS",
+	"SCALING OF THE GAME PICTURE\nNEAREST = SHARP PIXELS", /* test 126 */
 	"PRACTICE AND IMPROVE YOUR SCORE", /* test 89; test 91: the user's (31 letters: the menu's box takes 28, sm_help
 	                                     * wraps it) */
 	"CHANGE BRIGHTNESS",                    /* test 91: the user's */
@@ -2171,6 +2191,10 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
 	"ENABLE/DISABLE REPLAY SAVING",                                  /* test 118: the user's */
 	"ENABLE/DISABLE THE ATTRACT DEMOS\nONLY FROM THE NEXT POWER ON", /* test 121: the user's (ibara, Kuro BL); test 122 (user:
 	                                                                * "indicate it only takes effect after the next power on") */
+	"UP TO 1 FRAME LESS INPUT LAG\nCAUSES SCREEN TEARING", /* test 126: LOW LATENCY (the user's line 2) */
+	"COLOR STYLE OF THE PICTURE\nMENUS KEEP THEIR COLORS",    /* test 126: SCREEN COLOR */
+	"STICK MOVEMENT IGNORED\nAROUND THE CENTER", /* test 126: STICK DEADZONE (enum entry, not shown) */
+	"FRAMES PER SECOND\nSHOWN / EMULATED", /* test 126 */
 };
 /* test 67: [0] the options, [1] the debug menu; ending at OPT_N; test 68: SOUND after CONTROLS. Test 69 (user: "gadgets
  * on/off option is obsolete since the M3 gadgets options have an all/off toggle", "back in a run option is obsolete"):
@@ -2201,8 +2225,10 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
 #define OPT_PIC_ROWS OPT_PICTURE, OPT_PSIZE, OPT_PXSIZE, OPT_PYSIZE, OPT_PXPOS, OPT_PYPOS
 /* test 93 (user's todo list, "options screen menu (all games)": picture size .. y position, rotation, scanlines, scan
  * strength, brightness, smoothing, aspect ratio, m3 gadgets): the pause's SCREEN page and GENERAL SCREEN (the user's
- * choice: both; GENERAL SCREEN without M3 GADGETS, ARRANGE's BULLET DESIGN last) */
-#define OPT_GENERAL_ROWS OPT_PIC_ROWS, OPT_TATE, OPT_SCANLINES, OPT_STRENGTH, OPT_BRIGHT, OPT_SMOOTH, OPT_ASPECT
+ * choice: both; GENERAL SCREEN without M3 GADGETS, ARRANGE's BULLET DESIGN last).
+ * test 124: OPT_GENERAL_ROWS = PICTURE/SIZE rows, ROTATION, SCANLINES, STRENGTH, BRIGHTNESS, FILTER, SCREEN COLOR, LOW
+ * LATENCY, ASPECT RATIO (and the pause's SCREEN / GENERAL SCREEN pages use it) */
+#define OPT_GENERAL_ROWS OPT_PIC_ROWS, OPT_TATE, OPT_SCANLINES, OPT_STRENGTH, OPT_BRIGHT, OPT_SMOOTH, OPT_COLOR, OPT_ASPECT
 /* test 98: MENU STYLE, LANGUAGE after ASPECT RATIO (the screen's look; the ini keeps them for all four .xex); test 102
  * (user: "language option should be at the bottom of the options page, below debug menu, instead of general screen"):
  * GENERAL SCREEN without LANGUAGE, OPTIONS' last row; the pause's SCREEN page keeps it (the pause has no other place).
@@ -2212,18 +2238,19 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
 #define OPT_SCREEN_ROWS OPT_GENERAL_ROWS
 /* test 100 (user's list: "all three game's pause menu should have "options" selection with controls, screen, gadgets
  * and sound (in the same order as the main menu's options menu) instead of an extended pause menu") */
-#define OPT_PAUSE_ROWS OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_LANG
+/* test 125: STICK DEADZONE moved to the P1 / P2 CONTROLS pages (per player); test 126: LOW LATENCY above LANGUAGE */
+#define OPT_PAUSE_ROWS OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_LOWLAG, OPT_LANG
 static const unsigned char opt_rows_ib[OPT_PAGES][18] = { /* test 71: P2 CONTROLS after P1's; test 81: PLAY first */
 	{OPT_PLAY, OPT_TRAIN, OPT_LOAD, OPT_REPLAYS, OPT_OPTIONS, OPT_GSEL_ROW OPT_N},
 	/* test 106: ACHIEVEMENTS, ACHIEVEMENT TOAST; test 109: STAFF ROLL; test 110 (user: "move initialize rankings to the
 	 * bottom, staff roll to the top after special mode"). Test 112 (user: "move service menu to the bottom of the debug
 	 * menu, before initialize rankings", "move achivements and toast options in the ex-debug menu", "move EEPROM save,
 	 * record, framelog and network log on the ex-debug menu"; DEBUG CARD is in their EX-DEBUG order too) */
-	{OPT_SPECIAL, OPT_STAFF, OPT_ATTRACT, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_ACH, OPT_N}, /* test 119 (user): ACHIEVEMENTS last;
-	                                                         * test 121: ATTRACT DEMO after STAFF ROLL (not ARRANGE: no demos) */
+	{OPT_SPECIAL, OPT_STAFF, OPT_ATTRACT, OPT_FPS, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_ACH, OPT_N}, /* test 119 (user): ACHIEVEMENTS last;
+	                                                         * test 121: ATTRACT DEMO after STAFF ROLL (not ARRANGE: no demos); test 125: FPS after ATTRACT */
 	{OPT_SCREEN_ROWS, OPT_N}, /* test 100: M3 GADGETS on the pause's OPTIONS page */
 	{OPT_GENERAL_ROWS, OPT_N},
-	{OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_DEBUG, OPT_LANG, OPT_N}, /* test 102: LANGUAGE */
+	{OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_DEBUG, OPT_LOWLAG, OPT_LANG, OPT_N},
 	{OPT_PAUSE_ROWS, OPT_N},
 	/* test 112 (user: "final order of ex debug menu should be: infinite lives, infinite bombs, invincible, hitboxes,
 	 * debug card, eeprom save, record, frame log, network log, achievements, toast") */
@@ -2235,10 +2262,10 @@ static const unsigned char opt_rows_arr[OPT_PAGES][18] = {
 	{OPT_PLAY, OPT_TRAIN, OPT_LOAD, OPT_REPLAYS, OPT_OPTIONS, OPT_GSEL_ROW OPT_N},
 	/* test 102 (user: "ibara arrange shouldn't have the service menu accessible, since it didn't exist on PS2"):
 	 * no SERVICE MENU row */
-	{OPT_STAFF, OPT_GAME_ROW OPT_RANKS, OPT_ACH, OPT_N}, /* test 112: the rest on EX-DEBUG; test 119: ACHIEVEMENTS last */
+	{OPT_FPS, OPT_STAFF, OPT_GAME_ROW OPT_RANKS, OPT_ACH, OPT_N}, /* test 112: the rest on EX-DEBUG; test 119: ACHIEVEMENTS last; test 125: FPS first (ARRANGE has no ATTRACT) */
 	{OPT_SCREEN_ROWS, OPT_N},
 	{OPT_GENERAL_ROWS, OPT_BULLETS, OPT_N},
-	{OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_DEBUG, OPT_LANG, OPT_N}, /* test 102: LANGUAGE */
+	{OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_DEBUG, OPT_LOWLAG, OPT_LANG, OPT_N},
 	{OPT_PAUSE_ROWS, OPT_N},
 	/* test 112 (user: "final order of ex debug menu should be: infinite lives, infinite bombs, invincible, hitboxes,
 	 * debug card, eeprom save, record, frame log, network log, achievements, toast") */
@@ -2247,12 +2274,12 @@ static const unsigned char opt_rows_arr[OPT_PAGES][18] = {
 };
 static const unsigned char opt_rows_blk[OPT_PAGES][18] = { /* test 60: GADGETS; 64: M3; 70: PLAYER in the start menu */
 	{OPT_PLAY, OPT_TRAIN, OPT_LOAD, OPT_REPLAYS, OPT_OPTIONS, OPT_GSEL_ROW OPT_N},
-	{OPT_STAFF, OPT_ATTRACT, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_ACH, OPT_N}, /* test 121: ATTRACT DEMO after STAFF ROLL; test 119: ACHIEVEMENTS last; test 110: STAFF ROLL first (Kuro BL's addresses found),
+	{OPT_STAFF, OPT_ATTRACT, OPT_FPS, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_ACH, OPT_N}, /* test 121: ATTRACT DEMO after STAFF ROLL; test 119: ACHIEVEMENTS last; test 110: STAFF ROLL first (Kuro BL's addresses found),
 	                                                         * INITIALIZE RANKINGS last; test 112: SERVICE MENU before it,
-	                                                         * the rest on EX-DEBUG */
+	                                                         * the rest on EX-DEBUG; test 125: FPS after ATTRACT */
 	{OPT_SCREEN_ROWS, OPT_N}, /* test 100: M3 GADGETS on the pause's OPTIONS page */
 	{OPT_GENERAL_ROWS, OPT_N},
-	{OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_DEBUG, OPT_LANG, OPT_N}, /* test 102: LANGUAGE */
+	{OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_DEBUG, OPT_LOWLAG, OPT_LANG, OPT_N},
 	{OPT_PAUSE_ROWS, OPT_N},
 	/* test 112 (user: "final order of ex debug menu should be: infinite lives, infinite bombs, invincible, hitboxes,
 	 * debug card, eeprom save, record, frame log, network log, achievements, toast") */
@@ -2348,6 +2375,9 @@ static unsigned af_period(int pad)
 }
 
 static const char *const bullet_names[3] = {"NORMAL", "COLOR", "COLORLESS"}; /* the PS2's ARRANGE CONFIG */
+static const char *const filter_names[4] = {"NEAREST", "BILINEAR", "BICUBIC", "LANCZOS"}; /* test 124 */
+static const char *const color_names[6] = {"STANDARD", "FLAT", "MONOTONE", "SEPIA", "OUTLINE", "NEGATIVE"}; /* test 124 */
+/* test 125: STICK DEADZONE is per player on the CONTROLS pages (percent 0..95) */
 static void bullets_step(int d);
 
 /* row i's value as the page shows it (14 characters at most) */
@@ -2369,9 +2399,15 @@ static void opt_value(int i, char *s, size_t n)
 	case OPT_PXPOS: case OPT_PYPOS: /* test 89: its centre's place */
 		snprintf(s, n, "%+d", i == OPT_PXPOS ? cfg.pic_x[pic_shape()] : cfg.pic_y[pic_shape()]);
 		break;
-	case OPT_SMOOTH: snprintf(s, n, "%s", cfg.smooth ? "ON" : "OFF"); break; /* test 89 */
+	case OPT_SMOOTH: snprintf(s, n, "%s", filter_names[cfg.smooth >= 0 && cfg.smooth < 4 ? cfg.smooth : 0]); break; /* test 124: FILTER */
 	case OPT_BRIGHT: snprintf(s, n, "%d%%", cfg.brightness); break; /* test 91 */
-	case OPT_TATE: snprintf(s, n, "%s", cfg.tate == TATE_LEFT ? "LEFT" : cfg.tate == TATE_RIGHT ? "RIGHT" : "OFF"); break;
+	case OPT_TATE: /* test 124: UPSIDE DOWN = the whole screen turned half round */
+		snprintf(s, n, "%s", cfg.flip ? "UPSIDE DOWN" : cfg.tate == TATE_LEFT ? "LEFT" : cfg.tate == TATE_RIGHT ? "RIGHT" : "OFF");
+		break;
+	case OPT_COLOR: snprintf(s, n, "%s", color_names[cfg.color >= 0 && cfg.color < 6 ? cfg.color : 0]); break; /* test 124 */
+	case OPT_LOWLAG: snprintf(s, n, "%s", cfg.low_lag ? "ON" : "OFF"); break; /* test 124 */
+	case OPT_DEADZONE: snprintf(s, n, "%d%%", cfg.deadzone[0]); break; /* test 125: not shown on the options pages */
+	case OPT_FPS: snprintf(s, n, "%s", cfg.fps_counter ? "ON" : "OFF"); break; /* test 125 */
 	case OPT_ASPECT:
 		snprintf(s, n, "%s", cfg.aspect == ASPECT_4_3 ? "4:3" : cfg.aspect == ASPECT_16_9 ? "16:9" :
 		         vmode.is_widescreen ? "AUTO (16:9)" : "AUTO (4:3)");
@@ -2383,7 +2419,7 @@ static void opt_value(int i, char *s, size_t n)
 	case OPT_RECORD: snprintf(s, n, "%s", cfg.record ? "ON" : "OFF"); break;
 	case OPT_FRAMELOG: snprintf(s, n, "%s", cfg.framelog ? "ON" : "OFF"); break;
 	case OPT_NETLOG: snprintf(s, n, "%s (PORT %u)", cfg.netlog ? "ON" : "OFF", cfg.netlog_port); break;
-	case OPT_AUTOFIRE: snprintf(s, n, "%d HZ", af_hz(ctl_pad)); break;
+	case OPT_AUTOFIRE: snprintf(s, n, "%s HZ", autofire_label(af_hz(ctl_pad))); break;
 	case OPT_BACK: snprintf(s, n, "%s", cfg.back_pause ? "PAUSE" : "COIN"); break;
 	case OPT_PLAYER: snprintf(s, n, "%dP SIDE", sm_side + 1); break;
 	case OPT_GADGETS: snprintf(s, n, "%s", cfg.gadgets ? "ON" : "OFF"); break;
@@ -2436,7 +2472,13 @@ static void opt_step(int i, int d)
 		cfg.special ^= 1;
 		break;
 	case OPT_PICTURE: cfg.picture = (cfg.picture + 3 + d) % 3; break; /* test 88: INTEGER, FULL, CUSTOM */
-	case OPT_TATE: cfg.tate = (cfg.tate + 3 + d) % 3; break;
+	case OPT_TATE: { /* test 124: OFF, LEFT, RIGHT, UPSIDE DOWN (tate OFF + flip); layout as OFF, then the whole frame turned */
+		const int cur = cfg.flip ? 3 : cfg.tate;
+		const int nxt = (cur + 4 + d) % 4;
+		cfg.tate = nxt == 3 ? TATE_OFF : nxt;
+		cfg.flip = nxt == 3;
+		break;
+	}
 	case OPT_ASPECT: cfg.aspect = (cfg.aspect + 1 + 3 + d) % 3 - 1; break; /* auto (-1), 4:3 (0), 16:9 (1) */
 	case OPT_SCANLINES: cfg.scanlines ^= 1; break;
 	case OPT_STRENGTH: /* the next ten up or down (an ini's 55 goes to 60 or 50) */
@@ -2471,7 +2513,10 @@ static void opt_step(int i, int d)
 	case OPT_OPTIONS: case OPT_TRAIN: /* test 89: pages (sm_frame) */
 	case OPT_PSIZE: case OPT_PXSIZE: case OPT_PYSIZE: case OPT_PXPOS: case OPT_PYPOS: /* test 89: pic_input */
 		return;
-	case OPT_SMOOTH: cfg.smooth ^= 1; break; /* test 89: present() reads it */
+	case OPT_SMOOTH: cfg.smooth = (cfg.smooth + 4 + d) % 4; break; /* test 124: FILTER (present() reads it) */
+	case OPT_COLOR: cfg.color = (cfg.color + 6 + d) % 6; break; /* test 124 */
+	case OPT_LOWLAG: cfg.low_lag ^= 1; break; /* test 124 */
+	case OPT_DEADZONE: break; /* test 125: on the CONTROLS pages */
 	case OPT_BRIGHT: /* test 91: 5% steps (an ini's 52 goes to 55 or 50), BRIGHT_MIN .. BRIGHT_MAX; present() reads it */
 		cfg.brightness = d > 0 ? (cfg.brightness / 5 + 1) * 5 : ((cfg.brightness + 4) / 5 - 1) * 5;
 		cfg.brightness = cfg.brightness < BRIGHT_MIN ? BRIGHT_MIN : cfg.brightness > BRIGHT_MAX ? BRIGHT_MAX : cfg.brightness;
@@ -2491,6 +2536,7 @@ static void opt_step(int i, int d)
 	case OPT_TOAST: cfg.toast_pos = (cfg.toast_pos + ACHX_TOAST_N + d) % ACHX_TOAST_N; break;
 	case OPT_STAFF: cfg.staff_keep ^= 1; break; /* test 109: sm_frame reads it */
 	case OPT_ATTRACT: cfg.attract_demo ^= 1; break; /* test 121: attract_hold reads it (the title's timeout) */
+	case OPT_FPS: cfg.fps_counter ^= 1; break; /* test 125 */
 	case OPT_EXREPLAY: cfg.replay_save ^= 1; break; /* test 118: an ini setting (a run's end reads it) */
 	case OPT_EXINV: case OPT_EXINFB: case OPT_EXHIT: case OPT_EXLIVES: /* test 108: not ini settings (no opt_changes,
 	                                                                     * no save) */
@@ -2512,7 +2558,7 @@ static void opt_step(int i, int d)
 	log_printf(C_WHITE, "%s%s %s %s (EMU %u)", sm_state == SM_CTRL ? "CONTROLS:" : menu_paused ? "PAUSE SCREEN:" : "OPTIONS:",
 	           sm_state == SM_CTRL ? (ctl_pad ? " P2" : " P1") : "", opt_names[i], v,
 	           (unsigned)frame_count); /* test 67: AUTOFIRE from the controls page */
-	if ((i >= OPT_PICTURE && i <= OPT_STRENGTH) || i == OPT_GADGETS) /* test 60: GADGETS on 4:3 move the game */
+	if ((i >= OPT_PICTURE && i <= OPT_STRENGTH) || i == OPT_GADGETS || i == OPT_TATE) /* test 60: GADGETS on 4:3 move the game; test 124: ROTATION */
 		layout_apply("THE OPTIONS");
 	if (i == OPT_TOAST) /* test 106: at once */
 		achx_toast_position(cfg.toast_pos);
@@ -2655,7 +2701,7 @@ static void controls_log(const char *head)
 
 	for (p = 0; p < CTL_PADS; p++) {
 		settings_ctl_text(p, CTL_SET, s, sizeof(s));
-		log_printf(C_YELLOW, "%s P%d %s; AUTO SHOT %d HZ", head, p + 1, s, af_hz(p));
+		log_printf(C_YELLOW, "%s P%d %s; AUTO SHOT %s HZ", head, p + 1, s, autofire_label(af_hz(p)));
 	}
 }
 
@@ -2712,19 +2758,25 @@ static int opt_leave(int restart)
  * START plays. A change applies at once (controls_apply: the menus read the pad's own A and B, so
  * they work whatever the buttons do) and goes into the ini when the options are left.
  * Test 67 (user: "move the autofire setting frequency inside the control rebind option menu"): ibara's AUTOFIRE (AUTO
- * SHOT's rate, test 55's options row) after the buttons, before DEFAULTS (which leaves it as it is). */
-enum { CTL_ROW_AF = CTL_N, CTL_ROW_DEF }; /* test 67: the rows after the buttons, by id */
+ * SHOT's rate, test 55's options row) after the buttons, before DEFAULTS (which leaves it as it is).
+ * Test 125: STICK DEADZONE (per player) before AUTOFIRE / DEFAULTS. */
+enum { CTL_ROW_DEAD = CTL_N, CTL_ROW_AF, CTL_ROW_DEF }; /* test 67: the rows after the buttons, by id; test 125 */
 static int ctl_sel;
 
 static int ctl_nrows(void)
 {
-	return CTL_N + 1 + (game_set == SET_IBARA);
+	return CTL_N + 2 + (game_set == SET_IBARA);
 }
 
-/* row k's id: a button (CTL_*), CTL_ROW_AF or CTL_ROW_DEF */
+/* row k's id: a button (CTL_*), CTL_ROW_DEAD, CTL_ROW_AF or CTL_ROW_DEF */
 static int ctl_rowid(int k)
 {
-	return k < CTL_N ? k : k == CTL_N && game_set == SET_IBARA ? CTL_ROW_AF : CTL_ROW_DEF;
+	if (k < CTL_N)
+		return k;
+	k -= CTL_N;
+	if (k == 0)
+		return CTL_ROW_DEAD;
+	return game_set == SET_IBARA ? (k == 1 ? CTL_ROW_AF : CTL_ROW_DEF) : CTL_ROW_DEF;
 }
 
 static void ctl_open(int pad)
@@ -2738,6 +2790,18 @@ static void ctl_step(int row, int d)
 {
 	int *f;
 
+	if (row == CTL_ROW_DEAD) { /* test 125: 1% steps, 0..95, no wrap */
+		int v = cfg.deadzone[ctl_pad] + d;
+		if (v < 0)
+			v = 0;
+		if (v > 95)
+			v = 95;
+		cfg.deadzone[ctl_pad] = v;
+		log_printf(C_WHITE, "CONTROLS: P%d STICK DEADZONE = %d%% (EMU %u)", ctl_pad + 1, v, (unsigned)frame_count);
+		opt_changes++;
+		controls_apply();
+		return;
+	}
 	if (row == CTL_ROW_AF) {
 		opt_step(OPT_AUTOFIRE, d); /* counts the change and logs it */
 		return;
@@ -2746,6 +2810,7 @@ static void ctl_step(int row, int d)
 		if (d < 0)
 			return;
 		settings_ctl_defaults(ctl_pad, CTL_SET);
+		cfg.deadzone[ctl_pad] = 50; /* test 125 */
 		log_printf(C_WHITE, "CONTROLS: P%d DEFAULTS (EMU %u)", ctl_pad + 1, (unsigned)frame_count);
 	} else {
 		f = &cfg.ctl[ctl_pad][CTL_SET][row];
@@ -5251,6 +5316,7 @@ static const XsdkVertexElement vlayout[] = {
 };
 
 static XsdkShader vs, ps;
+static XsdkShader ps_look[3]; /* test 124b: the game picture's FILTER: game.frag (NEAREST / BILINEAR), bicubic, lanczos */
 static XsdkTexture stex;               /* test 37: 256 greys, column g = g / 255 */
 static XsdkSamplerState samp_point, samp_linear;
 static XsdkBlendState blend_mul, blend_none, blend_kmul, blend_kadd; /* test 91: kmul / kadd = BRIGHTNESS */
@@ -6477,10 +6543,14 @@ static int sm_pages(volatile uint32_t *t)
 			if (sel)
 				sm_text(t, x0, y, C_YELLOW, ">");
 			sm_text(t, x0 + 6, y, sel ? C_YELLOW : C_WHITE,
-			        r < CTL_N ? settings_ctl_name(r) : r == CTL_ROW_AF ? opt_names[OPT_AUTOFIRE] : "DEFAULTS");
+			        r < CTL_N ? settings_ctl_name(r) : r == CTL_ROW_DEAD ? "STICK DEADZONE" :
+			        r == CTL_ROW_AF ? opt_names[OPT_AUTOFIRE] : "DEFAULTS");
 			if (r < CTL_N) {
 				sm_text(t, x0 + 6 * 10, y, sel ? C_YELLOW : c[r] == FN_OFF ? C_DIM : C_GREEN,
 				        settings_fn_name(CTL_SET, c[r]));
+			} else if (r == CTL_ROW_DEAD) { /* test 125 */
+				snprintf(v, sizeof(v), "%d%%", cfg.deadzone[ctl_pad]);
+				sm_text(t, x0 + 6 * 10, y, sel ? C_YELLOW : C_GREEN, v);
 			} else if (r == CTL_ROW_AF) { /* test 67 */
 				opt_value(OPT_AUTOFIRE, v, sizeof(v));
 				sm_text(t, x0 + 6 * 10, y, sel ? C_YELLOW : C_GREEN, v);
@@ -6488,14 +6558,17 @@ static int sm_pages(volatile uint32_t *t)
 		}
 		if (id == CTL_ROW_DEF) {
 			help = "A = RESTORE DEFAULT"; /* test 71: the user's */
+		} else if (id == CTL_ROW_DEAD) { /* test 126 */
+			/* review: the PS2 box takes two lines (and has the Japanese); ARCADE's help has room for one */
+			help = menu_ps2() ? "STICK MOVEMENT IGNORED\nAROUND THE CENTER" : "STICK MOVEMENT IGNORED AT CENTER";
 		} else if (id == CTL_ROW_AF) { /* test 67: the options' AUTOFIRE help */
 			snprintf(v, sizeof(v), "SHOT DOWN %u, UP %u GAME FRAMES", af_period(ctl_pad) / 2,
 			         af_period(ctl_pad) - af_period(ctl_pad) / 2);
 			help = v;
-		} else if (c[ctl_sel] == FN_AUTO) {
-			snprintf(v, sizeof(v), "AUTO SHOT = SHOT AT %d HZ", af_hz(ctl_pad));
+		} else if (id < CTL_N && c[ctl_sel] == FN_AUTO) {
+			snprintf(v, sizeof(v), "AUTO SHOT = SHOT AT %s HZ", autofire_label(af_hz(ctl_pad)));
 			help = v;
-		} else if (c[ctl_sel] == FN_CARD) {
+		} else if (id < CTL_N && c[ctl_sel] == FN_CARD) {
 			help = "SHOWS / HIDES THE DEBUG CARD";
 		}
 		sm_help1(t, x0, y0 + hy, C_CYAN, help); /* test 98 */
@@ -6787,21 +6860,126 @@ static void ct_draw_ps2(volatile uint32_t *t)
 	ps2m_render(&tg, ps2m_clock++, menu_ja());
 }
 
+/* test 124: LT held hides any menu's drawing (the menu's state and input stay) */
+static int menu_hidden(void)
+{
+	int p;
+	/* review: only while a menu is open (a game with LT bound, or a replay's label, keeps its picture) */
+	if (sm_state == SM_CLOSED && ct_state[0] != CT_PICK && ct_state[1] != CT_PICK)
+		return 0;
+	for (p = 0; p < NPADS; p++)
+		if (pad_raw[p] & RAW_LT)
+			return 1;
+	return 0;
+}
+
+/* test 125: the picture uses a ps_look shader (FILTER BICUBIC / LANCZOS, or SCREEN COLOR not STANDARD), so menu pixels
+ * in the game texture must be marked (alpha 0) for the shaders to leave them as they are; present() uses this too;
+ * test 126: BILINEAR too (menus must not be smoothed) */
+static int look_on(void)
+{
+	return cfg.smooth != FILTER_NEAREST || cfg.color != COLOR_STANDARD;
+}
+
+/* test 125: FPS COUNTER (frames handed to the display / game frames emulated, the last whole second) */
+static uint64_t fps_t0;
+static unsigned fps_pres_cnt, fps_shown_n, fps_emu_n;
+static uint64_t fps_emu0; /* frame_count at the window's start */
+static int fps_ready;
+
+static void fps_tick(int presented)
+{
+	const uint64_t now = tb_read();
+	if (presented)
+		fps_pres_cnt++;
+	if (!fps_ready) {
+		fps_t0 = now;
+		fps_emu0 = frame_count;
+		fps_ready = 1;
+		return;
+	}
+	if (tb_us(fps_t0, now) >= 1000000) {
+		fps_shown_n = fps_pres_cnt;
+		fps_emu_n = (unsigned)(frame_count - fps_emu0);
+		fps_pres_cnt = 0;
+		fps_emu0 = frame_count;
+		fps_t0 = now;
+	}
+}
+
+static void fps_draw(volatile uint32_t *t)
+{
+	const int px = 4, py = 4; /* top-left of the game texture */
+	char s[16];
+	int w, x, y, x0, y0, x1, y1;
+	if (!cfg.fps_counter)
+		return;
+	snprintf(s, sizeof(s), "FPS %u / %u", fps_shown_n, fps_emu_n);
+	w = 6 * (int)strlen(s);
+	/* black box 1 texel larger than the text (text: w x 7 at px,py) */
+	x0 = px - 1;
+	y0 = py - 1;
+	x1 = px + w;
+	y1 = py + 7;
+	if (x0 < 0) x0 = 0;
+	if (y0 < 0) y0 = 0;
+	if (x1 > GAME_H) x1 = GAME_H; /* portrait: px is the texture row index */
+	if (y1 > GAME_W) y1 = GAME_W;
+	for (x = x0; x <= x1 && x < GAME_H; x++) {
+		volatile uint32_t *row = t + (size_t)x * gtex_pitch;
+		for (y = y0; y <= y1 && y < GAME_W - 0; y++) {
+			const int tx = GAME_W - 1 - y;
+			if (tx >= 0)
+				row[tx] = 0xFF000000u;
+		}
+	}
+	/* the ARCADE-look menus' small font (sm_text draws directly when not recording PS2 menus) */
+	{
+		const int rec = ps2m_rec;
+		ps2m_rec = 0;
+		sm_text(t, px, py, C_WHITE, s);
+		ps2m_rec = rec;
+	}
+	gtex_dirty[tex_cur] = 1; /* review: the counter alone (no menu) must reach the GPU too */
+}
+
+/* review (test 125): with look_on() the menus draw into this cached copy (cleared to 0 = nothing drawn), then only the
+ * drawn texels go to the game texture, alpha 0 = a menu pixel the look shaders leave plain. The texture is
+ * write-combined: reading it back (opencode's snapshot + compare) would cost the game thread many ms a frame. A texel
+ * with alpha 0xFE is the game itself (ps2menu.c's window outside its vines) and goes in as a game pixel. */
+static uint32_t *mshadow;
+
 static void sm_draw(void)
 {
 	int s;
+	volatile uint32_t *const tex = gtex[tex_cur].texels;
+	volatile uint32_t *t = tex;
+	int mark = 0, y, x;
+
+	if (look_on()) {
+		if (!mshadow)
+			mshadow = malloc((size_t)GAME_H * gtex_pitch * sizeof(uint32_t));
+		if (mshadow) {
+			memset(mshadow, 0, (size_t)GAME_H * gtex_pitch * sizeof(uint32_t));
+			t = mshadow;
+			mark = 1;
+		}
+	}
+	/* test 125: FPS COUNTER before the menu_hidden() check, LT must not hide it */
+	fps_draw(t);
+	if (menu_hidden()) /* test 124: the drawing skipped, the state and input unchanged */
+		goto out;
 
 	for (s = 0; s < 2; s++) /* test 67 */
 		if (ct_state[s] == CT_PICK) {
 			if (!menu_ps2())
-				ct_draw(gtex[tex_cur].texels, s);
+				ct_draw(t, s);
 			gtex_dirty[tex_cur] = 1;
 		}
 	if (menu_ps2() && (ct_state[0] == CT_PICK || ct_state[1] == CT_PICK)) /* test 106 */
-		ct_draw_ps2(gtex[tex_cur].texels);
-	if (rp_play && rp_label(gtex[tex_cur].texels)) /* test 86: REPLAY, B / BACK = STOP */
+		ct_draw_ps2(t);
+	if (rp_play && rp_label(t)) /* test 86: REPLAY, B / BACK = STOP */
 		gtex_dirty[tex_cur] = 1;
-	volatile uint32_t *t = gtex[tex_cur].texels;
 
 	if (menu_ps2()) {
 		int drawn;
@@ -6831,6 +7009,17 @@ static void sm_draw(void)
 	} else if (sm_pages(t)) {
 		gtex_dirty[tex_cur] = 1;
 	}
+out:
+	if (mark) /* each texture row upward in memory, only the drawn texels stored (sm_box's write-combining order) */
+		for (y = 0; y < GAME_H; y++) {
+			const uint32_t *src = mshadow + (size_t)y * gtex_pitch;
+			volatile uint32_t *row = tex + (size_t)y * gtex_pitch;
+			for (x = 0; x < GAME_W; x++) {
+				const uint32_t v = src[x];
+				if (v)
+					row[x] = (v >> 24) == 0xFEu ? v | 0xFF000000u : v & 0x00FFFFFFu;
+			}
+		}
 }
 
 /* the frame queued last has been shown */
@@ -6919,6 +7108,10 @@ static void present(void)
 	int n, vto = 0, show, view, pending, draw = 1, waited = 0;
 	NTSTATUS st;
 
+	if (cfg.tate != TATE_OFF) /* review: an ini's flip = 1 with tate LEFT / RIGHT: UPSIDE DOWN is ROTATION OFF's only */
+		cfg.flip = 0;
+	xsdk_present_set_tear(cfg.low_lag != 0); /* test 124 */
+	gadgets_flip(cfg.flip); /* test 124 */
 	xsdk_present_stats(&s);
 	if (!sched_set) {
 		sched_set = 1;
@@ -6970,6 +7163,8 @@ static void present(void)
 		}
 		st = xsdk_present_begin(&address, BEGIN_TIMEOUT_MS);
 	}
+	{
+		int presented = 0;
 	if (!NT_SUCCESS(st)) {
 		disp.begin_fails++;
 		if (disp.begin_fails <= 5)
@@ -6994,6 +7189,10 @@ static void present(void)
 		if (view != GV_NONE)
 			gadgets_draw(0, view, frames_queued, s.flips);
 		xsdk_gpu_set_shaders(&vs, &ps);
+		{ /* test 124: ROTATION UPSIDE DOWN */
+			const float t[4] = {cfg.flip ? -1.0f : 1.0f, 0.0f, 0.0f, 0.0f};
+			xsdk_gpu_set_vertex_constants(QUAD_VERT_PUSH, t, 1);
+		}
 		xsdk_built_shader_set_literals(&quad_vert);
 		xsdk_built_shader_set_literals(&quad_frag);
 		if (load_pic) { /* test 88: NOW LOADING alone; test 93: black (the ticker comes with the ini) */
@@ -7002,25 +7201,71 @@ static void present(void)
 			                     &vb_cust : &vb_int; /* test 88: CUSTOM */
 			if (!g->verts)
 				g = &vb_game;
-			/* test 69 (user: "full picture is blurry. remove smoothing"): point sampling at every size; test 89
-			 * (user's todo list: "add "smoothing" option in "general screen""): linear with SMOOTHING ON */
-			const int br = show ? 100 : cfg.brightness; /* test 91: BRIGHTNESS (the game's picture, the menus in it) */
-			xsdk_gpu_set_texture(QUAD_FRAG_SAMPLER_0_0, &gtex[tex_cur], cfg.smooth && !show ? &samp_linear : &samp_point);
+			/* test 124: FILTER / SCREEN COLOR (the debug card shown instead of the game is always plain); test 124b:
+			 * the picture's own shaders (quad.frag stays one sample for everything else), the colour as a matrix; test 125:
+			 * look_on() = the same test sm_draw uses to mark menu pixels; test 126: ps_look always point-sampled,
+			 * BILINEAR = k 0 with look[15] 1.0 (game.frag blends a 4-tap bilinear) */
+			const int flt = show ? FILTER_NEAREST : (cfg.smooth >= 0 && cfg.smooth < 4 ? cfg.smooth : FILTER_NEAREST);
+			const int col = show ? COLOR_STANDARD : (cfg.color >= 0 && cfg.color < 6 ? cfg.color : COLOR_STANDARD);
+			if (show || !look_on()) {
+				xsdk_gpu_set_texture(QUAD_FRAG_SAMPLER_0_0, &gtex[tex_cur],
+				                     flt == FILTER_BILINEAR ? &samp_linear : &samp_point);
+			} else {
+				static const float lum[3] = {0.299f, 0.587f, 0.114f};
+				float look[16] = {0}; /* rows r, g, b (times R, G, B, 1), then t = (1/320, 1/240, outline, bilinear) */
+				const int k = flt == FILTER_BICUBIC ? 1 : flt == FILTER_LANCZOS ? 2 : 0;
+				int r, c;
+				for (r = 0; r < 3; r++)
+					for (c = 0; c < 3; c++) {
+						float v = r == c ? 1.0f : 0.0f;
+						if (col == COLOR_FLAT) /* mix(L, c, 0.75) * 0.9 + 0.04 */
+							v = 0.9f * (0.25f * lum[c] + 0.75f * v);
+						else if (col == COLOR_MONOTONE)
+							v = lum[c];
+						else if (col == COLOR_NEGATIVE)
+							v = -v;
+						look[r * 4 + c] = v;
+					}
+				if (col == COLOR_SEPIA) {
+					static const float sep[9] = {0.393f, 0.769f, 0.189f, 0.349f, 0.686f, 0.168f, 0.272f, 0.534f, 0.131f};
+					for (r = 0; r < 3; r++)
+						for (c = 0; c < 3; c++)
+							look[r * 4 + c] = sep[r * 3 + c];
+				}
+				for (r = 0; r < 3; r++)
+					look[r * 4 + 3] = col == COLOR_FLAT ? 0.04f : col == COLOR_NEGATIVE ? 1.0f : 0.0f;
+				look[12] = 1.0f / (float)GAME_W;
+				look[13] = 1.0f / (float)GAME_H;
+				look[14] = col == COLOR_OUTLINE ? 1.0f : 0.0f;
+				look[15] = flt == FILTER_BILINEAR ? 1.0f : 0.0f; /* test 126 */
+				xsdk_gpu_set_shaders(&vs, &ps_look[k]);
+				xsdk_built_shader_set_literals(k == 1 ? &bicubic_frag : k == 2 ? &lanczos_frag : &game_frag);
+				xsdk_gpu_set_pixel_constants(k == 1 ? BICUBIC_FRAG_PUSH : k == 2 ? LANCZOS_FRAG_PUSH : GAME_FRAG_PUSH, look, 4);
+				xsdk_gpu_set_texture(k == 1 ? BICUBIC_FRAG_SAMPLER_0_0 : k == 2 ? LANCZOS_FRAG_SAMPLER_0_0 : GAME_FRAG_SAMPLER_0_0,
+				                     &gtex[tex_cur], &samp_point); /* test 126 */
+			}
 			xsdk_gpu_set_vertices(0, g->address, g->bytes);
-			if (br < 100) { /* the picture times br% */
-				const float k = (float)br / 100, kc[4] = {k, k, k, 1};
-				xsdk_gpu_set_blend_constants(kc);
-				xsdk_gpu_set_blend(&blend_kmul);
-			}
-			xsdk_gpu_draw(XSDK_PRIMITIVE_TRIANGLE_LIST, g->verts);
-			if (br > 100) { /* again, times (br - 100)%, added (the target saturates) */
-				const float k = (float)(br - 100) / 100, kc[4] = {k, k, k, 0};
-				xsdk_gpu_set_blend_constants(kc);
-				xsdk_gpu_set_blend(&blend_kadd);
+			{
+				const int br = show ? 100 : cfg.brightness; /* test 91: BRIGHTNESS (the game's picture, the menus in it) */
+				if (br < 100) { /* the picture times br% */
+					const float k = (float)br / 100, kc[4] = {k, k, k, 1};
+					xsdk_gpu_set_blend_constants(kc);
+					xsdk_gpu_set_blend(&blend_kmul);
+				}
 				xsdk_gpu_draw(XSDK_PRIMITIVE_TRIANGLE_LIST, g->verts);
+				if (br > 100) { /* again, times (br - 100)%, added (the target saturates) */
+					const float k = (float)(br - 100) / 100, kc[4] = {k, k, k, 0};
+					xsdk_gpu_set_blend_constants(kc);
+					xsdk_gpu_set_blend(&blend_kadd);
+					xsdk_gpu_draw(XSDK_PRIMITIVE_TRIANGLE_LIST, g->verts);
+				}
+				if (br != 100)
+					xsdk_gpu_set_blend(&blend_none);
 			}
-			if (br != 100)
-				xsdk_gpu_set_blend(&blend_none);
+			if (!(show || !look_on())) { /* test 124b: back to quad.frag */
+				xsdk_gpu_set_shaders(&vs, &ps);
+				xsdk_built_shader_set_literals(&quad_frag);
+			}
 		}
 		if (!show && !load_pic && scan_quads) { /* test 37: picture = picture * grey */
 			xsdk_gpu_set_blend(&blend_mul);
@@ -7032,6 +7277,13 @@ static void present(void)
 		if (view != GV_NONE) /* test 58: the values over the artwork */
 			gadgets_draw(1, view, frames_queued, s.flips);
 		if (show) {
+			xsdk_gpu_set_shaders(&vs, &ps); /* gadgets_draw leaves other shaders; test 124 */
+			{ /* test 124: ROTATION UPSIDE DOWN */
+				const float t[4] = {cfg.flip ? -1.0f : 1.0f, 0.0f, 0.0f, 0.0f};
+				xsdk_gpu_set_vertex_constants(QUAD_VERT_PUSH, t, 1);
+			}
+			xsdk_built_shader_set_literals(&quad_vert);
+			xsdk_built_shader_set_literals(&quad_frag);
 			xsdk_gpu_set_texture(QUAD_FRAG_SAMPLER_0_0, &ctex[card_front], &samp_point);
 			xsdk_gpu_set_vertices(0, vb_card.address, vb_card.bytes);
 			xsdk_gpu_draw(XSDK_PRIMITIVE_TRIANGLE_LIST, vb_card.verts);
@@ -7041,6 +7293,7 @@ static void present(void)
 		xsdk_gpu_resolve(address, (uint32_t)fb_w, (uint32_t)fb_h,
 		                 (game_running && !card_on) || load_pic || load_tk ? C_BLACK : CLEAR_BORDER);
 		xsdk_present_end();
+		presented = 1; /* test 125: a frame handed to the display */
 		q_due[frames_queued % QD] = due;
 		q_emu[frames_queued % QD] = (uint32_t)frame_count;
 		q_work[frames_queued % QD] = tb_read() - frame_start;
@@ -7051,6 +7304,8 @@ static void present(void)
 		tex_shown = tex_cur;
 		if (show)
 			ctex_used[card_front] = frames_queued;
+	}
+		fps_tick(presented); /* test 125: the last whole second's counts */
 	}
 
 	/* the next frame starts at this one's vblank, or at once when that has passed */
@@ -7341,7 +7596,7 @@ static int pause_input(uint32_t press, int *done)
 			if (opt_sels[OPT_PAGE_SCREEN] >= opt_nrows())
 				opt_sels[OPT_PAGE_SCREEN] = 0;
 			log_printf(C_WHITE, "PAUSE: SCREEN (EMU %u)", (unsigned)frame_count);
-		} else if (id == OPT_LANG) { /* test 107: LANGUAGE last on this page, as on OPTIONS (LEFT / RIGHT / A) */
+		} else if (id == OPT_LANG || id == OPT_LOWLAG) { /* test 107: LANGUAGE last on this page, as on OPTIONS (LEFT / RIGHT / A); test 126: LOW LATENCY above it */
 			if (press & A_LEFT)
 				opt_step(id, -1);
 			if (press & (A_RIGHT | A_MA))
@@ -7437,15 +7692,22 @@ static void pause_loop(int pad)
 		sl_open(sl_reopen);
 		sl_reopen = -1;
 	}
-	while (!done) {
-		if (menu_ps2() && !(vb & 1)) /* test 98: the rose's next picture */
-			dirty = 1;
-		if (dirty) {
-			pause_redraw();
-			dirty = 0;
-		}
-		present();
-		vb++;
+	{
+		int mh_prev = menu_hidden(); /* test 124 */
+		while (!done) {
+			int mh = menu_hidden(); /* test 124: repaint when LT hides/shows the menu */
+			if (mh != mh_prev) {
+				mh_prev = mh;
+				dirty = 1;
+			}
+			if (menu_ps2() && !(vb & 1)) /* test 98: the rose's next picture */
+				dirty = 1;
+			if (dirty) {
+				pause_redraw();
+				dirty = 0;
+			}
+			present();
+			vb++;
 		gi = guide_input_off(); /* test 109 */
 		for (p = 0; p < NPADS && !done; p++) {
 			const uint32_t w = pad_word[p], rep = menu_repeat(&reps[p], w); /* test 93 */
@@ -7474,6 +7736,7 @@ static void pause_loop(int pad)
 					      hl_slot >= 0 ? "LOAD STATE" : press & A_MA ? "RESUME" : "B / BACK";
 				}
 			}
+		}
 		}
 	}
 	if (opt_changes) { /* the ini as the options page leaves it (no special switch here) */
@@ -8551,12 +8814,18 @@ static void rp_write(int num, int harness)
 	if (!harness) { /* the result for RP_DONE_VBL vblanks (any press ends it) */
 		uint32_t last[NPADS];
 		int p;
+		int mh_prev = menu_hidden(); /* test 124 */
 		rp_box = RPX_DONE;
 		pause_redraw();
 		for (p = 0; p < NPADS; p++)
 			last[p] = pad_word[p];
 		for (unsigned vb = 0; vb < RP_DONE_VBL; vb++) {
 			int any = 0;
+			int mh = menu_hidden(); /* test 124 */
+			if (mh != mh_prev) {
+				mh_prev = mh;
+				pause_redraw();
+			}
 			present();
 			for (p = 0; p < NPADS; p++) {
 				any |= (pad_word[p] & ~last[p] & (A_MA | A_MB | A_COIN)) != 0;
@@ -8606,11 +8875,18 @@ static void rp_question(void)
 			last[p] = pad_word[p];
 		rl_pick = 0;
 		pause_redraw();
-		while (yes < 0) {
-			if (menu_ps2() && !(vb & 1)) /* test 98: the rose's next picture */
-				pause_redraw();
-			present();
-			vb++;
+		{
+			int mh_prev = menu_hidden(); /* test 124 */
+			while (yes < 0) {
+				int mh = menu_hidden(); /* test 124 */
+				if (mh != mh_prev) {
+					mh_prev = mh;
+					pause_redraw();
+				}
+				if (menu_ps2() && !(vb & 1)) /* test 98: the rose's next picture */
+					pause_redraw();
+				present();
+				vb++;
 			for (p = 0; p < NPADS && yes < 0; p++) {
 				const uint32_t w = pad_word[p], press = (w & ~last[p]) | menu_repeat(&reps[p], w); /* test 93 */
 				last[p] = w;
@@ -8643,6 +8919,7 @@ static void rp_question(void)
 					yes = 0, by = p;
 				}
 				menu_se(se_st, se_sig, press, yes >= 0); /* test 98 */
+			}
 			}
 		}
 		rl_pick = 0;
@@ -9317,15 +9594,22 @@ static void rp_pause_loop(int pad)
 	           (unsigned)((uint32_t)frame_count - rp_base), pad);
 	for (p = 0; p < NPADS; p++)
 		last[p] = pad_word[p];
-	while (!done) {
-		if (menu_ps2() && !(vb & 1)) /* test 98: the rose's next picture */
-			dirty = 1;
-		if (dirty) {
-			pause_redraw();
-			dirty = 0;
-		}
-		present();
-		vb++;
+	{
+		int mh_prev = menu_hidden(); /* test 124 */
+		while (!done) {
+			int mh = menu_hidden(); /* test 124 */
+			if (mh != mh_prev) {
+				mh_prev = mh;
+				dirty = 1;
+			}
+			if (menu_ps2() && !(vb & 1)) /* test 98: the rose's next picture */
+				dirty = 1;
+			if (dirty) {
+				pause_redraw();
+				dirty = 0;
+			}
+			present();
+			vb++;
 		gi = guide_input_off(); /* test 109 */
 		for (p = 0; p < NPADS && !done; p++) {
 			const uint32_t w = pad_word[p], press = (w & ~last[p]) | menu_repeat(&reps[p], w); /* test 93 */
@@ -9352,6 +9636,7 @@ static void rp_pause_loop(int pad)
 			}
 			if (press) /* test 98 */
 				menu_se(se_st, se_sig, press, done);
+		}
 		}
 	}
 	for (p = 0; p < 2; p++) { /* the menu's buttons kept from the game (after QUIT REPLAY: the attract's) */
@@ -9526,6 +9811,12 @@ static int video_init(void)
 	st = xsdk_shader_load(&vs, quad_vert.container, quad_vert.container_bytes);
 	if (NT_SUCCESS(st))
 		st = xsdk_shader_load(&ps, quad_frag.container, quad_frag.container_bytes);
+	if (NT_SUCCESS(st)) /* test 124b */
+		st = xsdk_shader_load(&ps_look[0], game_frag.container, game_frag.container_bytes);
+	if (NT_SUCCESS(st))
+		st = xsdk_shader_load(&ps_look[1], bicubic_frag.container, bicubic_frag.container_bytes);
+	if (NT_SUCCESS(st))
+		st = xsdk_shader_load(&ps_look[2], lanczos_frag.container, lanczos_frag.container_bytes);
 	if (NT_SUCCESS(st))
 		st = xsdk_shader_set_vertex_layout(&vs, vlayout, sizeof(vlayout) / sizeof(vlayout[0]),
 		                                   (const uint32_t[]){VERT_BYTES});
@@ -10963,6 +11254,10 @@ static void tr_vblank(void)
 	const int ib = game_set == SET_IBARA;
 	int s;
 
+	/* review (test 126): no cheat holds a side unless this vblank's training loop or ex_vblank (after this) says so;
+	 * the early returns below would otherwise leave a stale ON */
+	gadgets_inv_held(0, 0);
+	gadgets_inv_held(1, 0);
 	/* the credit started; test 91: ibara's at its stage loop's first vblank (before its game byte), for the intro skip */
 	if (tr_armed && (sm_run || (ib && *RAMP(IB_DEMO) != 1 && tri_loop_first()))) {
 		tr_armed = 0;
@@ -11089,8 +11384,13 @@ static void tr_vblank(void)
 			tr_pend[s] = 0;
 			log_printf(C_WHITE, "TRAINING: %dP'S START VALUES (EMU %u, STARTS %u)", s + 1, (unsigned)frame_count, *st);
 		}
-		if (alive && (tr_val[TR_INV] || tr_turbo) && *RAMP(r.base + r.inv) < 2 && (ib || BE32(RAMP(r.base + 8)) < 0x10))
-			*RAMP(r.base + r.inv) = 2;
+		{
+			const int inv_held = alive && (tr_val[TR_INV] || tr_turbo) &&
+			                     (ib || BE32(RAMP(r.base + 8)) < 0x10); /* test 126 */
+			if (inv_held && *RAMP(r.base + r.inv) < 2)
+				*RAMP(r.base + r.inv) = 2;
+			gadgets_inv_held(s, inv_held);
+		}
 		if (alive && tr_val[TR_INFB] && *RAMP(r.base + r.bombs) < 4)
 			*RAMP(r.base + r.bombs) = 4;
 	}
@@ -11161,16 +11461,24 @@ static void ex_vblank(void)
 	const int ib = game_set == SET_IBARA;
 	int wrote = 0;
 
-	if ((!ex_inv && !ex_infb && !ex_lives) || tr_run || rp_play || *RAMP(ib ? IB_DEMO : BLK_DEMO) == 1)
+	if ((!ex_inv && !ex_infb && !ex_lives) || tr_run || rp_play || *RAMP(ib ? IB_DEMO : BLK_DEMO) == 1) {
+		if (!tr_run) { /* test 126: training's cheats set it */
+			gadgets_inv_held(0, 0);
+			gadgets_inv_held(1, 0);
+		}
 		return;
+	}
 	for (int s = 0; s < 2; s++) {
 		const struct tr_rec r = tr_rec_of(s);
-		if (BE32(RAMP(r.base)) != 0xDC000000u)
-			continue;
-		if (ex_inv && *RAMP(r.base + r.inv) < 2 && (ib || BE32(RAMP(r.base + 8)) < 0x10)) {
+		const int alive = BE32(RAMP(r.base)) == 0xDC000000u;
+		const int inv_held = ex_inv && alive && (ib || BE32(RAMP(r.base + 8)) < 0x10); /* test 126 */
+		if (inv_held && *RAMP(r.base + r.inv) < 2) {
 			*RAMP(r.base + r.inv) = 2;
 			wrote = 1;
 		}
+		gadgets_inv_held(s, inv_held);
+		if (!alive)
+			continue;
 		if (ex_infb && *RAMP(r.base + r.bombs) < 4) {
 			*RAMP(r.base + r.bombs) = 4;
 			wrote = 1;
@@ -12121,7 +12429,7 @@ static void game_start(void)
 	else if (special_on)
 		chk_off_why = "SPECIAL VER. (THE PC RUN IS THE NORMAL ONE)";
 	chk.off = !rtc_default || eep_saved || special_on;
-	if (prof_init())
+	if (cfg.framelog && prof_init()) /* test 128: the buffer only when the frame log is on */
 		log_printf(C_RED, "PROF: OUT OF MEMORY, NO FRAME LOG");
 	if (cfg.framelog) /* test 33: only when the ini asks */
 		prof_begin(romload_device());
@@ -12271,11 +12579,14 @@ static void game_start(void)
 			state_ok = rt_state_init(n) == 0;
 		if (!state_ok)
 			hdd_ok = rp_ok = 0; /* test 84: the files need the slots; test 86: the replays too */
-		if (state_ok)
+		if (state_ok) {
 			log_printf(C_GREEN, "STATE: 4 SLOTS (ATTRACT, CREDIT, STAGE, STATE) OF 8 MB RAM EACH, A VRAM POOL OF %u BLOCKS (%u MB; %u MB "
 			           "WERE FREE), READY IN %u MS", rt_state_stats.pool_blocks, rt_state_stats.pool_blocks * 8 / 1024, avail_mb,
 			           tb_us(t, tb_read()) / 1000);
-		else
+			if (rt_state_stats.pool_blocks < STATE_POOL_MAX) /* test 128 */
+				log_printf(C_YELLOW, "STATE: THE POOL IS SMALLER THAN VRAM (%u OF %u BLOCKS): LONG RUNS MAY DROP SLOTS",
+				           rt_state_stats.pool_blocks, STATE_POOL_MAX);
+		} else
 			log_printf(C_RED, "STATE: NO MEMORY FOR THE SAVE STATES (%u MB FREE): NO RESTARTS OR QUIT IN THE PAUSE MENU",
 			           avail_mb);
 	}

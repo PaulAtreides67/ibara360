@@ -317,8 +317,9 @@ static void panel(int x, int y, int w, int h)
 				o = c | 0xFF000000u;
 			} else {
 				const uint32_t p = row[(PH - 1 - py + tg->sx) & 0x1FFF];
-				if ((c >> 24) < 0x80) /* outside the vines: the game */
-					o = 0xFF000000u | (p & 0x7C00) << 9 | (p & 0x3E0) << 6 | (p & 0x1F) << 3;
+				if ((c >> 24) < 0x80) /* outside the vines: the game (test 125: alpha 0xFE = a game texel, main.c's sm_draw
+				                       * gives it SCREEN COLOR like the rest of the game; unused otherwise) */
+					o = 0xFE000000u | (p & 0x7C00) << 9 | (p & 0x3E0) << 6 | (p & 0x1F) << 3;
 				else /* the fill (48, 24, 32) over the game at a third (ARCADE's box shows it at a quarter) */
 					o = 0xFF000000u | fill_r[(p >> 10) & 31] | fill_g[(p >> 5) & 31] | fill_b[p & 31];
 			}

@@ -92,6 +92,9 @@ void gadgets_mask(unsigned mask);
  * pixel: the game picture's) */
 void gadgets_style(int ctl_text, int coop, int xtc_full, float game_k);
 
+/* test 124: the whole 16:9 screen turned upside down (ROTATION UPSIDE DOWN) */
+void gadgets_flip(int on);
+
 /* Game thread, in present() with the target set: layer 0 = the background (before the game picture), layer 1 =
  * the plates and their values over it (after the picture and its scanlines), both in view (GV_*). queued = this
  * frame's number among the frames handed to xsdk (frames_queued before it), flips = xsdk's flip count: a vertex block
@@ -130,6 +133,9 @@ int gadgets_red(int side);
 void gadgets_stagemap_set(int on, int japanese);
 int gadgets_stagemap_avail(void);
 const char *gadgets_stagemap_why(void);
+
+/* test 126: the INVINCIBLE gadget shows ON while a cheat holds the ship invincible */
+void gadgets_inv_held(int side, int on);
 
 /* for the log and the debug card */
 struct gd_stats {

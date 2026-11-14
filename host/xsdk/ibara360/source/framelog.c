@@ -15,7 +15,8 @@
 #include "wgate.h"
 #include "xplat.h"
 
-#define FLOG_MAX 216000u            /* one hour of emulated frames */
+#define FLOG_MAX_FRAMES 216000u      /* test 128: the old one-hour stop: no frames added once flog_n reaches this */
+#define FLOG_RING 16384u             /* test 128: ring (power of two, ~4.5 min of frames, 1.2 MB) */
 #define PERF_TEXT_MAX (192 * 1024)  /* test 14d: frame log text, room for ~30 s while the gate holds */
 #define CHUNK (48 * 1024)           /* write as soon as this much waits */
 #define FLUSH_US 4000000            /* and at least this often */
@@ -23,8 +24,10 @@
 /* game thread */
 static struct prof_frame *flog;
 static volatile uint32_t flog_n;
+static volatile uint32_t flog_lost; /* test 128: frames dropped while the ring was full */
 
 /* IO thread */
+static volatile uint32_t flog_done; /* test 128: the writer's done index, for the producer's ring-full test */
 struct tfile {
 	char path[160];
 	int ok, err;
@@ -43,7 +46,7 @@ volatile int prof_final; /* test 72 */
 
 int prof_init(void)
 {
-	flog = memalign(128, FLOG_MAX * sizeof(struct prof_frame));
+	flog = memalign(128, FLOG_RING * sizeof(struct prof_frame)); /* test 128: the ring, not an hour */
 	return flog ? 0 : -1;
 }
 
@@ -66,10 +69,14 @@ void prof_frame(struct prof_frame *f)
 	f->samples = 0;
 	if ((uint64_t)f->cpu * 1000 >= (uint64_t)PROF_HEAVY_MS * PPC_TIMEBASE_FREQ)
 		f->flags |= PF_HEAVY;
-	if (flog && dev_set && flog_n < FLOG_MAX) {
-		flog[flog_n] = *f;
-		__sync_synchronize(); /* the entry before the count */
-		flog_n = flog_n + 1;
+	if (flog && dev_set && flog_n < FLOG_MAX_FRAMES) { /* test 128: the old one-hour stop */
+		if (flog_n - flog_done < FLOG_RING) { /* test 128: the ring: only when there is room */
+			flog[flog_n & (FLOG_RING - 1)] = *f;
+			__sync_synchronize(); /* the entry before the count */
+			flog_n = flog_n + 1;
+		} else {
+			flog_lost++; /* test 128: dropped, not logged for good */
+		}
 	}
 }
 
@@ -186,7 +193,6 @@ static int perf_service(void)
 {
 	static char text[PERF_TEXT_MAX];
 	static unsigned tlen;
-	static uint32_t done; /* frames turned into text */
 	uint32_t n;
 	unsigned t0;
 
@@ -202,8 +208,8 @@ static int perf_service(void)
 	n = flog_n;
 	__sync_synchronize(); /* the count before the entries it covers */
 	t0 = tlen;
-	while (done < n && tlen + 240 <= PERF_TEXT_MAX) {
-		const struct prof_frame *e = &flog[done];
+	while (flog_done < n && tlen + 240 <= PERF_TEXT_MAX) {
+		const struct prof_frame *e = &flog[flog_done & (FLOG_RING - 1)]; /* test 128: the ring */
 		const uint32_t f = e->frame;
 		/* the sound thread's entry for the frame is final once it moved past it */
 		if (sound_stats.alive && f >= t3_frame)
@@ -217,7 +223,7 @@ static int perf_service(void)
 		                           (unsigned)e->io, (unsigned)e->spin, (unsigned)e->samples, (unsigned)e->flags,
 		                           f < T3LOG_N ? (unsigned)t3log_gap[f] : 0u, f < T3LOG_N ? (unsigned)t3log_late[f] : 0u,
 		                           f < T3LOG_N ? (unsigned)t3log_flags[f] : 0u, f < T3LOG_N ? (unsigned)t3log_cushion[f] : 0u);
-		done++;
+		flog_done++;
 	}
 	if (tlen > t0) /* test 40: as it is made, the file gets it at the next write */
 		netlog_put(NL_PERF, text + t0, tlen - t0);
@@ -226,7 +232,7 @@ static int perf_service(void)
 			return 0;
 		if (tf_append(&perf_f, text, tlen) == 0) {
 			tlen = 0;
-			perf_saved = done;
+			perf_saved = flog_done;
 		}
 		return 1;
 	}
@@ -255,8 +261,13 @@ void prof_rows(char t[PROF_ROWS][100], uint32_t color[PROF_ROWS])
 		snprintf(t[0], 100, "PERF LOG STOPPED: %s", perf_f.why);
 	} else {
 		const char *base = strrchr(perf_f.path, '/');
-		snprintf(t[0], 100, "%s TO FRAME %u (%u KB)", perf_f.ok && base ? base + 1 : "PERF OPENING",
-		         (unsigned)perf_saved, (unsigned)(perf_f.bytes / 1024));
+		unsigned lost = flog_lost; /* test 128 */
+		if (lost)
+			snprintf(t[0], 100, "%s TO FRAME %u (%u KB), %u LOST", perf_f.ok && base ? base + 1 : "PERF OPENING",
+			         (unsigned)perf_saved, (unsigned)(perf_f.bytes / 1024), lost);
+		else
+			snprintf(t[0], 100, "%s TO FRAME %u (%u KB)", perf_f.ok && base ? base + 1 : "PERF OPENING",
+			         (unsigned)perf_saved, (unsigned)(perf_f.bytes / 1024));
 	}
 	upper(t[0]);
 	color[0] = perf_f.err ? C_RED : !dev_set && off_why[0] ? C_DIM : C_WHITE;
