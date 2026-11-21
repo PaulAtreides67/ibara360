@@ -109,6 +109,8 @@ u64 ymz_chip_time(void);
 int ymz_decode_phrase(int phrase, s16 *out, int max, int *rate);
 extern int ymz_rate_mode;          /* 0 = MAME 0.289 (rate from each AMM block), 1 = fixed 16 kHz */
 extern void (*ymz_write_hook)(u64 sample, u8 reg, u8 data);
+extern const u8 *volatile ymz_seq_remap; /* test 132: SQSN data -> played (256), or NULL */
+extern const u8 *volatile ymz_seq_level; /* test 132: BGM level per sequence (256), or NULL */
 extern u64 ymz770_writes, ymz_queue_full, ymz_samples, ymz_blocks, ymz_rate_changes;
 /* Test 68 (ibara360's sound page): with ymz_scaled the host's mix comes out in ymz_out (the sink's sample stays the
  * chip's): each phrase's category and factor (Q8, 256 = as the game plays it), the categories' gains (Q15, 32768 = 1)

@@ -268,6 +268,28 @@ static unsigned be16(uint32_t a)
 /* ibara's music: the sequence the driver plays -> the name in the game's own sound list (0C1F5CD4: its sound test
  * plays bgm 0-15 as sequences 15 17 19 21 23 25 2 9 7 6 4 27 29 31 33 0, each its intro, then the next one looping;
  * bgm 15, sequence 0, has no name; sequences 11/12 are not in the list) */
+static int gad_tracklist; /* test 132 */
+
+void gadgets_tracklist(int alt)
+{
+	gad_tracklist = alt;
+}
+
+static unsigned gad_seq_show(unsigned seq) /* test 132: name the track that plays */
+{
+	if (!gad_tracklist)
+		return seq;
+	switch (seq) {
+	case 15: return 27; case 27: return 15;
+	case 16: return 28; case 28: return 16;
+	case 17: return 31; case 31: return 17;
+	case 18: return 32; case 32: return 18;
+	case 23: return 29; case 29: return 23;
+	case 24: return 30; case 30: return 24;
+	default: return seq;
+	}
+}
+
 static const char *bgm_name_ib(unsigned seq)
 {
 	switch (seq) {
@@ -2196,7 +2218,8 @@ static void draw_xtc_full(void)
 
 static void draw_music(void)
 {
-	const char *n = M->bgm_name(s.bgm);
+	const unsigned bgm_show = gad_seq_show(s.bgm); /* test 132: the track that plays (Kuro BL's list has no Show Time: ibara's names) */
+	const char *n = bgm_show != s.bgm ? bgm_name_ib(bgm_show) : M->bgm_name(s.bgm);
 	const float x = CL_MUSIC_WIN_X + 6, y = CL_MUSIC_WIN_Y + 5;
 
 	if (!n || s.boot) /* test 89 */
@@ -4032,6 +4055,12 @@ void gadgets_inv_held(int side, int on)
 {
 	if ((unsigned)side < 2u)
 		pl[side].inv_held = on ? 1 : 0;
+}
+
+/* test 134: a bomb of this side is active (bomb_read's bm_on) */
+int gadgets_bomb_on(int side)
+{
+	return side >= 0 && side < 2 && pl[side].bm_on;
 }
 
 /* 1 = ibaraweb.dat's pictures are there (the M3 GADGETS row can be ON); else the reason is gadgets_stagemap_why */

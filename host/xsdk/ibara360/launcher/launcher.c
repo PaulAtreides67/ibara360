@@ -105,8 +105,8 @@
 #define LA_TV_H 896
 
 /* test 97: the music in the .xex, the PS2 data from ps2data.bin (the plain screen without it) */
-#define XEX_VERSION "1.04" /* test 129: 1.04; test 120: release version; test 121: 1.03 */
-#define XEX_TEST "129" /* test 129: version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127: version; test 126: version; test 125: version; test 124: card.vert turn constant; test 123: STORY plate as GALLERY / EXIT, no EN/JP tag; test 120: release version; test 122: STORY sign, label window, UNLISTED level, 鋳薔薇 */
+#define XEX_VERSION "1.05" /* test 146: 1.05; test 129: 1.04; test 120: release version; test 121: 1.03 */
+#define XEX_TEST "146" /* test 146: version 1.05; test 129: version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127: version; test 126: version; test 125: version; test 124: card.vert turn constant; test 123: STORY plate as GALLERY / EXIT, no EN/JP tag; test 120: release version; test 122: STORY sign, label window, UNLISTED level, 鋳薔薇 */
 #define NPADS 4
 #define STICK_DEAD 16000
 

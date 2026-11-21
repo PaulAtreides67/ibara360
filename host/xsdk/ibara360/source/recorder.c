@@ -349,12 +349,15 @@ int rec_service(void)
 			continue;
 		}
 		if (e->pad[2] == 0x20) { /* test 84: a save state file's line */
-			if (e->c)
-				tlen += (unsigned)snprintf(text + tlen, REC_TEXT - tlen, "# %s %u %u %08X\n", e->c == 1 ? "hddload" :
-				                           "hddsaved", (unsigned)e->frame, (unsigned)e->d, (unsigned)e->scr);
-			else
+			if (e->c == 0)
 				tlen += (unsigned)snprintf(text + tlen, REC_TEXT - tlen, "# hddsave %u %u\n", (unsigned)e->frame,
 				                           (unsigned)e->d);
+			else if (e->c == 3) /* test 141 */
+				tlen += (unsigned)snprintf(text + tlen, REC_TEXT - tlen, "# sldel %u %u\n", (unsigned)e->frame,
+				                           (unsigned)e->d);
+			else
+				tlen += (unsigned)snprintf(text + tlen, REC_TEXT - tlen, "# %s %u %u %08X\n", e->c == 1 ? "hddload" :
+				                           "hddsaved", (unsigned)e->frame, (unsigned)e->d, (unsigned)e->scr);
 			n_done++;
 			continue;
 		}

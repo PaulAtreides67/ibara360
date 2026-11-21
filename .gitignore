@@ -312,3 +312,15 @@
 !/tools/web/en.json
 !/tools/web/mkbossbg.py
 !/tools/web/addbg.py
+# 1.05: new sources + the book converter
+!/host/xsdk/ibara360/source/book.c
+!/host/xsdk/ibara360/source/book.h
+!/host/xsdk/ibara360/source/bulletcol.c
+!/host/xsdk/ibara360/source/bulletcol.h
+!/host/xsdk/ibara360/source/cheatfx.c
+!/host/xsdk/ibara360/source/cheatfx.h
+!/host/xsdk/ibara360/source/history.c
+!/host/xsdk/ibara360/source/history.h
+!/host/xsdk/ibara360/source/zones.c
+!/host/xsdk/ibara360/source/zones.h
+!/tools/book/mkbook.py

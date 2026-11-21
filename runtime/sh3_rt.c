@@ -294,7 +294,10 @@ static recomp_fn lookup(u32 addr)
 	return NULL;
 }
 
-void rt_call(sh3_t *c, u32 addr)
+volatile u32 rt_hook_addr = 0;              /* test 133 */
+void (*volatile rt_hook_fn)(sh3_t *c, u32 addr) = NULL; /* test 133 */
+
+void rt_call_raw(sh3_t *c, u32 addr)
 {
 	recomp_fn f;
 	PCB_RGN_SAVE;
@@ -306,6 +309,16 @@ void rt_call(sh3_t *c, u32 addr)
 	else
 		interp(c, addr);
 	PCB_RGN_RESTORE;
+}
+
+void rt_call(sh3_t *c, u32 addr)
+{
+	void (*h)(sh3_t *, u32) = rt_hook_fn;
+	if (UNLIKELY(h != NULL) && PHYS(addr) == rt_hook_addr) {
+		h(c, addr);
+		return;
+	}
+	rt_call_raw(c, addr);
 }
 
 void rt_resync(sh3_t *c)

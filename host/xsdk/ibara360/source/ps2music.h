@@ -30,6 +30,8 @@ int ps2music_state(void);           /* PS2M_* */
 const char *ps2music_why(void);     /* why not PS2M_OK, for the SOUND page's grey line */
 /* the SOUNDTRACK row: 1 = PS2 (it plays only once ps2music_state() is PS2M_OK) */
 void ps2music_enable(int on);
+void ps2m_tracklist(int alt);       /* test 132: TRACKLIST ALTERNATIVE (Kuro BL stream swap) */
+void ps2music_set_game(int set);   /* test 134: the chosen game, after game_choose */
 int ps2music_active(void);          /* enabled and the file good */
 int ps2music_has_seq(int seq);      /* a sequence with a stream */
 const char *ps2music_seq_name(int seq);

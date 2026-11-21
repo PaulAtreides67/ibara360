@@ -9,7 +9,7 @@
 Press Back during a run to pause the game.
 If the continue screen appears, press start to resume your run**
 
-**Version 1.04** (November 2026), see [PATCH_NOTES.md](PATCH_NOTES.md)
+**Version 1.05** (November 2026), see [PATCH_NOTES.md](PATCH_NOTES.md)
 
 **Video preview:**
 
@@ -152,7 +152,7 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
 1. On a Windows PC, drag `Ibara (Japan).iso` onto `ps2extract.exe`. It checks the disc's files, and writes `ps2data.bin` and `ps2music.bin`
    into a folder `ibara360 ps2data` beside the ISO.
 3. Put the four .xex files (`ibara360.xex`, `ibara.xex`, `ibarablk.xex`, `ibaraarr.xex`), `ps2data.bin` and
-   `ps2music.bin` (and `ibaraweb.dat` from the release zip, for STORY and STAGE MAP) in one folder on the Xbox 360's hard disk or a USB drive (for example `Hdd1:\apps\ibara360`).
+   `ps2music.bin` (and `ibaraweb.dat` and `ibarabook.dat` from the release zip, for STORY, STAGE MAP and BOOK) in one folder on the Xbox 360's hard disk or a USB drive (for example `Hdd1:\apps\ibara360`).
 4. Put the arcade ROMs `ibara.zip` and `ibarablk.zip` in the same folder as the .xex files.
 5. Start `ibara360.xex` in Aurora. The first start of each game also writes its loading index, so later starts are a little
    faster.
@@ -177,6 +177,7 @@ The .xex files land in `host/xsdk/ibara360/out`.
   patch, the GADGETS art and the launcher's music
 - `tools/ps2extract`: the PS2 disc extractor (`build.sh` builds the .exe in Docker)
 - `tools/web`: builds `ibaraweb.dat` from a mirror of Cave's official Ibara website
+- `tools/book`: builds `ibarabook.dat` from the Insanity DVD booklet ("The Lunatic Ibara Book") scans
 
 ## Credits
 

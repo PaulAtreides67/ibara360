@@ -1,5 +1,41 @@
 # ibara360 patch notes
 
+## 1.05 (November 2026)
+
+### New
+- **BOOK** (OPTIONS page, all three games): the Insanity DVD booklet "The Lunatic Ibara Book" (94 pages, Japanese)
+  readable in game. Two-page spreads at 16:9, single pages in TATE, LB/RB turn pages (wrapping round), A zooms into a
+  page in halves, and a zoomed spread tells you which way the other page is. Needs `ibarabook.dat` beside the .xex
+  files.
+- **CHEATS** page: INF LIVES, INF BOMBS, INVINCIBLE, HITBOXES, BOMB INVINCIBILITY, AUTOBOMB, FIXED RANK, HITBOX SIZE,
+  FEWER BULLETS, BULLET SPEED, ITEM FALL SPEED, ITEM MAGNETISM + MAGNET RANGE (ground items too), MEDAL SUCTION,
+  MEDAL PENALTY, and ALL CHEATS OFF / ON / CUSTOM. A run with cheats saves no replay, score, initials or save
+  states and earns no achievements.
+- **BATTLE HISTORY**: totals of all your runs: runtime and play time, medals, items, shots and bombs, score, ships
+  chosen, bosses, clears by ship and by mode, deaths. Quitting counts the run. INITIALIZE HISTORY in OTHER SETTINGS
+  clears it.
+- **BULLET COLORS** (GENERAL SCREEN): your own colors for the enemy bullets, per type (purple + blue in Arcade,
+  purple + red in Harder / Extended / Arrange), from presets or R/G/B, with a preview of the bullet sprites.
+  Black Label uses its own bullet art.
+- **NO ITEM ZONES** gadget (M3 GADGETS): shows the screen zones where destroyed enemies drop no items (sides,
+  bottom or both), with your own colors.
+- **OTHER SETTINGS** page (replaces the DEBUG MENU): LOW LATENCY, CONTINUES, STAFF ROLL PROTECTION, ATTRACT DEMO,
+  SPECIAL MODE, ACHIEVEMENTS, FPS COUNTER, LANGUAGE, SERVICE MENU, INITIALIZE RANKINGS, INITIALIZE HISTORY.
+- **CONTINUES** ON / OFF.
+- **TRACKLIST** ORIGINAL / ALTERNATIVE (SOUND page): Ibara swaps the Normal and Harder songs, Arrange uses Normal's
+  stage songs, Black Label swaps in Ibara's songs (PS2 soundtrack only).
+- **LOAD STATE**: X deletes a save state.
+- Japanese help text for every option.
+
+### Changes
+- Menus re-spaced in the PS2 style, values in one column; the SOUND and BULLET COLORS windows no longer jump
+  between rows.
+- EX-DEBUG removed (HITBOXES moved to CHEATS; the other EX-DEBUG settings stay in the ini). Arrange's BULLET DESIGN
+  row and the LB RAM-hash check removed.
+- AUTOFIRE renamed AUTO FREQUENCY; many help texts shortened and clarified.
+- No replay is saved for a run that used a continue.
+- Logging (record, frame log, network log) is turned off once when 1.05 first starts.
+
 ## 1.04 (November 2026)
 
 ### New

@@ -330,3 +330,120 @@ int hitbox_draw(volatile uint32_t *tex, unsigned pitch, int kuro, int mode)
 		stats(tb_read() - t0, n, px);
 	return n;
 }
+
+/* test 135: AUTOBOMB: a lethal touch of this side's kill box now (game RAM read, no writes). */
+static inline uint8_t rd8(uint32_t a)
+{
+	return RAMP(a)[0];
+}
+
+static int threat_hit(int32_t x1, int32_t y1, int32_t hw1, int32_t hh1,
+                      int32_t x2, int32_t y2, int32_t hw2, int32_t hh2)
+{
+	int32_t dx = x1 - x2, dy = y1 - y2;
+	if (dx < 0) dx = -dx;
+	if (dy < 0) dy = -dy;
+	return dx < hw1 + hw2 + 0x10000 && dy < hh1 + hh2 + 0x10000;
+}
+
+int hitbox_touch(int kuro, int arr, int side)
+{
+	const struct hb_game *g = &games[kuro ? 1 : 0];
+	const uint32_t a = g->player + (uint32_t)side * g->player_side;
+	uint32_t p, ls;
+	int32_t sx, sy, hw, hh;
+
+	if (side < 0 || side > 1)
+		return 0;
+	if (rd32(a) != 0xDC000000u) /* alive */
+		return 0;
+	/* ship kill box = entry 0 of its list (player_tbl by +4, +8, +0xC + 4) */
+	p = rd32(g->player_tbl + (rd32(a + 4) << 3));
+	if (!is_ram(p))
+		return 0;
+	p = rd32(p + (rd32(a + 8) << 4));
+	if (!is_ram(p))
+		return 0;
+	ls = rd32(p + (rd32(a + 12) << 3) + 4);
+	if (!is_ram(ls))
+		return 0;
+	{
+		const uint32_t w = rd32(ls);
+		if (!w || (w & 0x20000000u))
+			return 0;
+		hw = (int32_t)(w & 0x0FFFFFFFu);
+		hh = (int32_t)rd32(ls + 4);
+		sx = (int32_t)rd32(a + 0x10) + (int32_t)rd32(ls + 8);
+		sy = (int32_t)rd32(a + 0x14) + (int32_t)rd32(ls + 12);
+	}
+
+	/* enemy bullets */
+	for (int i = 0; i < 256; i++) {
+		const uint32_t b = g->bullets + (uint32_t)i * 0x54u;
+		if (!(rd32(b) & 0x10000000u))
+			continue;
+		{
+			uint32_t bls = rd32(b + 0x20);
+			const int32_t bx = (int32_t)rd32(b + 0x28);
+			const int32_t by = (int32_t)rd32(b + 0x2C);
+			if (arr) {
+				/* ARRANGE: one box, half 1 x 1 at position with Y - 0x100 */
+				if (is_ram(bls) && rd32(bls)) {
+					if (threat_hit(sx, sy, hw, hh, bx, by - 0x100, 0x10000, 0x10000))
+						return 1;
+				}
+			} else if (kuro) {
+				/* Kuro BL: each entry's offset with half 1 x 1 */
+				if (is_ram(bls)) {
+					for (int k = 0; k < MAX_LIST; k++, bls += 16) {
+						if (!rd32(bls))
+							break;
+						if (threat_hit(sx, sy, hw, hh,
+						               bx + (int32_t)rd32(bls + 8), by + (int32_t)rd32(bls + 12),
+						               0x10000, 0x10000))
+							return 1;
+					}
+				}
+			} else {
+				/* ibara (not ARRANGE): each list entry until W = 0, half W & 0x0FFFFFFF x H */
+				if (is_ram(bls)) {
+					for (int k = 0; k < MAX_LIST; k++, bls += 16) {
+						const uint32_t bw = rd32(bls);
+						if (!bw)
+							break;
+						if (threat_hit(sx, sy, hw, hh,
+						               bx + (int32_t)rd32(bls + 8), by + (int32_t)rd32(bls + 12),
+						               (int32_t)(bw & 0x0FFFFFFFu), (int32_t)rd32(bls + 4)))
+							return 1;
+					}
+				}
+			}
+		}
+	}
+
+	/* lethal enemy parts */
+	for (int i = 0; i < 192; i++) {
+		const uint32_t pa = g->parts + (uint32_t)i * 0xB4u;
+		if (!(rd32(pa) & 0x10000000u))
+			continue;
+		if (rd8(pa + 0xA9) < rd8(pa + 0xAB))
+			continue;
+		{
+			uint32_t pls = rd32(pa + 0x1C);
+			const int32_t px = (int32_t)rd32(pa + 0x24);
+			const int32_t py = (int32_t)rd32(pa + 0x28);
+			if (!is_ram(pls))
+				continue;
+			for (int k = 0; k < MAX_LIST; k++, pls += 16) {
+				const uint32_t pw = rd32(pls);
+				if (!pw)
+					break;
+				if (threat_hit(sx, sy, hw, hh,
+				               px + (int32_t)rd32(pls + 8), py + (int32_t)rd32(pls + 12),
+				               (int32_t)(pw & 0x0FFFFFFFu), (int32_t)rd32(pls + 4)))
+					return 1;
+			}
+		}
+	}
+	return 0;
+}

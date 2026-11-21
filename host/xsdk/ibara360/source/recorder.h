@@ -38,7 +38,7 @@ void rec_state(uint32_t frame, int what, int slot);
 void rec_host(uint32_t frame, int what, int value);
 /* test 84: a save state file's line: "# hddsave <frame> <slot>" (what 0: the vblank that asks for its moment) or
  * "# hddload <frame> <slot> <crc>" (what 1: loaded at that vblank; crc = the file's header CRC), "# hddsaved <frame>
- * <slot> <crc>" (what 2: the file written, for the reader) */
+ * <slot> <crc>" (what 2: the file written, for the reader). Test 141: "# sldel <frame> <slot>" (what 3: a slot deleted) */
 void rec_hdd(uint32_t frame, int what, int slot, uint32_t crc);
 /* test 86: a replay's line, in order with rec_frame's entries: "# rpsave <frame> <num>" (RP_REC_SAVE: SAVE REPLAY?'s A
  * at that vblank, nothing emulated meanwhile; the PC harness writes its own replay of that number there), "# rpsaved

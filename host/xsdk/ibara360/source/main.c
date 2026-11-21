@@ -359,6 +359,7 @@
 #include "expect.h"
 #include "expect_blk.h"
 #include "gadgets.h"
+#include "book.h" /* test 138 E: Insanity DVD book viewer */
 #include "hddstate.h" /* test 84 */
 #include "hitbox.h"   /* test 98: TRAINING's HITBOX PLAYER / ALL */
 #include "arrhud.h" /* test 79: ARRANGE's HUD (ibaraarr.xex; empty in the others) */
@@ -378,6 +379,10 @@ void xsdk_present_set_tear(bool on); /* test 124: LOW LATENCY */
 #include "state.h"
 #include "wgate.h"
 #include "xplat.h"
+#include "cheatfx.h" /* test 135: batch 2 */
+#include "zones.h"   /* test 137: NO ITEM ZONES */
+#include "history.h" /* test 137 C2: BATTLE HISTORY */
+#include "bulletcol.h" /* test 137 B1/B2: BULLET COLOURS */
 
 /* runtime/sh3_rt.c */
 void rt_init(void);
@@ -560,10 +565,10 @@ static volatile int menu_on, menu_sel;         /* the pad menu is up; the highli
  * toggle (TR_ROW_NONE; test 100: EDIT only), A opens the box on EDIT, X in a box all on / off (FORMATION: the next formation for all three
  * slots, "QUICK SWAP"), a row with none set NONE (until test 100); every game's RANK a start value, the game's own rise and falls after it (tr_rank_vblank), X on RANK holds it all the run
  * (TRR_HELD, a "*") */
-#define XEX_TEST "130"  /* test 130: SCREEN COLOR OUTLINE = per-screen-pixel Sobel, white edges on black; test 129 (1.04): the release: logs off once, version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127 (1.04): record, frame log, network log on once for a check-up log; test 126 (1.04): menus unaffected by FILTER/SCREEN COLOR including BILINEAR, LOW LATENCY on OPTIONS page above LANGUAGE default ON, help text, INVINCIBLE gadget held; test 125 (1.04): menus unaffected by FILTER/SCREEN COLOR, per-player STICK DEADZONE on CONTROLS, FPS COUNTER on DEBUG MENU; test 124 (1.04): LOW LATENCY, LT hides menus, FILTER, SCREEN COLOR, UPSIDE DOWN, STICK DEADZONE; test 123 (1.03): STAGE MAP boss art from ps2data.bin's gallery cut out, bg.boss right panel; test 122 (1.03): ATTRACT DEMO help (next power on), STAGE MAP box held at the boss + background + border; test 121 (1.03): IKUZE at full volume only in a run (the attract's demos follow the attract volume); the
+#define XEX_TEST "146"  /* test 146: the 1.05 release (logs off once); test 145: BATTLE HISTORY RUNTIME SAVED ON QUIT, BOOK ZOOM SHOWS THE OTHER PAGE, QUIT TO ATTRACT COUNTS THE RUN, INITIALIZE HISTORY ROW; test 144: TEXT REFINEMENTS (LANGUAGE, ACHIEVEMENTS, LOW LATENCY, CONTINUES, SOUNDTRACK HELPS, AUTO FREQUENCY, JAPANESE HELPS), SOUND WINDOW FIXED; test 143: TRACKLIST HELP PER GAME, NO BULLET DESIGN ROW, NO LB RAM HASH, SHORTER HISTORY/OTHER SETTINGS HELPS, KURO BL BULLET COLORS PREVIEW; test 142: BULLET COLORS HELP IN THE DESCRIPTION BOX (sm_help on every row), WINDOW AT PITCH 10 CENTRED, LOAD STATE HELP WITHOUT THE COMMA; test 141: PS2 LAYOUT B ON HISTORY/PLAY/DIP/PAUSE, CHEATS +2, BULLET COLORS PER-TYPE PRESETS + FIXED WINDOW, NO PAUSE BULLET COLORS, LOAD STATE DELETE; test 140: BOOK ZOOM IN HALVES (memory), BULLET COLORS PREVIEW STRIP, GROUND ITEMS MAGNET (ibara/ARRANGE), JAPANESE HELPS 135-139, PS2 MENU SPACING B; test 139: MENU ORDER, BOOK IN OPTIONS, BULLET PRESETS, HISTORY FIT, BOOK ZOOM; test 138: BOOK, BULLET COLORS PER MODE, HISTORY RELATCH, OTHER SETTINGS VALUES; test 137: NO ITEM ZONES (M3 GADGETS row + sub-menu, drawing, logs); test 136: CHEATS ALL/CUSTOM, BOMB INVINCIBILITY, per-page value columns, ITEM MAGNETISM per program + MAGNET RANGE, ground items pulled, FEWER BULLETS whole bullets, MEDAL PENALTY fix; test 135: AUTOBOMB rewritten (full bombs, touch-now guard), ALL CHEATS, HITBOX SIZE 100%, CHEATS help; test 134: Kuro BL TRACKLIST ALTERNATIVE (ps2music told the chosen game); test 133: CONTINUES OFF = DIP DISABLE, TRACKLIST AT THE STAGE SCRIPT; test 132: CONTINUES, TRACKLIST; test 131: menu rework, CHEATS; test 130: SCREEN COLOR OUTLINE = per-screen-pixel Sobel, white edges on black; test 129 (1.04): the release: logs off once, version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127 (1.04): record, frame log, network log on once for a check-up log; test 126 (1.04): menus unaffected by FILTER/SCREEN COLOR including BILINEAR, LOW LATENCY on OPTIONS page above LANGUAGE default ON, help text, INVINCIBLE gadget held; test 125 (1.04): menus unaffected by FILTER/SCREEN COLOR, per-player STICK DEADZONE on CONTROLS, FPS COUNTER ON DEBUG MENU; test 124 (1.04): LOW LATENCY, LT hides menus, FILTER, SCREEN COLOR, UPSIDE DOWN, STICK DEADZONE; test 123 (1.03): STAGE MAP boss art from ps2data.bin's gallery cut out, bg.boss right panel; test 122 (1.03): ATTRACT DEMO help (next power on), STAGE MAP box held at the boss + background + border; test 121 (1.03): IKUZE at full volume only in a run (the attract's demos follow the attract volume); the
  * quit to the attract's logos held black until the title (no AMI logo flash); ATTRACT DEMO ON/OFF on the debug menu (ibara,
  * Kuro BL: the title held); test 120: release candidate; test 119: EX-DEBUG closed, ACHIEVEMENTS the debug menu's last row */
-#define XEX_VERSION "1.04" /* test 129: 1.04; test 121: 1.03; test 120: PS2-only menus and the 1.02 presentation fixes */
+#define XEX_VERSION "1.05" /* test 146: 1.05; test 129: 1.04; test 121: 1.03; test 120: PS2-only menus and the 1.02 presentation fixes */
 /* test 72: the image's game in its name (the log's first lines, the network log's session) */
 #if defined(IB_GAME) && IB_GAME == 1
 #define XEX_GAME " KURO BL"
@@ -1210,7 +1215,7 @@ static struct {
 static int ram_hash_on, hash_this_frame;
 static unsigned hash_switches, hash_frames;
 static uint64_t hash_sum, hash_max;
-static uint32_t prev_hash_any;
+/* test 143: prev_hash_any removed */
 static int checking(void);
 
 /* test 18: after loading, frames without the RAM hash, their late frames and game-thread CPU;
@@ -1268,8 +1273,8 @@ enum {
 	A_B1 = 0x10, A_B2 = 0x20, A_B3 = 0x40, A_B4 = 0x80,
 	A_START = 0x100, A_COIN = 0x200, A_TEST = 0x400, /* test 85: A_TEST unused (no pad button is S3, svc_left) */
 	A_CARD = 0x800,   /* test 33: RB shows / hides the card */
-	A_HASH = 0x1000,  /* test 17b: LB switches the check's RAM hash (not a board input) */
 	A_AUTO = 0x2000,  /* test 48: RT = button 1 at 30 Hz (inputs_update) */
+	/* test 143: A_HASH removed (LB RAM hash check toggle) */
 	A_MA = 0x4000, A_MB = 0x8000, /* test 55: the pad's own A and B, for the menus (whatever the controls) */
 	A_LOCK = 0x10000, /* test 78: ARRANGE's aim lock = PCDR bit 6 (P1) / 7 (P2) low, bits the arcade game never reads */
 	A_MX = 0x20000,   /* test 86: the pad's own X, for the menus (the REPLAYS page's DELETE) */
@@ -1285,7 +1290,7 @@ enum {
  * CONTROLS = pad 1 and the others) */
 static const uint32_t fn_bits[FN_N] = {0, A_B1, A_B2, A_B3, A_B4, A_AUTO, A_CARD, A_LOCK};
 static volatile uint32_t ctl_bits[CTL_PADS][CTL_N] = {[0 ... CTL_PADS - 1] = {A_B1, A_B2, A_B3, A_B4, 0, A_CARD, 0, A_AUTO}};
-static volatile int lb_hash[CTL_PADS] = {1, 1}; /* LB is OFF: it still switches the check's RAM hash (test 17b) */
+/* test 143: lb_hash removed (LB RAM hash check toggle) */
 
 /* written only by the IO thread, one aligned word per pad (read whole by the game) */
 static volatile uint32_t pad_word[NPADS];
@@ -1293,6 +1298,7 @@ static volatile uint32_t pad_word[NPADS];
 #define RAW_LT 0x10000u
 #define RAW_RT 0x20000u
 static volatile uint32_t pad_raw[NPADS];
+static int16_t pad_lx[NPADS], pad_ly[NPADS]; /* test 138 E: left stick axes for book panning */
 static volatile unsigned pad_attaches[NPADS], pad_detaches[NPADS], pad_reports[NPADS];
 static volatile uint32_t pad_last_result[NPADS];
 static volatile unsigned io_loops, io_late, io_max_us, io_writes_on;
@@ -1336,7 +1342,7 @@ static uint32_t map_pad(int p, const INPUT_GAMEPAD *g)
 	/* test 85 (user: "remove R3 as a quick way to access it"): no pad button is the S3 test switch (test 48's R3 and
 	 * the Guide); the debug menu's SERVICE MENU row presses it (svc_left) */
 	if (b & INPUT_GAMEPAD_LEFT_SHOULDER)
-		w |= ctl_bits[c][CTL_LB] | (lb_hash[c] ? A_HASH : 0) | A_MLB;
+		w |= ctl_bits[c][CTL_LB] | A_MLB; /* test 143: lb_hash removed */
 	if (b & INPUT_GAMEPAD_RIGHT_SHOULDER)
 		w |= ctl_bits[c][CTL_RB] | A_MRB;
 	if (g->left_trigger > AF_TRIGGER)
@@ -1386,6 +1392,8 @@ static void pads_update(void)
 			pad_word[p] = map_pad(p, &s.gamepad) | A_ON;
 			pad_raw[p] = s.gamepad.buttons | (s.gamepad.left_trigger > AF_TRIGGER ? RAW_LT : 0) |
 			             (s.gamepad.right_trigger > AF_TRIGGER ? RAW_RT : 0);
+			pad_lx[p] = s.gamepad.thumb_lx; /* test 138 E */
+			pad_ly[p] = s.gamepad.thumb_ly;
 		} else {
 			if (pad_connected[p]) {
 				pad_connected[p] = 0;
@@ -1394,6 +1402,8 @@ static void pads_update(void)
 			}
 			pad_word[p] = 0;
 			pad_raw[p] = 0;
+			pad_lx[p] = 0;
+			pad_ly[p] = 0;
 		}
 	}
 }
@@ -1495,6 +1505,7 @@ static const char *const fs_name[FS_N] = {"SLEEPING", "RECORDING", "EEPROM", "FR
 static volatile int file_state;
 static volatile int file_in_pass;
 static volatile unsigned file_passes; /* test 72: passes finished (game_select_quit waits for two) */
+static volatile int hist_save_req;    /* test 137 C2: BATTLE HISTORY's file wanted (a run's end, GAME SELECT, 5 minutes) */
 static volatile uint32_t file_pass_t0, file_pass_t1;
 
 /* test 41: the recorder's, the EEPROM's and the frame log's file work, the log file (test 40's IO
@@ -1508,6 +1519,16 @@ static int files_service(void)
 	file_state = FS_EEP;
 	eeprom_service();       /* test 33: the EEPROM save */
 	settings_service();     /* test 53: an ini save the options page asked for */
+	{ /* test 138 E; test 139: up to 4 book jobs per pass (a spread's two halves in one pass) */
+		int bj;
+		for (bj = 0; bj < 4 && book_file_job(); bj++)
+			;
+	}
+	if (hist_save_req) {    /* test 137 C2: BATTLE HISTORY's file, when a counter changed */
+		hist_save_req = 0;
+		if (hist_dirty())
+			hist_save_now();
+	}
 	file_state = FS_PROF;
 	prof_service();         /* test 14b: the frame log */
 	file_state = FS_LOG;
@@ -1646,12 +1667,16 @@ static uint32_t io_task(void *u)
 		slept = tb_us(ts, tb_read());
 		if (slept > io_sleep_max_us)
 			io_sleep_max_us = slept;
-		if (slept >= IO_SLOW_US && io_slow_lines++ < IO_SLOW_LINES) {
-			char a[16], fp[64];
-			ms2us(a, sizeof(a), slept);
-			file_pass_text(fp, sizeof(fp));
-			log_printf(C_YELLOW, "IO: SLEPT %s MS AT EMU %u (ASKED %d MS); %s", a, (unsigned)frame_count,
-			           IO_SLEEP_MS, fp);
+		{
+			static unsigned io_slept_log_emu = ~(unsigned)0; /* test 141: at most once per EMU frame (BOOK hold) */
+			if (slept >= IO_SLOW_US && (unsigned)frame_count != io_slept_log_emu && io_slow_lines++ < IO_SLOW_LINES) {
+				char a[16], fp[64];
+				io_slept_log_emu = (unsigned)frame_count;
+				ms2us(a, sizeof(a), slept);
+				file_pass_text(fp, sizeof(fp));
+				log_printf(C_YELLOW, "IO: SLEPT %s MS AT EMU %u (ASKED %d MS); %s", a, (unsigned)frame_count,
+				           IO_SLEEP_MS, fp);
+			}
 		}
 	}
 	return 0;
@@ -1813,8 +1838,9 @@ static u8 sm_end_last;
 #define SM_SCENE_TITLE 6 /* the attract's scene byte on the title (test 57) */
 
 /* test 70: SM_FULLSEL = FULL RESTART's side and ship (the pause menu) */
-enum { SM_CLOSED, SM_OPEN, SM_OPTS, SM_SENDING, SM_CTRL, SM_GADG, SM_SOUND, SM_PAUSE, SM_FULLSEL, SM_GSEL, SM_DIP,
-       SM_SLOTS, SM_HDD, SM_REPLAYS, SM_RPBOX, SM_RPPAUSE }; /* test 87: SM_RPPAUSE = a playback's pause menu */
+/* test 137 B2: SM_BCOL = BULLET COLOURS sub-menu */
+enum { SM_CLOSED, SM_OPEN, SM_OPTS, SM_SENDING, SM_CTRL, SM_GADG, SM_ZONES, SM_SOUND, SM_PAUSE, SM_FULLSEL, SM_GSEL, SM_DIP,
+       SM_SLOTS, SM_HDD, SM_REPLAYS, SM_RPBOX, SM_RPPAUSE, SM_BCOL, SM_HIST }; /* test 137 C2: SM_HIST = BATTLE HISTORY; test 87: SM_RPPAUSE = a playback's pause menu; test 137: SM_ZONES, SM_BCOL */
 static int pic_shape(void);
 static void pic_box_at(int w, int h, int *bx, int *by);
 /* test 84: SM_SLOTS = the SLOTS page (the pause's SAVE STATE / LOAD STATE, the menu's LOAD STATE), SM_HDD = the box
@@ -1822,7 +1848,7 @@ static void pic_box_at(int w, int h, int *bx, int *by);
 static void sl_open(int save);
 static int sl_input(uint32_t press, int *done);
 static void sl_draw(volatile uint32_t *t);
-static int sl_save, sl_sel, sl_armed = -1, sl_paused; /* the SLOTS page: SAVE (1) or LOAD, its row, the row asking */
+static int sl_save, sl_sel, sl_armed = -1, sl_arm_del, sl_paused; /* the SLOTS page: SAVE (1) or LOAD, its row, the row asking (arm: load/save, or delete in LOAD) */
 static int sl_reopen = -1;          /* pause_loop opens the SLOTS page (SAVE 1, LOAD 0), -1 none */
 static int pm_reopen = -1;          /* and the pause menu's row under it (else RESUME) */
 static char hdd_msg[36];            /* the page's last result, in hdd_msg_c (35 letters: the box's width) */
@@ -1842,6 +1868,8 @@ static int pm_to_state;             /* the pause's RESTART STAGE: 0 = STAGE (its
 /* test 86: SM_REPLAYS = the menu's REPLAYS page, SM_RPBOX = a replay's box (SAVE REPLAY?, SAVING, LOADING: rp_box) */
 static void rl_open(void);
 static void rl_input(uint32_t press);
+static void hist_open(void);        /* test 137 C2: BATTLE HISTORY's pages (the menu's row, its input) */
+static void hist_input(uint32_t press);
 static void rl_draw(volatile uint32_t *t);
 static void rl_move(uint32_t press);
 static int rp_delete(int i, const char *why);
@@ -1850,7 +1878,7 @@ static void rp_capture_start(uint32_t base, const char *from);
 static void rp_cancel(int why);
 static void rp_join_note(int value); /* test 117 */
 static int rp_label(volatile uint32_t *t);
-enum { RPB_NONE, RPB_RESTART, RPB_LOAD, RPB_QUIT, RPB_LONG, RPB_GAP, RPB_EXDBG, RPB_N }; /* why a run has no replay; test 108: EXDBG */
+enum { RPB_NONE, RPB_RESTART, RPB_LOAD, RPB_QUIT, RPB_LONG, RPB_GAP, RPB_EXDBG, RPB_CONT, RPB_N }; /* why a run has no replay; test 131: CONT; test 108: EXDBG */
 #define RP_KEEP 30                  /* test 87 (user: "limit it to 30 replays"): a full list asks which one to replace */
 static int rl_pick;                 /* test 87: the page chooses the replay SAVE REPLAY? replaces (rp_question's) */
 static int rp_restart_req, rp_quit_req; /* test 87: the playback's pause menu chose RESTART REPLAY / QUIT REPLAY */
@@ -1911,7 +1939,7 @@ enum { TR_STAGE, TR_BOSS, TR_LIVES, TR_BOMBS, TR_GAUGE, TR_SHOT, TR_MEDAL, TR_RA
 /* test 94 (user's todo list: each game's TRAINING rows in a new order): the rows before OPTIONS, those after */
 #define TR_ROWS_A SM_ROW_TR + TR_STAGE, SM_ROW_TR + TR_BOSS, SM_ROW_TR + TR_SHOT
 #define TR_ROWS_B SM_ROW_TR + TR_LIVES, SM_ROW_TR + TR_BOMBS, SM_ROW_TR + TR_GAUGE, SM_ROW_TR + TR_MEDAL, \
-	SM_ROW_TR + TR_RPCT, SM_ROW_TR + TR_INV, SM_ROW_TR + TR_INFB, SM_ROW_TR + TR_SPEED, SM_ROW_TR + TR_HITBOX
+	SM_ROW_TR + TR_RPCT, SM_ROW_TR + TR_SPEED, SM_ROW_TR + TR_HITBOX /* test 131: INVINCIBLE, INFINITE BOMBS on CHEATS */
 /* test 82 (user: "swap mode and type's positions with each other"; ARRANGE: "delete mode > arrange, it's redundant",
  * its DIP SWITCHES removed with BULLET DESIGN gone to GENERAL SCREEN, the user's choice). Test 83 (user's todo list:
  * ""play" menu should have a "start run" at the top, by pressing A, eliminate being able to press start, inside any
@@ -2044,6 +2072,8 @@ static int svc_armed;             /* the row asks "SERVICE MENU? A = YES, B = NO
 static int rk_armed;              /* the row asks "CONFIRM? A = YES, B = NO" */
 static int rk_said;               /* 1 done, 2 not now (the help says so until the row is left) */
 static int ac_armed;              /* test 106: ACHIEVEMENTS ON asks first (the user: a ban warning, then "confirm? yes/no") */
+static int hi_armed;              /* test 145: INITIALIZE HISTORY armed */
+static int hi_said;               /* test 145: 1 done, 2 not now */
 
 /* test 53: the options page's special row, applied on leaving the page: the switch to the
  * board, A+B for game_main when it goes on (inputs_update), the recording's "# dsw" line */
@@ -2091,12 +2121,20 @@ enum { OPT_SPECIAL, OPT_PICTURE, OPT_TATE, OPT_ASPECT, OPT_SCANLINES, OPT_STRENG
        OPT_STAFF, OPT_EXINV, OPT_EXINFB, OPT_EXHIT, OPT_EXLIVES, OPT_EXREPLAY, OPT_ATTRACT,
        OPT_LOWLAG, OPT_COLOR, OPT_DEADZONE, /* test 124 */
        OPT_FPS, /* test 125 */
-       OPT_N }; /* test 108: EX-DEBUG's; test 110:
+       OPT_CHEATS, /* test 131: the CHEATS page */
+       OPT_CONTINUES, /* test 132: CONTINUES ON/OFF (OTHER SETTINGS) */
+       OPT_EXBOMBINV, OPT_EXAUTOBOMB, OPT_EXFIXRANK, OPT_EXHITSIZE, OPT_EXALL, /* test 134, 135 */
+       OPT_EXFEWER, OPT_EXBSPEED, OPT_EXIFALL, OPT_EXSUCTION, OPT_EXMAGNET, OPT_EXMAGRANGE, OPT_EXMEDALPEN, /* test 135: batch 2; test 136: MAGNET RANGE */
+       OPT_BCOL, /* test 137 B2: BULLET COLOURS row on GENERAL SCREEN */
+       OPT_HIST, /* test 137 C2: BATTLE HISTORY (the menu's row; A opens its pages) */
+       OPT_BOOK, /* test 138 E: Insanity DVD book viewer (OPTIONS page row; A opens) */
+       OPT_HIST_INIT, /* test 145: INITIALIZE HISTORY row */
+       OPT_N };/* test 108: EX-DEBUG's; test 110:
                  * LIVES; test 118: REPLAY SAVE */
 static const char *const opt_names[OPT_N] = { /* "*" = from the next power-on */
 	"SPECIAL MODE", "PICTURE SIZE", "ROTATION", "ASPECT RATIO", "SCANLINES", "SCAN STRENGTH", "DEBUG CARD",
-	"EEPROM SAVE *", "RECORD *", "FRAME LOG *", "NETWORK LOG *", "GAME MENU *", "AUTOFIRE", "BACK IN A RUN",
-	"P1 CONTROLS", "PLAYER", "GADGETS", "M3 GADGETS", "DEBUG MENU", "SOUND", "GENERAL SCREEN",
+	"EEPROM SAVE *", "RECORD *", "FRAME LOG *", "NETWORK LOG *", "GAME MENU *", "AUTO FREQUENCY", "BACK IN A RUN",
+	"P1 CONTROLS", "PLAYER", "GADGETS", "M3 GADGETS", "OTHER SETTINGS", "SOUND", "GENERAL SCREEN",
 	"P2 CONTROLS", /* test 71 (user: "add P2 controls in options ... follow same text as P1") */
 	"GAME SELECT", /* test 72: back to the launcher (A, then A again) */
 	"PLAY",        /* test 81: the PLAY page (A) */
@@ -2131,6 +2169,14 @@ static const char *const opt_names[OPT_N] = { /* "*" = from the next power-on */
 	"ATTRACT DEMO",   /* test 121 (user: "attract demo toggle on/off in the debug menu, for arcade and black label") */
 	"LOW LATENCY", "SCREEN COLOR", "STICK DEADZONE", /* test 124 */
 	"FPS COUNTER", /* test 125 */
+	"CHEATS", /* test 131 */
+	"CONTINUES", /* test 132 */
+	"BOMB INVINCIBILITY", "AUTOBOMB", "FIXED RANK", "HITBOX SIZE", "ALL CHEATS", /* test 134, 135 */
+	"FEWER BULLETS", "BULLET SPEED", "ITEM FALL SPEED", "MEDAL SUCTION", "ITEM MAGNETISM", "MAGNET RANGE", "MEDAL PENALTY", /* test 135: batch 2; test 136 */
+	"BULLET COLORS", /* test 137 B2: row on GENERAL SCREEN */
+	"BATTLE HISTORY", /* test 137 C2: the attract menu's row (A = its pages) */
+	"BOOK", /* test 138 E: Insanity DVD book viewer */
+	"INITIALIZE HISTORY", /* test 145 */
 };
 static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most (the box); "\n" = a second line (test 70) */
 	"IBARA'S SPECIAL VER. (PCB DIP S2-2)",
@@ -2159,12 +2205,12 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
 	"CUSTOMIZE CONTROLS",                   /* test 71: P2 CONTROLS, P1's text (user) */
 	"QUIT TO MAIN MENU",                    /* test 72; test 76: the user's (the launcher is the main menu) */
 	"",                                     /* sm_draw: the game's PLAY rows (test 81) */
-	"CHANGE ENEMY BULLET DESIGN",           /* test 82; test 83: the user's (todo list 2026-10-27) */
+	"CHANGE ENEMY BULLET DESIGN\nBULLET COLORS CUSTOM OVERRIDES IT", /* test 82; test 83: the user's (todo list 2026-10-27); test 137 B2: ARRANGE's CUSTOM colours use NORMAL */
 	"CONTINUE FROM A SAVE STATE",           /* test 84 */
 	"ARCADE ROM'S SERVICE MENU\nPRESS START ON \"GAME MODE\" TO EXIT", /* test 85; armed: "SERVICE MENU? A = YES, B = NO"
 	                                                                   * (sm_draw); test 88: the user's */
 	"WATCH RECORDED REPLAYS",               /* test 86; test 87: the user's */
-	"SCREEN, GADGETS, CONTROLS,\nSOUND, DEBUG MENU", /* test 88; test 89: 28 letters a line (the menu's box: the user's
+	"SCREEN, GADGETS, CONTROLS,\nSOUND, OTHER SETTINGS", /* test 88; test 131: OTHER SETTINGS; test 89: 28 letters a line (the menu's box: the user's
 	                                                    * "options blue line is unfinished") */
 	/* test 89; test 91: the user's (Y SIZE's "custom vertical placement" in the todo list read as the zoom rate, X
 	 * SIZE's pair) */
@@ -2178,23 +2224,40 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
 	                                     * wraps it) */
 	"CHANGE BRIGHTNESS",                    /* test 91: the user's */
 	"ARCADE OR PS2 MENU LOOK",              /* test 98: the research's (work/g97/ps2menu/ja_help.tsv) */
-	"HELP TEXT LANGUAGE\nJAPANESE WITH PS2 MENUS ONLY", /* test 98: JAPANESE draws the PS2's 16x16 font in the
-	                                                        * PS2 look's description box only */
+	"HELP TEXT LANGUAGE", /* test 144: arcade menu style gone */
 	"CLEAR EVERY HIGH SCORE TABLE",         /* test 101; armed: "CONFIRM? A = YES, B = NO" (sm_draw) */
-	"OFF = NOTHING WRITTEN TO THE\nPROFILE (FOR AN ONLINE PROFILE)", /* test 106 */
+	"XBOX STYLE ACHIEVEMENTS\n(NOT RECOMMENDED FOR\nONLINE PROFILES)", /* test 144 */
 	"WHERE THE TOASTS POP UP\nA = TEST TOAST",                      /* test 106; test 111: the probes gone (route K at the start) */
 	"CAN'T SKIP STAFF ROLL AND INITIALS\nENTRY SCREEN WITH START",      /* test 109; test 110: the user's */
-	"SHIPS CANNOT BE HIT\nACHIEVEMENTS STILL COUNT",                 /* test 108: EX-DEBUG */
-	"FULL BOMB STOCK KEPT\nACHIEVEMENTS STILL COUNT",
-	"PLAYER = THE SHIP'S HITBOX\nALL = ENEMIES, BULLETS, SHOTS TOO",
-	"LIVES NEVER RUN OUT\nACHIEVEMENTS STILL COUNT",                 /* test 110 */
+	"PLAYER SHIPS CANNOT BE HIT",                 /* test 138 B3 */
+	"BOMB STOCK NEVER RUNS OUT",
+	"SHOW HITBOXES\nPLAYER ONLY OR ALL",
+	"LIVES NEVER RUN OUT",                 /* test 131: CHEATS */
 	"ENABLE/DISABLE REPLAY SAVING",                                  /* test 118: the user's */
 	"ENABLE/DISABLE THE ATTRACT DEMOS\nONLY FROM THE NEXT POWER ON", /* test 121: the user's (ibara, Kuro BL); test 122 (user:
 	                                                                * "indicate it only takes effect after the next power on") */
-	"UP TO 1 FRAME LESS INPUT LAG\nCAUSES SCREEN TEARING", /* test 126: LOW LATENCY (the user's line 2) */
+	"REMOVES 1 FRAME OF INPUT LAG\n(CAUSES SCREEN TEARING)", /* test 144 */
 	"COLOR STYLE OF THE PICTURE\nMENUS KEEP THEIR COLORS",    /* test 126: SCREEN COLOR */
 	"STICK MOVEMENT IGNORED\nAROUND THE CENTER", /* test 126: STICK DEADZONE (enum entry, not shown) */
 	"FRAMES PER SECOND\nSHOWN / EMULATED", /* test 126 */
+	"CHEAT OPTIONS (NO SCORES,\nREPLAYS OR ACHIEVEMENTS)", /* test 138 B3 */
+	"ENABLE/DISABLE CONTINUE\nCOUNTDOWN", /* test 144 */
+	"INVINCIBLE DURING BOMBS", /* test 138 B3 */
+	"AUTOMATIC BOMB WHEN HIT\nFULL BOMBS ONLY",
+	"LOCK THE RANK AT\nITS STARTING VALUE",
+	"ADJUST PLAYER HITBOX SIZE",
+	"ENABLE/DISABLE ALL CHEATS", /* test 139: no CUSTOM sub-line */
+	"HALVE THE ENEMY BULLETS",
+	"ADJUST ENEMY BULLET SPEED",
+	"ADJUST ITEM FALL SPEED",
+	"ATTRACT MEDALS TO THE SHIP",
+	"ATTRACT ITEMS TO THE SHIP\nRELEASE = WHEN NOT SHOOTING",
+	"ADJUST ITEM MAGNET RANGE\nFULL = WHOLE SCREEN", /* test 136 */
+	"ADJUST MEDAL VALUE DROP\nWHEN A MEDAL IS LOST",
+	"ENEMY BULLET COLORS", /* test 137 B2: BULLET COLOURS help */
+	"TOTALS OF ALL YOUR RUNS", /* test 143: BATTLE HISTORY help shortened */
+	"INSANITY DVD BOOK", /* test 138 E */
+	"CLEAR THIS GAME'S\nBATTLE HISTORY", /* test 145 */
 };
 /* test 67: [0] the options, [1] the debug menu; ending at OPT_N; test 68: SOUND after CONTROLS. Test 69 (user: "gadgets
  * on/off option is obsolete since the M3 gadgets options have an all/off toggle", "back in a run option is obsolete"):
@@ -2205,10 +2268,11 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
 #define OPT_PAGE_SCREEN 2
 #define OPT_PAGE_GENERAL 3
 #define OPT_PAGE_OPTIONS 4 /* test 88: OPTIONS (the menu's settings pages) */
-#define OPT_PAGE_PAUSE 5   /* test 100: the pause's OPTIONS (OPTIONS' rows but DEBUG MENU) */
-#define OPT_PAGE_EXDBG 6  /* test 108: EX-DEBUG (RB held + A on DEBUG MENU); test 112: LB + RB held + A */
-#define EXDBG_OPEN 0      /* test 119 (user: "disable access to ex-debug (but keep it in the game)"): 1 = LB + RB + A opens it */
-#define OPT_PAGES 7
+#define OPT_PAGE_PAUSE 5   /* test 100: the pause's OPTIONS (OPTIONS' rows but OTHER SETTINGS) */
+#define OPT_PAGE_EXDBG 6  /* test 108: EX-DEBUG (RB held + A on OTHER SETTINGS); test 112: LB + RB held + A */
+#define OPT_PAGE_CHEATS 7 /* test 131: CHEATS (below OTHER SETTINGS) */
+#define EXDBG_OPEN 0      /* test 134: EX-DEBUG removed (LB + RB + A opens nothing; the ini keeps its * rows) */
+#define OPT_PAGES 8
 /* test 72: no GAME MENU row in a one-game image (the launcher chooses), GAME SELECT at the options' end instead */
 #ifdef IB_GAME
 #define OPT_GAME_ROW
@@ -2228,7 +2292,7 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
  * choice: both; GENERAL SCREEN without M3 GADGETS, ARRANGE's BULLET DESIGN last).
  * test 124: OPT_GENERAL_ROWS = PICTURE/SIZE rows, ROTATION, SCANLINES, STRENGTH, BRIGHTNESS, FILTER, SCREEN COLOR, LOW
  * LATENCY, ASPECT RATIO (and the pause's SCREEN / GENERAL SCREEN pages use it) */
-#define OPT_GENERAL_ROWS OPT_PIC_ROWS, OPT_TATE, OPT_SCANLINES, OPT_STRENGTH, OPT_BRIGHT, OPT_SMOOTH, OPT_COLOR, OPT_ASPECT
+#define OPT_GENERAL_ROWS OPT_PIC_ROWS, OPT_TATE, OPT_SCANLINES, OPT_STRENGTH, OPT_BRIGHT, OPT_SMOOTH, OPT_COLOR, OPT_ASPECT, OPT_BCOL
 /* test 98: MENU STYLE, LANGUAGE after ASPECT RATIO (the screen's look; the ini keeps them for all four .xex); test 102
  * (user: "language option should be at the bottom of the options page, below debug menu, instead of general screen"):
  * GENERAL SCREEN without LANGUAGE, OPTIONS' last row; the pause's SCREEN page keeps it (the pause has no other place).
@@ -2238,53 +2302,45 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
 #define OPT_SCREEN_ROWS OPT_GENERAL_ROWS
 /* test 100 (user's list: "all three game's pause menu should have "options" selection with controls, screen, gadgets
  * and sound (in the same order as the main menu's options menu) instead of an extended pause menu") */
-/* test 125: STICK DEADZONE moved to the P1 / P2 CONTROLS pages (per player); test 126: LOW LATENCY above LANGUAGE */
-#define OPT_PAUSE_ROWS OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_LOWLAG, OPT_LANG
+/* test 125: STICK DEADZONE moved to the P1 / P2 CONTROLS pages (per player); test 126: LOW LATENCY above LANGUAGE;
+ * test 139 I: pause OPTIONS without LOW LATENCY and LANGUAGE (they stay in OTHER SETTINGS) */
+#define OPT_PAUSE_ROWS OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND
 static const unsigned char opt_rows_ib[OPT_PAGES][18] = { /* test 71: P2 CONTROLS after P1's; test 81: PLAY first */
-	{OPT_PLAY, OPT_TRAIN, OPT_LOAD, OPT_REPLAYS, OPT_OPTIONS, OPT_GSEL_ROW OPT_N},
-	/* test 106: ACHIEVEMENTS, ACHIEVEMENT TOAST; test 109: STAFF ROLL; test 110 (user: "move initialize rankings to the
-	 * bottom, staff roll to the top after special mode"). Test 112 (user: "move service menu to the bottom of the debug
-	 * menu, before initialize rankings", "move achivements and toast options in the ex-debug menu", "move EEPROM save,
-	 * record, framelog and network log on the ex-debug menu"; DEBUG CARD is in their EX-DEBUG order too) */
-	{OPT_SPECIAL, OPT_STAFF, OPT_ATTRACT, OPT_FPS, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_ACH, OPT_N}, /* test 119 (user): ACHIEVEMENTS last;
-	                                                         * test 121: ATTRACT DEMO after STAFF ROLL (not ARRANGE: no demos); test 125: FPS after ATTRACT */
+	{OPT_PLAY, OPT_TRAIN, OPT_LOAD, OPT_REPLAYS, OPT_HIST, OPT_OPTIONS, OPT_GSEL_ROW OPT_N}, /* test 138 E; test 139 B: BOOK moved to OPTIONS */
+	/* test 131: OTHER SETTINGS (was DEBUG MENU); test 139 A: reordered */
+	{OPT_LOWLAG, OPT_CONTINUES, OPT_STAFF, OPT_ATTRACT, OPT_SPECIAL, OPT_ACH, OPT_FPS, OPT_LANG, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_HIST_INIT, OPT_N},
 	{OPT_SCREEN_ROWS, OPT_N}, /* test 100: M3 GADGETS on the pause's OPTIONS page */
 	{OPT_GENERAL_ROWS, OPT_N},
-	{OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_DEBUG, OPT_LOWLAG, OPT_LANG, OPT_N},
+	{OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_DEBUG, OPT_CHEATS, OPT_BOOK, OPT_N}, /* test 131; test 139 B: BOOK last */
 	{OPT_PAUSE_ROWS, OPT_N},
-	/* test 112 (user: "final order of ex debug menu should be: infinite lives, infinite bombs, invincible, hitboxes,
-	 * debug card, eeprom save, record, frame log, network log, achievements, toast") */
-	{OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXHIT, OPT_EXREPLAY, OPT_CARD, OPT_SAVE, OPT_RECORD, OPT_FRAMELOG, OPT_NETLOG,
-	 OPT_TOAST, OPT_N}, /* test 119: ACHIEVEMENTS on the debug menu */
+	{OPT_N}, /* test 134: EX-DEBUG page removed */
+	{OPT_EXALL, OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXBOMBINV, OPT_EXAUTOBOMB, OPT_EXFIXRANK, OPT_EXHITSIZE,
+	 OPT_EXFEWER, OPT_EXBSPEED, OPT_EXIFALL, OPT_EXSUCTION, OPT_EXMAGNET, OPT_EXMAGRANGE, OPT_EXMEDALPEN, OPT_EXHIT, OPT_N}, /* test 135: CHEATS; test 136 */
 };
 /* test 82 (user: "in "debug menu", delete "special mode"", "move "bullet design" to "general screen""): ARRANGE's */
 static const unsigned char opt_rows_arr[OPT_PAGES][18] = {
-	{OPT_PLAY, OPT_TRAIN, OPT_LOAD, OPT_REPLAYS, OPT_OPTIONS, OPT_GSEL_ROW OPT_N},
-	/* test 102 (user: "ibara arrange shouldn't have the service menu accessible, since it didn't exist on PS2"):
-	 * no SERVICE MENU row */
-	{OPT_FPS, OPT_STAFF, OPT_GAME_ROW OPT_RANKS, OPT_ACH, OPT_N}, /* test 112: the rest on EX-DEBUG; test 119: ACHIEVEMENTS last; test 125: FPS first (ARRANGE has no ATTRACT) */
+	{OPT_PLAY, OPT_TRAIN, OPT_LOAD, OPT_REPLAYS, OPT_HIST, OPT_OPTIONS, OPT_GSEL_ROW OPT_N}, /* test 138 E; test 139 B: BOOK moved to OPTIONS */
+	/* test 131: OTHER SETTINGS; test 102: no SERVICE MENU; test 139 A: reordered (no ATTRACT/SPECIAL/SERVICE) */
+	{OPT_LOWLAG, OPT_CONTINUES, OPT_STAFF, OPT_ACH, OPT_FPS, OPT_LANG, OPT_GAME_ROW OPT_RANKS, OPT_HIST_INIT, OPT_N},
 	{OPT_SCREEN_ROWS, OPT_N},
-	{OPT_GENERAL_ROWS, OPT_BULLETS, OPT_N},
-	{OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_DEBUG, OPT_LOWLAG, OPT_LANG, OPT_N},
+	{OPT_GENERAL_ROWS, OPT_N}, /* test 143: BULLET DESIGN row removed */
+	{OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_DEBUG, OPT_CHEATS, OPT_BOOK, OPT_N}, /* test 131; test 139 B: BOOK last */
 	{OPT_PAUSE_ROWS, OPT_N},
-	/* test 112 (user: "final order of ex debug menu should be: infinite lives, infinite bombs, invincible, hitboxes,
-	 * debug card, eeprom save, record, frame log, network log, achievements, toast") */
-	{OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXHIT, OPT_EXREPLAY, OPT_CARD, OPT_SAVE, OPT_RECORD, OPT_FRAMELOG, OPT_NETLOG,
-	 OPT_TOAST, OPT_N}, /* test 119: ACHIEVEMENTS on the debug menu */
+	{OPT_N}, /* test 134: EX-DEBUG page removed */
+	{OPT_EXALL, OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXBOMBINV, OPT_EXAUTOBOMB, OPT_EXFIXRANK, OPT_EXHITSIZE,
+	 OPT_EXFEWER, OPT_EXBSPEED, OPT_EXIFALL, OPT_EXSUCTION, OPT_EXMAGNET, OPT_EXMAGRANGE, OPT_EXMEDALPEN, OPT_EXHIT, OPT_N}, /* test 135: CHEATS; test 136 */
 };
 static const unsigned char opt_rows_blk[OPT_PAGES][18] = { /* test 60: GADGETS; 64: M3; 70: PLAYER in the start menu */
-	{OPT_PLAY, OPT_TRAIN, OPT_LOAD, OPT_REPLAYS, OPT_OPTIONS, OPT_GSEL_ROW OPT_N},
-	{OPT_STAFF, OPT_ATTRACT, OPT_FPS, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_ACH, OPT_N}, /* test 121: ATTRACT DEMO after STAFF ROLL; test 119: ACHIEVEMENTS last; test 110: STAFF ROLL first (Kuro BL's addresses found),
-	                                                         * INITIALIZE RANKINGS last; test 112: SERVICE MENU before it,
-	                                                         * the rest on EX-DEBUG; test 125: FPS after ATTRACT */
+	{OPT_PLAY, OPT_TRAIN, OPT_LOAD, OPT_REPLAYS, OPT_HIST, OPT_OPTIONS, OPT_GSEL_ROW OPT_N}, /* test 138 E; test 139 B: BOOK moved to OPTIONS */
+	/* test 131: OTHER SETTINGS; test 139 A: reordered (no SPECIAL) */
+	{OPT_LOWLAG, OPT_CONTINUES, OPT_STAFF, OPT_ATTRACT, OPT_ACH, OPT_FPS, OPT_LANG, OPT_GAME_ROW OPT_SERVICE, OPT_RANKS, OPT_HIST_INIT, OPT_N},
 	{OPT_SCREEN_ROWS, OPT_N}, /* test 100: M3 GADGETS on the pause's OPTIONS page */
 	{OPT_GENERAL_ROWS, OPT_N},
-	{OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_DEBUG, OPT_LOWLAG, OPT_LANG, OPT_N},
+	{OPT_SCREEN, OPT_M3, OPT_CONTROLS, OPT_CONTROLS2, OPT_SOUND, OPT_DEBUG, OPT_CHEATS, OPT_BOOK, OPT_N}, /* test 131; test 139 B: BOOK last */
 	{OPT_PAUSE_ROWS, OPT_N},
-	/* test 112 (user: "final order of ex debug menu should be: infinite lives, infinite bombs, invincible, hitboxes,
-	 * debug card, eeprom save, record, frame log, network log, achievements, toast") */
-	{OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXHIT, OPT_EXREPLAY, OPT_CARD, OPT_SAVE, OPT_RECORD, OPT_FRAMELOG, OPT_NETLOG,
-	 OPT_TOAST, OPT_N}, /* test 119: ACHIEVEMENTS on the debug menu */
+	{OPT_N}, /* test 134: EX-DEBUG page removed */
+	{OPT_EXALL, OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXBOMBINV, OPT_EXAUTOBOMB, OPT_EXFIXRANK, OPT_EXHITSIZE,
+	 OPT_EXFEWER, OPT_EXBSPEED, OPT_EXIFALL, OPT_EXSUCTION, OPT_EXMAGNET, OPT_EXMAGRANGE, OPT_EXMEDALPEN, OPT_EXHIT, OPT_N}, /* test 135: CHEATS; test 136 */
 };
 static int lay_quiet; /* test 88: the picture's rows rebuild the layouts as they go: no PICTURE line each time */
 static int opt_page;               /* test 67: 0 = the options, 1 = the debug menu; test 69: 2 = the pause's SCREEN;
@@ -2293,6 +2349,66 @@ static int opt_page;               /* test 67: 0 = the options, 1 = the debug me
 /* test 108: EX-DEBUG's settings (this power-on only, never in the ini: a run is never cheated by surprise) */
 static int ex_inv, ex_infb, ex_hit; /* INVINCIBLE, INFINITE BOMBS, HITBOX (OFF, PLAYER, ALL as TRAINING's) */
 static int ex_lives;                /* test 110: INFINITE LIVES */
+static int ex_bombinv, ex_autobomb, ex_fixrank; /* test 134 */
+static int ex_hitsize = 3; /* test 135: 100% */
+static int ex_fewer, ex_suction; /* test 135: batch 2 */
+static int ex_bspeed = 5;        /* index: pct = 50 + 10 * index */
+static int ex_ifall = 2;         /* index into {50, 75, 100, 125, 150, 200} */
+static int ex_magnet =
+#if defined(IB_GAME) && IB_GAME == 1
+	0;
+#else
+	1; /* test 136: ibara/ARRANGE OFF, Kuro BL DEFAULT */
+#endif
+static int ex_medalpen;
+static int ex_magrange;          /* test 136: 0 CLOSE, 1 FULL SCREEN */
+static const unsigned ex_hitsize_pct[7] = {25, 50, 75, 100, 150, 200, 300}; /* test 134 */
+static int ex_program_ib(void)
+{
+	return game_set == SET_IBARA; /* test 136: ibara and ARRANGE (ib true), Kuro BL (!ib) */
+}
+static int magnet_start(void)
+{
+	return ex_program_ib() ? 1 : 0; /* test 136: ibara/ARRANGE OFF, Kuro BL DEFAULT */
+}
+/* test 135: AUTOBOMB (ex_vblank sets ab_press, inputs_update holds the bomb button) */
+static int ab_press[2], ab_left[2], ab_bomb[2], ab_seen[2], ab_off[2];
+static unsigned shot_age[2]; /* test 135: batch 2, 0x10 (shot) held frames, for ITEM MAGNETISM RELEASE */
+/* test 134: FIXED RANK */
+static int fr_have;
+static uint32_t fr_rank;
+/* test 131: a cheated run (any CHEATS row on while playing): no replay, no initials/ranking, SCORE red */
+static int cheat_run;
+
+/* test 134: any CHEATS row away from its start value (HITBOXES counts: user) */
+static int cheats_on(void)
+{
+	return ex_inv || ex_infb || ex_lives || ex_hit || ex_bombinv || ex_autobomb || ex_fixrank || ex_hitsize != 3 ||
+	       ex_fewer || ex_suction || ex_bspeed != 5 || ex_ifall != 2 || ex_magnet != magnet_start() || ex_medalpen; /* test 135, 136 */
+}
+/* test 135: ALL CHEATS: every OFF/ON cheat on (HITBOXES = ALL), or every cheat back to its start value */
+static int cheats_all_on(void)
+{
+	return ex_inv && ex_infb && ex_lives && ex_hit == HITBOX_ALL && ex_bombinv && ex_autobomb && ex_fixrank &&
+	       ex_fewer && ex_suction; /* test 135: batch 2 */
+}
+static void cheats_set_all(int on)
+{
+	ex_inv = ex_infb = ex_lives = ex_bombinv = ex_autobomb = ex_fixrank = on ? 1 : 0;
+	ex_hit = on ? HITBOX_ALL : 0;
+	ex_fewer = ex_suction = on ? 1 : 0; /* test 135: batch 2 */
+	if (!on) {
+		ex_hitsize = 3;
+		ex_bspeed = 5;
+		ex_ifall = 2;
+		ex_magnet = magnet_start(); /* test 136 */
+		ex_medalpen = 0;
+		ex_magrange = 0; /* test 136 */
+	}
+	ab_press[0] = ab_press[1] = ab_left[0] = ab_left[1] = ab_bomb[0] = ab_bomb[1] = 0;
+	ab_seen[0] = ab_seen[1] = ab_off[0] = ab_off[1] = 0;
+	cfx_reset(); /* test 135: batch 2 */
+}
 static int opt_sels[OPT_PAGES];    /* the highlighted row of each page (an index into the game's rows) */
 static int menu_paused;            /* test 69: the pages are the pause menu's (sm_draw's lines, SOUND without tests) */
 static int opt_changes;            /* changes since the page opened */
@@ -2345,19 +2461,36 @@ static const unsigned char *opt_rowlist(void)
 	return ARR ? opt_rows_arr[opt_page] : game_set == SET_IBARA ? opt_rows_ib[opt_page] : opt_rows_blk[opt_page];
 }
 
+static int opt_hide_bcol(void)
+{
+	return menu_paused && opt_page == OPT_PAGE_SCREEN; /* test 141: no BULLET COLORS in the pause */
+}
+
 static int opt_nrows(void)
 {
 	const unsigned char *r = opt_rowlist();
-	int n = 0;
+	const int hide = opt_hide_bcol();
+	int n = 0, i;
 
-	while (r[n] != OPT_N)
-		n++;
+	for (i = 0; r[i] != OPT_N; i++)
+		if (!hide || r[i] != OPT_BCOL)
+			n++;
 	return n;
 }
 
 static int opt_row(int k)
 {
-	return opt_rowlist()[k];
+	const unsigned char *r = opt_rowlist();
+	const int hide = opt_hide_bcol();
+	int n = 0, i;
+
+	for (i = 0; r[i] != OPT_N; i++) {
+		if (hide && r[i] == OPT_BCOL)
+			continue;
+		if (n++ == k)
+			return r[i];
+	}
+	return OPT_N;
 }
 
 /* test 55: AUTO SHOT's rate (ibara's ini; Kuro BL's 30 Hz of test 48) and its cycle in game frames:
@@ -2379,6 +2512,15 @@ static const char *const filter_names[4] = {"NEAREST", "BILINEAR", "BICUBIC", "L
 static const char *const color_names[6] = {"STANDARD", "FLAT", "MONOTONE", "SEPIA", "OUTLINE", "NEGATIVE"}; /* test 124 */
 /* test 125: STICK DEADZONE is per player on the CONTROLS pages (percent 0..95) */
 static void bullets_step(int d);
+
+/* test 137 B2; test 138 C4; test 139 D; test 141 D: BULLET COLORS sub-menu (per bullet type presets) */
+enum { BCOLK_COLORS, BCOLK_MODE, BCOLK_PPRESET, BCOLK_PR, BCOLK_PG, BCOLK_PB, BCOLK_SPRESET, BCOLK_SR, BCOLK_SG, BCOLK_SB, BCOLK_RESET };
+static int bcol_nrows(void);
+static void bcol_step(int r, int d);
+static void bcol_slider_step(int r, int d);
+static int bcol_slider_row(int r);
+static void bcol_close(void);
+static int bcol_edit_harder(void); /* 0 ARCADE, 1 HARDER/ARRANGE: the mode/pair being edited */
 
 /* row i's value as the page shows it (14 characters at most) */
 static void opt_value(int i, char *s, size_t n)
@@ -2408,6 +2550,7 @@ static void opt_value(int i, char *s, size_t n)
 	case OPT_LOWLAG: snprintf(s, n, "%s", cfg.low_lag ? "ON" : "OFF"); break; /* test 124 */
 	case OPT_DEADZONE: snprintf(s, n, "%d%%", cfg.deadzone[0]); break; /* test 125: not shown on the options pages */
 	case OPT_FPS: snprintf(s, n, "%s", cfg.fps_counter ? "ON" : "OFF"); break; /* test 125 */
+	case OPT_CONTINUES: snprintf(s, n, "%s", cfg.continues ? "ON" : "OFF"); break; /* test 132 */
 	case OPT_ASPECT:
 		snprintf(s, n, "%s", cfg.aspect == ASPECT_4_3 ? "4:3" : cfg.aspect == ASPECT_16_9 ? "16:9" :
 		         vmode.is_widescreen ? "AUTO (16:9)" : "AUTO (4:3)");
@@ -2423,16 +2566,18 @@ static void opt_value(int i, char *s, size_t n)
 	case OPT_BACK: snprintf(s, n, "%s", cfg.back_pause ? "PAUSE" : "COIN"); break;
 	case OPT_PLAYER: snprintf(s, n, "%dP SIDE", sm_side + 1); break;
 	case OPT_GADGETS: snprintf(s, n, "%s", cfg.gadgets ? "ON" : "OFF"); break;
-	case OPT_CONTROLS: case OPT_CONTROLS2: case OPT_M3: case OPT_DEBUG: case OPT_SOUND: case OPT_SCREEN: /* test 70: no
+	case OPT_CONTROLS: case OPT_CONTROLS2: case OPT_M3: case OPT_DEBUG: case OPT_SOUND: case OPT_SCREEN: case OPT_CHEATS: /* test 70: no
 	                                                                                                   * "A = OPEN" */
 	case OPT_GSEL: /* test 72 */
 	case OPT_PLAY: /* test 81 */
 	case OPT_LOAD: /* test 84 */
 	case OPT_SERVICE: /* test 85 */
 	case OPT_RANKS:   /* test 101 */
+	case OPT_HIST_INIT:   /* test 145 */
 	case OPT_OPTIONS: /* test 89 (user's todo list: "remove green line "ask" next to options": test 88 left it to the
 	                   * default case, GAME MENU's value) */
 	case OPT_TRAIN:   /* test 89 */
+	case OPT_BOOK:    /* test 138 E: no value (like the other A-opens rows) */
 		s[0] = 0;
 		break;
 	case OPT_REPLAYS: /* test 86: how many; test 87: of RP_KEEP */
@@ -2441,7 +2586,10 @@ static void opt_value(int i, char *s, size_t n)
 		else
 			s[0] = 0;
 		break;
-	case OPT_BULLETS: snprintf(s, n, "%s", bullet_names[cfg.arr_bullets % 3]); break; /* test 82 */
+	/* test 143: BULLET DESIGN row removed, dead code */
+	case OPT_BCOL: /* test 138 B2: EDIT (N/A where the game's bullet pages were not found) */
+		snprintf(s, n, "%s", !bulletcol_ok() ? "N/A" : "EDIT");
+		break;
 	case OPT_GAME: snprintf(s, n, "%s", cfg.game == GAME_ASK ? "ASK" : cfg.game == SET_IBARA ? "IBARA" : "KURO BL"); break;
 	case OPT_STYLE: snprintf(s, n, "PS2"); break; /* test 120: retained index, fixed menu style */
 	case OPT_LANG: snprintf(s, n, "%s", cfg.language == LANG_JAPANESE ? "JAPANESE" : "ENGLISH"); break;
@@ -2452,9 +2600,84 @@ static void opt_value(int i, char *s, size_t n)
 	case OPT_EXINV: snprintf(s, n, "%s", ex_inv ? "ON" : "OFF"); break; /* test 108 */
 	case OPT_EXINFB: snprintf(s, n, "%s", ex_infb ? "ON" : "OFF"); break;
 	case OPT_EXLIVES: snprintf(s, n, "%s", ex_lives ? "ON" : "OFF"); break; /* test 110 */
+	case OPT_EXBOMBINV: snprintf(s, n, "%s", ex_bombinv ? "ON" : "OFF"); break; /* test 134 */
+	case OPT_EXAUTOBOMB: snprintf(s, n, "%s", ex_autobomb ? "ON" : "OFF"); break; /* test 134 */
+	case OPT_EXFIXRANK: snprintf(s, n, "%s", ex_fixrank ? "ON" : "OFF"); break; /* test 134 */
+	case OPT_EXHITSIZE: /* test 135: 100% */
+		snprintf(s, n, "%u%%", ex_hitsize_pct[ex_hitsize]);
+		break;
+	case OPT_EXFEWER: snprintf(s, n, "%s", ex_fewer ? "ON" : "OFF"); break; /* test 135: batch 2 */
+	case OPT_EXBSPEED: snprintf(s, n, "%u%%", 50u + 10u * (unsigned)ex_bspeed); break;
+	case OPT_EXIFALL: {
+		static const unsigned ifall_pct[6] = {50, 75, 100, 125, 150, 200};
+		snprintf(s, n, "%u%%", ifall_pct[ex_ifall]);
+		break;
+	}
+	case OPT_EXSUCTION: snprintf(s, n, "%s", ex_suction ? "ON" : "OFF"); break;
+	case OPT_EXMAGNET:
+		snprintf(s, n, "%s", ex_magnet == 1 ? "OFF" : ex_magnet == 2 ? "RELEASE" : ex_magnet == 3 ? "ALWAYS" : "DEFAULT");
+		break;
+	case OPT_EXMAGRANGE: /* test 136 */
+		snprintf(s, n, "%s", ex_magrange ? "FULL" : "CLOSE");
+		break;
+	case OPT_EXMEDALPEN:
+		snprintf(s, n, "%s", ex_medalpen == 1 ? "LOWEST" : ex_medalpen == 2 ? "5 DOWN" : ex_medalpen == 3 ? "3 DOWN" : "DEFAULT");
+		break;
+	case OPT_EXALL: /* test 135, 136 */
+		snprintf(s, n, "%s", cheats_all_on() ? "ON" : !cheats_on() ? "OFF" : "CUSTOM");
+		break;
 	case OPT_EXHIT: snprintf(s, n, "%s", ex_hit == HITBOX_ALL ? "ALL" : ex_hit ? "PLAYER" : "OFF"); break;
 	case OPT_EXREPLAY: snprintf(s, n, "%s", cfg.replay_save ? "ON" : "OFF"); break; /* test 118 */
 	default: s[0] = 0; break; /* test 89: a row without a value shows none */
+	}
+}
+
+/* test 138 D: widest possible value any row can show (so the fixed column does not move) */
+static int opt_value_maxw(int i)
+{
+	switch (i) {
+	case OPT_SPECIAL: return 14; /* "NOT IN ARRANGE" */
+	case OPT_PICTURE: return 7;  /* "INTEGER" */
+	case OPT_PSIZE: case OPT_PXSIZE: case OPT_PYSIZE: return 6; /* "300.0%" */
+	case OPT_PXPOS: case OPT_PYPOS: return 5; /* "-2000" */
+	case OPT_SMOOTH: return 8; /* "BILINEAR" */
+	case OPT_BRIGHT: return 4; /* "150%" */
+	case OPT_TATE: return 11; /* "UPSIDE DOWN" */
+	case OPT_COLOR: return 8; /* "STANDARD" */
+	case OPT_ASPECT: return 10; /* "AUTO (16:9)" */
+	case OPT_STRENGTH: return 4; /* "100%" */
+	case OPT_NETLOG: return 16; /* "OFF (PORT 65535)" */
+	case OPT_AUTOFIRE: return 6; /* "30 HZ" */
+	case OPT_BACK: return 5; /* "PAUSE" */
+	case OPT_PLAYER: return 7; /* "2P SIDE" */
+	case OPT_REPLAYS: return 5; /* "10/10" */
+	/* test 143: BULLET DESIGN row removed, dead code */
+	case OPT_BCOL: return 4; /* "EDIT" */
+	case OPT_GAME: return 7; /* "KURO BL" */
+	case OPT_STYLE: return 3; /* "PS2" */
+	case OPT_LANG: return 8; /* "JAPANESE" */
+	case OPT_STAFF: return 9; /* "SKIPPABLE" */
+	case OPT_EXHIT: return 6; /* "PLAYER" */
+	case OPT_EXHITSIZE: return 4; /* "200%" */
+	case OPT_EXBSPEED: return 4; /* "150%" */
+	case OPT_EXIFALL: return 4; /* "200%" */
+	case OPT_EXMAGNET: return 7; /* "RELEASE" */
+	case OPT_EXMAGRANGE: return 5; /* "CLOSE" */
+	case OPT_EXMEDALPEN: return 7; /* "DEFAULT" */
+	case OPT_EXALL: return 6; /* "CUSTOM" */
+	case OPT_TOAST: { /* test 106: widest toast position name */
+		int m = 0, j;
+		for (j = 0; j < ACHX_TOAST_N; j++) {
+			int l = (int)strlen(achx_toast_name(j));
+			if (l > m) m = l;
+		}
+		return m;
+	}
+	default: {
+		char v[40];
+		opt_value(i, v, sizeof(v));
+		return (int)strlen(v);
+	}
 	}
 }
 
@@ -2503,6 +2726,7 @@ static void opt_step(int i, int d)
 	case OPT_CONTROLS2:
 	case OPT_M3:
 	case OPT_DEBUG:
+	case OPT_CHEATS: /* test 131 */
 	case OPT_SOUND:
 	case OPT_SCREEN:
 	case OPT_GSEL: /* test 72: sm_frame arms it, then asks for the launcher */
@@ -2510,7 +2734,10 @@ static void opt_step(int i, int d)
 	case OPT_LOAD: /* test 84: and the SLOTS page */
 	case OPT_SERVICE: /* test 85: sm_frame arms it, then presses S3 (svc_left) */
 	case OPT_RANKS:   /* test 101: sm_frame arms it, then rank_init */
+	case OPT_HIST_INIT:   /* test 145 */
 	case OPT_OPTIONS: case OPT_TRAIN: /* test 89: pages (sm_frame) */
+	case OPT_BCOL: /* test 138 B2: value is EDIT; LEFT/RIGHT do nothing (test 146: return, no change counted) */
+	case OPT_BOOK: /* test 138 E */
 	case OPT_PSIZE: case OPT_PXSIZE: case OPT_PYSIZE: case OPT_PXPOS: case OPT_PYPOS: /* test 89: pic_input */
 		return;
 	case OPT_SMOOTH: cfg.smooth = (cfg.smooth + 4 + d) % 4; break; /* test 124: FILTER (present() reads it) */
@@ -2521,9 +2748,7 @@ static void opt_step(int i, int d)
 		cfg.brightness = d > 0 ? (cfg.brightness / 5 + 1) * 5 : ((cfg.brightness + 4) / 5 - 1) * 5;
 		cfg.brightness = cfg.brightness < BRIGHT_MIN ? BRIGHT_MIN : cfg.brightness > BRIGHT_MAX ? BRIGHT_MAX : cfg.brightness;
 		break;
-	case OPT_BULLETS: /* test 82: host_set logs it and counts the change */
-		bullets_step(d);
-		return;
+	/* test 143: BULLET DESIGN row removed, dead code */
 	case OPT_PLAYER: /* test 55: not an ini setting, kept between games as ibara's start menu's */
 		sm_side ^= 1;
 		log_printf(C_WHITE, "OPTIONS: PLAYER %dP SIDE (EMU %u)", sm_side + 1, (unsigned)frame_count);
@@ -2537,19 +2762,84 @@ static void opt_step(int i, int d)
 	case OPT_STAFF: cfg.staff_keep ^= 1; break; /* test 109: sm_frame reads it */
 	case OPT_ATTRACT: cfg.attract_demo ^= 1; break; /* test 121: attract_hold reads it (the title's timeout) */
 	case OPT_FPS: cfg.fps_counter ^= 1; break; /* test 125 */
+	case OPT_CONTINUES: /* test 132 */
+		cfg.continues ^= 1;
+		opt_changes++;
+		log_printf(C_WHITE, "OPTIONS: CONTINUES %s (EMU %u)", cfg.continues ? "ON" : "OFF", (unsigned)frame_count);
+		return;
 	case OPT_EXREPLAY: cfg.replay_save ^= 1; break; /* test 118: an ini setting (a run's end reads it) */
-	case OPT_EXINV: case OPT_EXINFB: case OPT_EXHIT: case OPT_EXLIVES: /* test 108: not ini settings (no opt_changes,
-	                                                                     * no save) */
-		if (i == OPT_EXLIVES)
+	case OPT_EXINV: case OPT_EXINFB: case OPT_EXHIT: case OPT_EXLIVES:
+	case OPT_EXBOMBINV: case OPT_EXAUTOBOMB: case OPT_EXFIXRANK: case OPT_EXHITSIZE: case OPT_EXALL:
+	case OPT_EXFEWER: case OPT_EXBSPEED: case OPT_EXIFALL: case OPT_EXSUCTION: case OPT_EXMAGNET: case OPT_EXMAGRANGE: case OPT_EXMEDALPEN: /* test 135, 136 */
+		if (i == OPT_EXALL) { /* test 136: CUSTOM shown, never chosen */
+			if (cheats_all_on())
+				cheats_set_all(0);
+			else if (!cheats_on())
+				cheats_set_all(1);
+			else
+				cheats_set_all(d > 0);
+		} else if (i == OPT_EXLIVES)
 			ex_lives ^= 1;
 		else if (i == OPT_EXINV)
 			ex_inv ^= 1;
 		else if (i == OPT_EXINFB)
 			ex_infb ^= 1;
-		else
+		else if (i == OPT_EXBOMBINV)
+			ex_bombinv ^= 1;
+		else if (i == OPT_EXAUTOBOMB) {
+			ex_autobomb ^= 1;
+			if (!ex_autobomb) { /* test 135 */
+				ab_press[0] = ab_press[1] = 0;
+				ab_left[0] = ab_left[1] = 0;
+				ab_bomb[0] = ab_bomb[1] = 0;
+				ab_seen[0] = ab_seen[1] = 0;
+				ab_off[0] = ab_off[1] = 0;
+			}
+		} else if (i == OPT_EXFIXRANK)
+			ex_fixrank ^= 1;
+		else if (i == OPT_EXHITSIZE) {
+			int hs = ex_hitsize + d;
+			if (hs < 0) hs = 0;
+			if (hs > 6) hs = 6;
+			ex_hitsize = hs;
+		} else if (i == OPT_EXFEWER) {
+			ex_fewer ^= 1; /* test 135: batch 2 */
+		} else if (i == OPT_EXSUCTION) {
+			ex_suction ^= 1;
+		} else if (i == OPT_EXBSPEED) {
+			int v = ex_bspeed + d;
+			if (v < 0) v = 0;
+			if (v > 10) v = 10;
+			ex_bspeed = v;
+		} else if (i == OPT_EXIFALL) {
+			int v = ex_ifall + d;
+			if (v < 0) v = 0;
+			if (v > 5) v = 5;
+			ex_ifall = v;
+		} else if (i == OPT_EXMAGNET) { /* test 136: per program, stop at ends */
+			static const int ib_seq[3] = {1, 2, 3};   /* OFF, RELEASE, ALWAYS */
+			static const int blk_seq[3] = {0, 1, 3};  /* DEFAULT, OFF, ALWAYS */
+			const int *seq = ex_program_ib() ? ib_seq : blk_seq;
+			int k;
+			for (k = 0; k < 3 && seq[k] != ex_magnet; k++)
+				;
+			if (k == 3)
+				k = 0;
+			k += d > 0 ? 1 : -1;
+			if (k < 0) k = 0;
+			if (k > 2) k = 2;
+			ex_magnet = seq[k];
+		} else if (i == OPT_EXMAGRANGE) { /* test 136 */
+			ex_magrange ^= 1;
+		} else if (i == OPT_EXMEDALPEN) {
+			int v = ex_medalpen + d;
+			if (v < 0) v = 0;
+			if (v > 3) v = 3;
+			ex_medalpen = v;
+		} else
 			ex_hit = (ex_hit + 3 + d) % 3;
 		opt_value(i, v, sizeof(v));
-		log_printf(C_YELLOW, "EX-DEBUG: %s %s (EMU %u)", opt_names[i], v, (unsigned)frame_count);
+		log_printf(C_YELLOW, "CHEATS: %s %s (EMU %u)", opt_names[i], v, (unsigned)frame_count); /* test 134 */
 		return;
 	default: return; /* test 89: no row changes GAME MENU but its own */
 	}
@@ -2663,6 +2953,7 @@ static void opt_open(void)
 	svc_armed = 0;  /* test 85 */
 	rk_armed = rk_said = 0; /* test 101 */
 	ac_armed = 0;           /* test 106 */
+	hi_armed = hi_said = 0; /* test 145 */
 	if (opt_sels[0] >= opt_nrows())
 		opt_sels[0] = 0;
 }
@@ -2682,7 +2973,7 @@ static void controls_apply(void)
 		const int *c = cfg.ctl[p][CTL_SET];
 		for (i = 0; i < CTL_N; i++)
 			ctl_bits[p][i] = fn_bits[c[i]];
-		lb_hash[p] = c[CTL_LB] == FN_OFF;
+		/* test 143: lb_hash removed */
 		for (k = 0; k < GD_KEYS; k++) {
 			size_t n = 0;
 			gd_keys[p][k][0] = 0;
@@ -2722,6 +3013,7 @@ static const char *card_button(void)
  * leaving and is in the ini meanwhile) */
 static int opt_leave(int restart)
 {
+	bcol_close(); /* test 137 B2: the bullet pages follow a changed BULLET COLOURS (once) */
 	if (opt_changes) {
 		settings_log("OPTIONS:");
 		controls_log("OPTIONS: CONTROLS");
@@ -2833,19 +3125,20 @@ static void ctl_step(int row, int d)
  * option as well, by pressing left/right instead of A"): the ALL row's LEFT / RIGHT turn every gadget of the game off
  * when all are on, else on (its value ON / OFF / MIXED); A does nothing there. */
 static int gp_sel;
-#define GP_STAGE (GD_N + 2) /* test 121 item 5: the STAGE MAP row, the page's first */
+#define GP_STAGE (GD_N + 3) /* test 121 item 5: the STAGE MAP row, the page's first */
+#define GP_ZONES (GD_N + 2) /* test 137: NO ITEM ZONES (opens its sub-menu) */
 #define GP_COOP (GD_N + 1) /* test 71: the CO-OP row (user: "co-op gadgets, to be a separate toggle in the gadgets menu") */
 
 static int gp_nrows(void)
 {
-	int g, n = 3; /* + STAGE MAP, CO-OP, ALL (test 121 item 5) */
+	int g, n = 4; /* + STAGE MAP, CO-OP, NO ITEM ZONES, ALL (test 121 item 5; test 137) */
 
 	for (g = 0; g < GD_N; g++)
 		n += gadgets_in_game(g, game_set != SET_IBARA); /* test 76: XTC Kuro BL's */
 	return n;
 }
 
-/* row k's gadget (GP_COOP, then GD_N = ALL) */
+/* row k's gadget (GP_STAGE, GP_COOP, GP_ZONES, then GD_N = ALL) */ /* test 137 */
 static int gp_row(int k)
 {
 	int g;
@@ -2857,7 +3150,11 @@ static int gp_row(int k)
 	for (g = 0; g < GD_N; g++)
 		if (gadgets_in_game(g, game_set != SET_IBARA) && k-- == 0)
 			return g;
-	return k == 0 ? GP_COOP : GD_N;
+	if (k == 0)
+		return GP_COOP;
+	if (k == 1)
+		return GP_ZONES; /* test 137 */
+	return GD_N;
 }
 
 /* test 88 (user: "when doing this, the stick controls gadget is automatically disabled"): Kuro BL's XTC FULL leaves no
@@ -2889,6 +3186,10 @@ static int gp_all(void)
 	return on == n ? 1 : on == 0 ? 0 : -1;
 }
 
+/* test 137: NO ITEM ZONES helpers (defined below; used by gp_step / the GADGETS page) */
+static const char *zones_show_name(int s);
+static void zones_log_change(void);
+
 static void gp_open(void)
 {
 	sm_state = SM_GADG;
@@ -2914,6 +3215,11 @@ static void gp_step(int k, int d)
 	} else if (g == GP_COOP) { /* test 71: both players' gadgets while two play */
 		cfg.coop ^= 1;
 		log_printf(C_WHITE, "M3 GADGETS: CO-OP %s (EMU %u)", cfg.coop ? "ON" : "OFF", (unsigned)frame_count);
+	} else if (g == GP_ZONES) { /* test 137: cycle SHOW on the row; A opens the sub-menu (handled by callers) */
+		int was = cfg.zones_show;
+		cfg.zones_show = (cfg.zones_show + 4 + d) % 4;
+		if (cfg.zones_show != was)
+			zones_log_change();
 	} else if (g == GD_N) { /* test 68: every one of the game's off when all are on, else on */
 		const int on = gp_all() != 1;
 		for (i = 0; i < GD_N; i++)
@@ -2947,6 +3253,308 @@ static void gp_step(int k, int d)
 	opt_changes++;
 }
 
+/* test 137: NO ITEM ZONES sub-menu (M3 GADGETS, A on the NO ITEM ZONES row) */
+enum { ZN_SHOW, ZN_RED, ZN_GREEN, ZN_BLUE, ZN_ALPHA, ZN_RESET, ZN_N };
+static const char *const zn_names[ZN_N] = {"SHOW", "RED", "GREEN", "BLUE", "OPACITY", "RESET"};
+static const char *const zn_helps[ZN_N] = {
+	"SIDES, BOTTOM OR BOTH", "THE ZONES' COLOUR", "THE ZONES' COLOUR", "THE ZONES' COLOUR",
+	"HOW SEE-THROUGH THE ZONES ARE", "LEFT/RIGHT CHANGE",
+};
+static int zn_sel;
+
+static const char *zones_show_name(int s)
+{
+	switch (s) {
+	case 1: return "SIDES";
+	case 2: return "BOTTOM";
+	case 3: return "BOTH";
+	default: return "OFF";
+	}
+}
+
+static void zones_log_change(void)
+{
+	log_printf(C_YELLOW, "GADGETS: NO ITEM ZONES %s RGB %02x%02x%02x ALPHA %d%%", zones_show_name(cfg.zones_show),
+	           cfg.zones_r & 255, cfg.zones_g & 255, cfg.zones_b & 255, cfg.zones_alpha);
+}
+
+static void zn_open(void)
+{
+	zn_sel = 0;
+	sm_state = SM_ZONES;
+	log_printf(C_WHITE, "NO ITEM ZONES: OPEN (EMU %u)", (unsigned)frame_count);
+}
+
+static void zn_step(int r, int d)
+{
+	switch (r) {
+	case ZN_SHOW: {
+		int was = cfg.zones_show;
+		cfg.zones_show = (cfg.zones_show + 4 + d) % 4;
+		if (cfg.zones_show != was)
+			zones_log_change();
+		break;
+	}
+	case ZN_RED:
+		cfg.zones_r = (cfg.zones_r + 256 + d) % 256;
+		break;
+	case ZN_GREEN:
+		cfg.zones_g = (cfg.zones_g + 256 + d) % 256;
+		break;
+	case ZN_BLUE:
+		cfg.zones_b = (cfg.zones_b + 256 + d) % 256;
+		break;
+	case ZN_ALPHA:
+		cfg.zones_alpha += d * 10;
+		if (cfg.zones_alpha < 10)
+			cfg.zones_alpha = 90;
+		else if (cfg.zones_alpha > 90)
+			cfg.zones_alpha = 10;
+		break;
+	case ZN_RESET:
+		if (d != 0) { /* A = defaults (d 1 from A/RIGHT) */
+			cfg.zones_show = 0;
+			cfg.zones_r = 64;
+			cfg.zones_g = 128;
+			cfg.zones_b = 255;
+			cfg.zones_alpha = 30;
+			zones_log_change();
+		}
+		break;
+	}
+	opt_changes++;
+}
+
+/* test 138 C4; test 139 D; test 141 D1: BULLET COLORS sub-menu (per bullet type presets). */
+static int bcol_sel;
+static int bcol_mode_edit; /* 0 = ARCADE, 1 = OTHER/HARDER: the mode being edited (ibara) */
+static int bcol_dirty;     /* a setting changed since the last bcol_close */
+static int bcol_preview_dirty;  /* test 140: preview strip needs recompute */
+static uint32_t bcol_preview_px[BULLET_PREVIEW_W * BULLET_PREVIEW_H];  /* test 140: cached preview strip (A8R8G8B8, CPU copy) */
+static int bcol_hold_dir;  /* -1 left, 1 right, 0 none (slider hold) */
+static unsigned bcol_hold_n; /* vblanks held in that direction */
+
+static int bcol_has_mode(void)
+{
+	/* test 139 D1: MODE row only in ibara.xex (ARRANGE and Kuro BL have no MODE row) */
+#ifdef IB_ARRANGE
+	return 0;
+#else
+	return game_set == SET_IBARA;
+#endif
+}
+
+static int bcol_nrows(void)
+{
+	return bcol_has_mode() ? 11 : 10; /* test 141 D1 */
+}
+
+static int bcol_kind(int vis)
+{
+	static const int k_ib[11] = {BCOLK_COLORS, BCOLK_MODE, BCOLK_PPRESET, BCOLK_PR, BCOLK_PG, BCOLK_PB,
+	                             BCOLK_SPRESET, BCOLK_SR, BCOLK_SG, BCOLK_SB, BCOLK_RESET};
+	static const int k_other[10] = {BCOLK_COLORS, BCOLK_PPRESET, BCOLK_PR, BCOLK_PG, BCOLK_PB,
+	                                BCOLK_SPRESET, BCOLK_SR, BCOLK_SG, BCOLK_SB, BCOLK_RESET};
+	if (bcol_has_mode())
+		return vis >= 0 && vis < 11 ? k_ib[vis] : BCOLK_COLORS;
+	return vis >= 0 && vis < 10 ? k_other[vis] : BCOLK_COLORS;
+}
+
+static int bcol_edit_harder(void)
+{
+	/* the edited pair: 0 = ARCADE (purple + blue), 1 = HARDER/OTHER/ARRANGE (purple_h + red) */
+#ifdef IB_ARRANGE
+	return 1;
+#else
+	if (game_set == SET_IBARABLK)
+		return 0;
+	return bcol_mode_edit ? 1 : 0; /* ibara: 0 ARCADE, 1 OTHER */
+#endif
+}
+
+static int bcol_slider_row(int vis)
+{
+	const int k = bcol_kind(vis);
+	return k == BCOLK_PR || k == BCOLK_PG || k == BCOLK_PB || k == BCOLK_SR || k == BCOLK_SG || k == BCOLK_SB;
+}
+
+static const char *bcol_mode_label(void)
+{
+#ifdef IB_ARRANGE
+	return "ARRANGE";
+#else
+	if (game_set == SET_IBARABLK)
+		return "ARCADE";
+	return bcol_mode_edit ? "OTHER" : "ARCADE"; /* test 139 D2 */
+#endif
+}
+
+static const char *bcol_row_label(int vis)
+{
+	static char buf[14];
+	const int k = bcol_kind(vis);
+	const char *b, *c;
+	switch (k) {
+	case BCOLK_COLORS: return "COLORS";
+	case BCOLK_MODE: return "MODE";
+	case BCOLK_PPRESET: return "PURPLE PRESET"; /* test 141 D1 */
+	case BCOLK_SPRESET: /* test 141 D1 */
+		snprintf(buf, sizeof(buf), "%s PRESET", bcol_edit_harder() ? "RED" : "BLUE");
+		return buf;
+	case BCOLK_RESET: return "RESET";
+	case BCOLK_PR: return "PURPLE R";
+	case BCOLK_PG: return "PURPLE G";
+	case BCOLK_PB: return "PURPLE B";
+	case BCOLK_SR: case BCOLK_SG: case BCOLK_SB:
+		b = bcol_edit_harder() ? "RED" : "BLUE";
+		c = k == BCOLK_SR ? "R" : k == BCOLK_SG ? "G" : "B";
+		snprintf(buf, sizeof(buf), "%s %s", b, c);
+		return buf;
+	default: return "";
+	}
+}
+
+static uint32_t bcol_preset_slot_val(int kind)
+{
+	const int h = bcol_edit_harder();
+	if (kind == BCOLK_PPRESET)
+		return (h ? cfg.bullet_purple_h : cfg.bullet_purple) & 0xFFFFFFu;
+	return (h ? cfg.bullet_red : cfg.bullet_blue) & 0xFFFFFFu; /* SPRESET */
+}
+
+static int bcol_preset_slot_id(int kind)
+{
+	if (kind == BCOLK_PPRESET)
+		return 0; /* purple */
+	return bcol_edit_harder() ? 2 : 1; /* red or blue */
+}
+
+static uint32_t *bcol_row_ptr(int vis)
+{
+	const int h = bcol_edit_harder(), k = bcol_kind(vis);
+	if (k >= BCOLK_PR && k <= BCOLK_PB)
+		return h ? &cfg.bullet_purple_h : &cfg.bullet_purple;
+	if (k >= BCOLK_SR && k <= BCOLK_SB)
+		return h ? &cfg.bullet_red : &cfg.bullet_blue;
+	return NULL;
+}
+
+static int bcol_row_shift(int vis)
+{
+	const int k = bcol_kind(vis);
+	if (k == BCOLK_PR || k == BCOLK_SR) return 16;
+	if (k == BCOLK_PG || k == BCOLK_SG) return 8;
+	return 0;
+}
+
+static int bcol_row_ch(int vis)
+{
+	uint32_t *p = bcol_row_ptr(vis);
+	return p ? (int)((*p >> bcol_row_shift(vis)) & 255) : 0;
+}
+
+static void bcol_slider_step(int vis, int d)
+{
+	uint32_t *p = bcol_row_ptr(vis);
+	int v, sh;
+	if (!p || !cfg.bullet_colours)
+		return;
+	sh = bcol_row_shift(vis);
+	v = (int)((*p >> sh) & 255) + d;
+	if (v < 0) v = 0;
+	if (v > 255) v = 255;
+	*p = (*p & ~(0xFFu << sh)) | ((uint32_t)v << sh);
+	bcol_dirty = 1;
+	bcol_preview_dirty = 1;
+	opt_changes++;
+}
+
+static void bcol_reset_mode(void)
+{
+	const int h = bcol_edit_harder();
+	/* test 141 D1: RESET restores this mode's originals (per slot) */
+	bulletcol_color_preset_apply(0, 0, h);
+	bulletcol_color_preset_apply(0, h ? 2 : 1, h);
+	bcol_dirty = 1;
+	bcol_preview_dirty = 1;
+	opt_changes++;
+}
+
+static void bcol_open(void)
+{
+	bcol_sel = 0;
+	bcol_hold_dir = 0;
+	bcol_hold_n = 0;
+	bcol_preview_dirty = 1;
+#ifndef IB_ARRANGE
+	if (game_set == SET_IBARA) {
+		/* default the edited mode to the play mode when it matters, else arcade */
+		bcol_mode_edit = (sm_mode != 0) ? 1 : 0;
+	} else {
+		bcol_mode_edit = 0;
+	}
+#else
+	bcol_mode_edit = 1;
+#endif
+	sm_state = SM_BCOL;
+	log_printf(C_WHITE, "BULLET COLORS: OPEN (EMU %u)", (unsigned)frame_count);
+	if (!bulletcol_ok())
+		log_printf(C_YELLOW, "NO PREVIEW: BULLET COLORS NOT AVAILABLE");
+	else if (!bulletcol_needle_page(0, 0) || !bulletcol_needle_page(0, 1) ||
+	         !bulletcol_needle_page(bcol_edit_harder() ? 2 : 1, 0) ||
+	         !bulletcol_needle_page(bcol_edit_harder() ? 2 : 1, 1))
+		log_printf(C_YELLOW, "NO PREVIEW: SPRITE PAGE MISSING");
+	else
+		log_printf(C_WHITE, "BULLET COLORS: PREVIEW 4 SPRITES FROM PAGE %d", bulletcol_preview_first_page());
+}
+
+static void bcol_step(int vis, int d)
+{
+	const int k = bcol_kind(vis);
+	switch (k) {
+	case BCOLK_COLORS:
+		cfg.bullet_colours ^= 1;
+		bcol_dirty = 1;
+		bcol_preview_dirty = 1;
+		opt_changes++;
+		bcol_hold_dir = 0;
+		bcol_hold_n = 0;
+		break;
+	case BCOLK_MODE:
+		if (cfg.bullet_colours && bcol_has_mode()) {
+			bcol_mode_edit ^= 1;
+			bcol_preview_dirty = 1;
+			bcol_hold_dir = 0;
+			bcol_hold_n = 0;
+		}
+		break;
+	case BCOLK_PPRESET: /* test 141 D1 */
+	case BCOLK_SPRESET:
+		if (cfg.bullet_colours) {
+			const int h = bcol_edit_harder(), slot = bcol_preset_slot_id(k), n = bulletcol_color_preset_n();
+			int cur = bulletcol_color_preset_current(bcol_preset_slot_val(k), slot);
+			if (d == 0) d = 1;
+			if (cur < 0) cur = d > 0 ? -1 : 0;
+			cur = (cur + (d > 0 ? 1 : -1) + n) % n;
+			bulletcol_color_preset_apply(cur, slot, h);
+			bcol_dirty = 1;
+			bcol_preview_dirty = 1;
+			opt_changes++;
+		}
+		bcol_hold_dir = 0;
+		bcol_hold_n = 0;
+		break;
+	case BCOLK_RESET:
+		if (cfg.bullet_colours && d != 0)
+			bcol_reset_mode();
+		break;
+	default:
+		if (bcol_slider_row(vis))
+			bcol_slider_step(vis, d);
+		break;
+	}
+}
+
 /* Test 68 (user 2026-10-25: "an update to the options screen: sound menu. music/sfx/voice/attract volume a mute
  * toggle, and sound test for each song/voice clip"): the SOUND page (SOUND on the options page, A opens it). MUSIC,
  * SFX and VOICE = their volumes, LEFT / RIGHT in tens from 0 to 100% (the phrases of the game's own sound list:
@@ -2966,14 +3574,25 @@ static void gp_step(int k, int d)
  * right one (the game stays ARCADE). With PS2, MUSIC TEST plays a track's stream where it has one */
 /* test 112 (user: "add mono/stereo audio toggles in sound options and pause sound options (all three games)"): AUDIO
  * after SOUNDTRACK (before the tests: the pause's page has it too), STEREO or MONO (sound.c's sound_mono, the last mix) */
-enum { SR_MUSIC, SR_SFX, SR_VOICE, SR_ATTRACT, SR_MUTE, SR_TRACK, SR_AUDIO, SR_MTEST, SR_STEST, SR_VTEST, SR_N };
-static const char *const sr_names[SR_N] = {"MUSIC", "SFX", "VOICE", "ATTRACT", "MUTE", "SOUNDTRACK", "AUDIO",
+enum { SR_MUSIC, SR_SFX, SR_VOICE, SR_ATTRACT, SR_MUTE, SR_TRACK, SR_TRACKLIST, SR_AUDIO, SR_MTEST, SR_STEST, SR_VTEST, SR_N };
+static const char *const sr_names[SR_N] = {"MUSIC", "SFX", "VOICE", "ATTRACT", "MUTE", "SOUNDTRACK", "TRACKLIST", "AUDIO",
                                            "MUSIC TEST", "SFX TEST", "VOICE TEST"};
 static const char *const sr_helps[SR_MTEST] = {
 	"MUSIC VOLUME", "SOUND EFFECTS VOLUME", "VOICE VOLUME", "ATTRACT SCREEN VOLUME", "ALL SOUND OFF", /* test 70 */
-	"ARCADE OR PS2 PORT SOUNDTRACK", /* test 99 */
+	"ARCADE OR HIGH QUALITY PS2\nSOUNDTRACK", /* test 144 */
+	"", /* test 143: TRACKLIST help is per-game, chosen at run time */
 	"STEREO OR MONO SOUND",          /* test 112 */
 };
+
+/* test 143: TRACKLIST help per game */
+static const char *sr_tracklist_help(void)
+{
+	if (game_set != SET_IBARA) /* Kuro BL (its swap is in ps2music only) */
+		return "SWAP WITH IBARA'S SONGS\nPS2 SOUNDTRACK ONLY";
+	if (ARR) /* ARRANGE */
+		return "USE NORMAL'S STAGE SONGS";
+	return "SWAP NORMAL AND HARDER SONGS"; /* ibara arcade */
+}
 struct snd_track {
 	const char *name;
 	signed char intro, loop; /* sequences; loop = intro: that one again and again; -1: once */
@@ -3045,6 +3664,27 @@ static int snd_track_vol(int seq)
 	return game_set == SET_IBARA ? ib[seq] : blk[seq];
 }
 
+static int trk_alt_now; /* test 133: ALTERNATIVE for the run that plays (a playback: its replay's flag) */
+static int rp_pb_trk;   /* test 133: a playback's TRACKLIST (rh.join_pad[1]); set in rp_start */
+
+/* test 133: stage-script 0xFF0F (the stage's song) under TRACKLIST ALTERNATIVE: ibara's NORMAL plays the second
+ * id and HARDER the first by flipping GAME_TYPE around the arcade command; ARRANGE's (its wrapper at the table
+ * entry forces HARDER's) plays the first; EXTENDED as the game has it */
+static void trk_bgm_hook(sh3_t *c, u32 addr)
+{
+	u8 *gt = RAMP(0x0C27DC50u);
+	const u8 t = *gt;
+	const u8 eff = (ARR && *RAMP(IB_DEMO) == 0) ? 1 : t; /* arr_scr_bgm's rule */
+
+	if (!trk_alt_now || eff > 1) {
+		rt_call_raw(c, addr);
+		return;
+	}
+	*gt = (u8)(eff ^ 1);
+	rt_call_raw(c, 0x0C061720u); /* the arcade command itself (ARRANGE: instead of its wrapper) */
+	*gt = t;
+}
+
 static void snd_open(void)
 {
 	sm_state = SM_SOUND;
@@ -3102,6 +3742,9 @@ static void snd_step(int k, int d, int a)
 		           cfg.soundtrack == TRACK_PS2 ? ps2music_why() : "", (unsigned)frame_count);
 		if (snd_music_on) /* a test playing: again in the other soundtrack */
 			snd_music(1);
+	} else if (k == SR_TRACKLIST) { /* test 132 */
+		cfg.tracklist ^= 1;
+		log_printf(C_WHITE, "SOUND: TRACKLIST %s (EMU %u)", cfg.tracklist ? "ALTERNATIVE" : "ORIGINAL", (unsigned)frame_count);
 	} else if (k == SR_AUDIO) { /* test 112 */
 		cfg.mono ^= 1;
 		sound_mono = cfg.mono;
@@ -3218,6 +3861,24 @@ static void snd_frame(void)
 	const int busy = sound_test_busy();
 
 	ps2music_enable(cfg.soundtrack == TRACK_PS2); /* test 99 */
+	{ /* test 133: TRACKLIST via stage script hook (ibara/ARRANGE); ps2music swaps Kuro BL */
+		extern const u8 *volatile ymz_seq_remap;
+		extern const u8 *volatile ymz_seq_level;
+		void ps2m_tracklist(int alt);
+		void gadgets_tracklist(int alt);
+		ymz_seq_remap = NULL;
+		ymz_seq_level = NULL; /* test 133: the game picks the song itself, at its own level */
+		trk_alt_now = rp_play ? rp_pb_trk : cfg.tracklist;
+		if (game_set == SET_IBARA) {
+			rt_hook_addr = PHYS(BE32(RAMP(0x0C163390u)));
+			rt_hook_fn = trk_bgm_hook;
+		} else {
+			rt_hook_fn = NULL;
+			rt_hook_addr = 0;
+		}
+		ps2m_tracklist(rp_play ? rp_pb_trk : cfg.tracklist);
+		gadgets_tracklist(trk_alt_now && game_set != SET_IBARA && ps2music_active());
+	}
 	sound_mono = cfg.mono;                        /* test 112 */
 	ps2music_vblank();
 	if (sm_state != SM_SOUND && (snd_music_on || busy)) {
@@ -3264,6 +3925,8 @@ static void sm_play(void)
 	sm_plays++;
 	sm_svc = 0; /* test 66: the run this starts is a run, on the logos too */
 	pad_swap = sm_pad ^ sm_side;
+	/* test 138 C3: HARDER/EXTENDED (and TRAINING's) use the HARDER/ARRANGE purple */
+	bulletcol_set_mode(ARR ? 1 : (game_set == SET_IBARA && sm_mode != 0));
 	if (game_set == SET_IBARA)
 		log_printf(C_GREEN, "MENU: PLAY %dP %s %s TYPE %c (PAD %d, EMU %u): PAD 0 = P%d, PAD 1 = P%d", sm_side + 1,
 		           sm_ships[sm_side], sm_modes[sm_mode], 'A' + sm_type, sm_pad, (unsigned)frame_count, 1 + pad_swap,
@@ -3301,12 +3964,12 @@ static int sm_rowid(int k)
 /* Host settings the game reads, set by a menu (and recorded: "# host <frame> <what> <value>", recorder.h) or by the PC
  * harness replaying such a line (REPLAY_HOST), so a replay sees them at the same vblank: HOST_DIP0 + i = DIP SWITCHES'
  * row i (the game's EEPROM word and its RAM copy, dip_write), HOST_BULLETS = ARRANGE's BULLET DESIGN (its byte in
- * ARRANGE's RAM, read by arrange/arrange.c). host_val keeps the last of each: a save state's load puts the game's RAM
- * back to its moment, so host_reapply writes them again after one */
+ * ARRANGE's RAM, read by arrange/arrange.c; test 137 B2: written as NORMAL (0) while BULLET COLOURS is CUSTOM), host_val keeps the last of each: a save state's load puts the game's RAM back to its moment, so host_reapply writes them again after one */
 /* test 89: HOST_TR0 + TR_* = a training run's settings, HOST_TR_GO 1 = the next credit is a training run (0 = not);
  * test 91: the rows from TR_OLD_N on after HOST_TR_GO (HOST_TR_MORE + k - TR_OLD_N), test 89's numbers unchanged */
 enum { HOST_DIP0 = 0, HOST_BULLETS = 8, HOST_TR0 = 9, HOST_TR_GO = HOST_TR0 + TR_OLD_N, HOST_TR_MORE = HOST_TR_GO + 1,
-       HOST_TR_END = HOST_TR_MORE + TR_N - TR_OLD_N, HOST_RANKS = HOST_TR_END, HOST_N = 40 }; /* test 117: 40 (was 32; only these arrays) */
+       HOST_TR_END = HOST_TR_MORE + TR_N - TR_OLD_N, HOST_RANKS = HOST_TR_END,
+              HOST_N = 40 }; /* test 117: 40 */
 /* test 101: HOST_RANKS = the debug menu's INITIALIZE RANKINGS (rank_init, once: host_reapply leaves it, the EEPROM and
  * the attract slot's check keep it), recorded so a replay across it clears the tables at the same vblank */
 _Static_assert(HOST_RANKS < HOST_N, "HOST_N has no room for HOST_RANKS");
@@ -3333,7 +3996,7 @@ static void host_set(int what, int value, int menu)
 #endif
 		cfg.arr_bullets = value;
 #ifdef ARRANGE_DESIGN
-		*RAMP(ARRANGE_DESIGN) = (u8)value;
+		*RAMP(ARRANGE_DESIGN) = (u8)(cfg.bullet_colours ? 0 : value); /* test 137 B2: CUSTOM BULLET COLOURS = NORMAL pages */
 #endif
 		log_printf(C_WHITE, "%s: BULLET DESIGN %s (EMU %u)", menu ? "GENERAL SCREEN" : "HOST", value >= 0 && value < 3 ?
 		           bullet_names[value] : "?", (unsigned)frame_count);
@@ -3352,6 +4015,18 @@ static void host_set(int what, int value, int menu)
 /* after a save state's load (inputs_update's next call): the host's settings into the game's RAM again */
 static int host_reapply_due;
 
+/* test 138 C4/C5: close applies once when changed (ARRANGE: BULLET DESIGN byte resent for CUSTOM = NORMAL pages) */
+static void bcol_close(void)
+{
+	if (!bcol_dirty)
+		return;
+	bcol_dirty = 0;
+	bulletcol_apply();
+#ifdef ARRANGE_DESIGN
+	host_set(HOST_BULLETS, cfg.arr_bullets, 1);
+#endif
+}
+
 static void host_reapply(void)
 {
 	int k;
@@ -3360,7 +4035,7 @@ static void host_reapply(void)
 	(void)k;
 #ifdef ARRANGE_DESIGN
 	if (host_seen[HOST_BULLETS])
-		*RAMP(ARRANGE_DESIGN) = (u8)host_val[HOST_BULLETS];
+		*RAMP(ARRANGE_DESIGN) = (u8)(cfg.bullet_colours ? 0 : host_val[HOST_BULLETS]); /* test 137 B2: CUSTOM = NORMAL */
 #endif
 	/* not the DIP SWITCHES: they are in the EEPROM, which a load leaves as it is; an attract slot taken with another
 	 * EEPROM is not loaded (attract_current) and is taken again at the logos / title (state_frame), and a run's slots
@@ -3421,8 +4096,8 @@ static const char *const dip_dif2[8] = {"MINIMUM SLOW", "VERY SLOW", "SLOW", "ME
 #define DIP_HELP_EXTEND "CHANGE REQUIRED SCORE FOR GETTING MORE LIVES"
 #define DIP_HELP_STOCK "CHANGE STARTING LIVES"
 static const struct dip_item dip_ib[DIP_N] = {
-	{"DIFFICULTY 1", "RANK FLOOR/STARTING POINT", 8, 0x0C21F5E0u, 0x0C21CCA8u, 0x0C286524u, 8, 3, dip_dif1},
-	{"DIFFICULTY 2", "RANK SPEED", 9, 0x0C22466Cu, 0x0C21CCA9u, 0x0C286525u, 8, 3, dip_dif2},
+	{"DIFFICULTY 1", "STARTING RANK", 8, 0x0C21F5E0u, 0x0C21CCA8u, 0x0C286524u, 8, 3, dip_dif1},
+	{"DIFFICULTY 2", "RANK SPEED INCREASE", 9, 0x0C22466Cu, 0x0C21CCA9u, 0x0C286525u, 8, 3, dip_dif2},
 	{"EXTEND", DIP_HELP_EXTEND, 10, 0x0C21F588u, 0x0C21CCAAu, 0x0C286526u, 19, 1, NULL},
 	{"PLAYER COUNTS", DIP_HELP_STOCK, 11, 0x0C220C53u, 0x0C21CCABu, 0x0C286527u, 8, 2, NULL},
 };
@@ -3757,6 +4432,46 @@ static void sm_frame(uint32_t w[2])
 
 		sm_prev[p] = w[p];
 		sm_hold[p] &= w[p];
+		if (book_is_open() && p == sm_pad) { /* test 138 E: book takes all input while open */
+			static uint16_t book_prev; /* per-frame previous raw buttons for book edge detection */
+			static int book_seen;      /* 0 on the first frame after the book opened */
+			const uint16_t cur = (uint16_t)(pad_raw[p] & 0xFFFFu);
+			unsigned bpress = 0, bheld = 0;
+
+			if (!book_seen) { /* A that opened the book must not zoom */
+				book_prev = cur;
+				book_seen = 1;
+				sm_hold[p] = w[p]; /* menu's other input must not act meanwhile */
+				continue;
+			}
+			{
+				const uint16_t edge = (uint16_t)(cur & ~book_prev);
+				book_prev = cur;
+
+				if (cur & INPUT_GAMEPAD_A) bheld |= BOOK_BTN_A;
+				if (edge & INPUT_GAMEPAD_A) bpress |= BOOK_BTN_A;
+				if (cur & (INPUT_GAMEPAD_B | INPUT_GAMEPAD_BACK)) bheld |= BOOK_BTN_B;
+				if (edge & (INPUT_GAMEPAD_B | INPUT_GAMEPAD_BACK)) bpress |= BOOK_BTN_B;
+				if (cur & INPUT_GAMEPAD_LEFT_SHOULDER) bheld |= BOOK_BTN_LB;
+				if (edge & INPUT_GAMEPAD_LEFT_SHOULDER) bpress |= BOOK_BTN_LB;
+				if (cur & INPUT_GAMEPAD_RIGHT_SHOULDER) bheld |= BOOK_BTN_RB;
+				if (edge & INPUT_GAMEPAD_RIGHT_SHOULDER) bpress |= BOOK_BTN_RB;
+				if (cur & INPUT_GAMEPAD_DPAD_UP) bheld |= BOOK_BTN_UP;
+				if (edge & INPUT_GAMEPAD_DPAD_UP) bpress |= BOOK_BTN_UP;
+				if (cur & INPUT_GAMEPAD_DPAD_DOWN) bheld |= BOOK_BTN_DOWN;
+				if (edge & INPUT_GAMEPAD_DPAD_DOWN) bpress |= BOOK_BTN_DOWN;
+				if (cur & INPUT_GAMEPAD_DPAD_LEFT) bheld |= BOOK_BTN_LEFT;
+				if (edge & INPUT_GAMEPAD_DPAD_LEFT) bpress |= BOOK_BTN_LEFT;
+				if (cur & INPUT_GAMEPAD_DPAD_RIGHT) bheld |= BOOK_BTN_RIGHT;
+				if (edge & INPUT_GAMEPAD_DPAD_RIGHT) bpress |= BOOK_BTN_RIGHT;
+			}
+			sm_hold[p] = w[p]; /* menu's other input must not act meanwhile */
+			if (book_input(bpress, bheld, (int)pad_lx[p], (int)pad_ly[p])) {
+				book_close(); /* B/BACK -> back to OPTIONS */
+				book_seen = 0;
+			}
+			continue;
+		}
 		/* test 109 (user: after a 1CC's third initial "the game immediately returned to the title screen as if i pressed
 		 * start"): no Start reaches the game during the initials' entry (nor one held into it), so the ranking and the
 		 * logos follow the initials; a Start after the entry still skips them (the arcade's). ibara and ARRANGE only.
@@ -3859,12 +4574,12 @@ static void sm_frame(uint32_t w[2])
 				opt_sels[opt_page] = (opt_sels[opt_page] + n - 1) % n;
 			if (press & A_DOWN)
 				opt_sels[opt_page] = (opt_sels[opt_page] + 1) % n;
-			if ((press & (A_UP | A_DOWN)) || ((gsel_armed || svc_armed || rk_armed || ac_armed) &&
+			if ((press & (A_UP | A_DOWN)) || ((gsel_armed || svc_armed || rk_armed || ac_armed || hi_armed) &&
 			                                  (press & (A_MB | A_COIN)))) {
-				/* test 72: B = no; test 101: INITIALIZE RANKINGS' too; test 106: ACHIEVEMENTS' */
-				unarm = (gsel_armed || svc_armed || rk_armed || ac_armed) && !(press & (A_UP | A_DOWN));
-				gsel_armed = svc_armed = rk_armed = ac_armed = 0;
-				rk_said = 0;
+				/* test 72: B = no; test 101: INITIALIZE RANKINGS' too; test 106: ACHIEVEMENTS'; test 145: INITIALIZE HISTORY' */
+				unarm = (gsel_armed || svc_armed || rk_armed || ac_armed || hi_armed) && !(press & (A_UP | A_DOWN));
+				gsel_armed = svc_armed = rk_armed = ac_armed = hi_armed = 0;
+				rk_said = hi_said = 0;
 			}
 			id = opt_row(opt_sels[opt_page]);
 			if (unarm) {
@@ -3910,6 +4625,25 @@ static void sm_frame(uint32_t w[2])
 					rk_armed = 1;
 					rk_said = 0;
 				}
+			} else if (id == OPT_HIST_INIT) { /* test 145: A, then A again */
+				if ((press & A_MA) && hi_armed) {
+					hi_armed = 0;
+					if (!dip_idle()) {
+						hi_said = 2;
+						log_printf(C_YELLOW, "OPTIONS: INITIALIZE HISTORY NOT DONE: THE GAME IS NOT IDLE (EMU %u)",
+						           (unsigned)frame_count);
+					} else {
+						hist_clear();
+						hist_save_req = 1;
+						hi_said = 1;
+						log_printf(C_YELLOW, "OPTIONS: HISTORY INITIALIZED (%s, EMU %u)",
+						           ARR ? "ARRANGE" : game_set == SET_IBARA ? "IBARA" : "KURO BL",
+						           (unsigned)frame_count);
+					}
+				} else if (press & A_MA) {
+					hi_armed = 1;
+					hi_said = 0;
+				}
 			} else if (id == OPT_ACH) { /* test 106: OFF at once; ON after the warning and A again (B = no) */
 				if ((press & (A_LEFT | A_RIGHT | A_MA)) && cfg.achievements) {
 					opt_step(id, 1);
@@ -3944,19 +4678,31 @@ static void sm_frame(uint32_t w[2])
 			} else if (id == OPT_REPLAYS) { /* test 86: the REPLAYS page (A) */
 				if ((press & A_MA) && rp_ok)
 					rl_open();
+			} else if (id == OPT_HIST) { /* test 137 C2: the BATTLE HISTORY pages (A) */
+				if (press & A_MA)
+					hist_open();
+			} else if (id == OPT_BOOK) { /* test 138 E: Insanity DVD book viewer (A) */
+				if ((press & A_MA) && book_avail())
+					book_open();
 			} else if (id == OPT_LOAD) { /* test 84: the SLOTS page (A) */
-				if ((press & A_MA) && hdd_ok) {
+				if ((press & A_MA) && cheats_on()) /* test 134 */
+					log_printf(C_YELLOW, "CHEATS: SAVE/LOAD STATE REFUSED");
+				else if ((press & A_MA) && hdd_ok) {
 					hdd_msg[0] = 0;
 					sl_open(0);
 				}
 			} else if (id == OPT_CONTROLS || id == OPT_CONTROLS2 || id == OPT_M3 || id == OPT_DEBUG || id == OPT_SOUND ||
-			    id == OPT_SCREEN) {
+			    id == OPT_SCREEN || id == OPT_CHEATS || id == OPT_BCOL) { /* test 131: CHEATS opens its page too; test 137 B2: BULLET COLOURS */
 				if ((press & A_MA) && (id == OPT_CONTROLS || id == OPT_CONTROLS2)) /* test 56: A only; test 71: P1 / P2 */
 					ctl_open(id == OPT_CONTROLS2);
 				else if ((press & A_MA) && id == OPT_M3) /* test 64 */
 					gp_open();
 				else if ((press & A_MA) && id == OPT_SOUND) /* test 68 */
 					snd_open();
+				else if ((press & A_MA) && id == OPT_BCOL) { /* test 137 B2: N/A (no pages) does nothing */
+					if (bulletcol_ok())
+						bcol_open();
+				}
 				else if (EXDBG_OPEN && (press & A_MA) && id == OPT_DEBUG && (w[p] & (A_MLB | A_MRB)) == (A_MLB | A_MRB)) {
 					/* test 108: RB held = EX-DEBUG; test 112 (user: "modify ex-debug menu to be opened by holding LB+RB,
 					 * then A") */
@@ -3964,6 +4710,11 @@ static void sm_frame(uint32_t w[2])
 					if (opt_sels[opt_page] >= opt_nrows())
 						opt_sels[opt_page] = 0;
 					log_printf(C_YELLOW, "EX-DEBUG: OPEN (EMU %u)", (unsigned)frame_count);
+				} else if ((press & A_MA) && id == OPT_CHEATS) { /* test 131 */
+					opt_page = OPT_PAGE_CHEATS;
+					if (opt_sels[opt_page] >= opt_nrows())
+						opt_sels[opt_page] = 0;
+					log_printf(C_WHITE, "CHEATS: OPEN (EMU %u)", (unsigned)frame_count);
 				} else if (press & A_MA) { /* test 67: the debug menu; test 70: GENERAL SCREEN */
 					opt_page = id == OPT_DEBUG ? OPT_PAGE_DEBUG : OPT_PAGE_GENERAL;
 					if (opt_sels[opt_page] >= opt_nrows())
@@ -3983,7 +4734,8 @@ static void sm_frame(uint32_t w[2])
 				log_printf(C_WHITE, "OPTIONS: BACK TO THE MENU");
 				opt_page = 0;
 			} else if (sm_state == SM_OPTS && opt_page != 0 && (press & (A_MB | A_COIN))) { /* test 67; test 88: OPTIONS */
-				log_printf(C_WHITE, "%s: BACK TO OPTIONS", opt_page == OPT_PAGE_EXDBG ? "EX-DEBUG" : /* test 108 */
+				log_printf(C_WHITE, "%s: BACK TO OPTIONS", opt_page == OPT_PAGE_CHEATS ? "CHEATS" : /* test 131 */
+				           opt_page == OPT_PAGE_EXDBG ? "EX-DEBUG" : /* test 108 */
 				           opt_names[opt_page == OPT_PAGE_DEBUG ? OPT_DEBUG : OPT_SCREEN]);
 				opt_page = OPT_PAGE_OPTIONS;
 			} else if (sm_state == SM_OPTS && (press & (A_MB | A_COIN))) {
@@ -4001,11 +4753,76 @@ static void sm_frame(uint32_t w[2])
 				gp_sel = (gp_sel + 1) % n;
 			if (press & A_LEFT)
 				gp_step(gp_sel, -1);
-			if ((press & A_RIGHT) || ((press & A_MA) && gp_row(gp_sel) != GD_N)) /* test 68: ALL by LEFT / RIGHT */
+			if (press & A_RIGHT)
 				gp_step(gp_sel, 1);
+			if (press & A_MA) { /* test 137: NO ITEM ZONES opens its sub-menu */
+				if (gp_row(gp_sel) == GP_ZONES)
+					zn_open();
+				else if (gp_row(gp_sel) != GD_N)
+					gp_step(gp_sel, 1);
+			}
 			if (press & (A_MB | A_COIN)) {
 				sm_state = SM_OPTS;
 				log_printf(C_WHITE, "M3 GADGETS: BACK TO OPTIONS");
+			}
+		} else if (sm_state == SM_ZONES && p == sm_pad) { /* test 137 */
+			if (press & A_UP)
+				zn_sel = (zn_sel + ZN_N - 1) % ZN_N;
+			if (press & A_DOWN)
+				zn_sel = (zn_sel + 1) % ZN_N;
+			if (press & A_LEFT)
+				zn_step(zn_sel, -1);
+			if (press & A_RIGHT)
+				zn_step(zn_sel, 1);
+			if (press & A_MA)
+				zn_step(zn_sel, 1);
+			if (press & (A_MB | A_COIN)) {
+				sm_state = SM_GADG;
+				log_printf(C_WHITE, "NO ITEM ZONES: BACK TO M3 GADGETS");
+			}
+		} else if (sm_state == SM_BCOL && p == sm_pad) { /* test 138 C4; test 139 D: BULLET COLORS sub-menu */
+			const int nrows = bcol_nrows();
+			const int slider = bcol_slider_row(bcol_sel) && cfg.bullet_colours;
+			if (press & A_UP) {
+				bcol_sel = (bcol_sel + nrows - 1) % nrows;
+				bcol_hold_dir = 0; bcol_hold_n = 0;
+			}
+			if (press & A_DOWN) {
+				bcol_sel = (bcol_sel + 1) % nrows;
+				bcol_hold_dir = 0; bcol_hold_n = 0;
+			}
+			if (slider) {
+				/* test 139 D4: LB -16, RB +16 (held repeat as LEFT/RIGHT); LEFT/RIGHT 1 step (held: repeat, >60 step 8) */
+				int big = (w[p] & A_MRB) ? 1 : (w[p] & A_MLB) ? -1 : 0;
+				int small = (w[p] & A_RIGHT) ? 1 : (w[p] & A_LEFT) ? -1 : 0;
+				int dir = big ? big : small;
+				int bpress = press & (A_MLB | A_MRB), spress = press & (A_LEFT | A_RIGHT);
+				if (bpress || spress) {
+					bcol_hold_dir = bpress ? ((bpress & A_MRB) ? 1 : -1) : ((spress & A_RIGHT) ? 1 : -1);
+					bcol_hold_n = 0;
+					bcol_slider_step(bcol_sel, bcol_hold_dir * (bpress ? 16 : 1));
+				} else if (dir != 0 && dir == bcol_hold_dir) {
+					bcol_hold_n++;
+					if (bcol_hold_n >= 15 && ((bcol_hold_n - 15) % 2) == 0)
+						bcol_slider_step(bcol_sel, dir * (big ? 16 : bcol_hold_n > 60 ? 8 : 1));
+				} else {
+					bcol_hold_dir = dir;
+					bcol_hold_n = 0;
+				}
+			} else {
+				if (press & A_LEFT)
+					bcol_step(bcol_sel, -1);
+				if (press & A_RIGHT)
+					bcol_step(bcol_sel, 1);
+				if (press & A_MA)
+					bcol_step(bcol_sel, 1);
+				bcol_hold_dir = 0; bcol_hold_n = 0;
+			}
+			if (press & (A_MB | A_COIN)) {
+				sm_state = SM_OPTS;
+				opt_page = OPT_PAGE_GENERAL;
+				bcol_close();
+				log_printf(C_WHITE, "BULLET COLORS: BACK TO GENERAL SCREEN");
 			}
 		} else if (sm_state == SM_SOUND && p == sm_pad) { /* test 68 */
 			if (press & A_UP)
@@ -4022,6 +4839,8 @@ static void sm_frame(uint32_t w[2])
 				sm_state = SM_OPTS;
 				log_printf(C_WHITE, "SOUND: BACK TO OPTIONS");
 			}
+		} else if (sm_state == SM_HIST && p == sm_pad) { /* test 137 C2: BATTLE HISTORY's pages */
+			hist_input(press);
 		} else if (sm_state == SM_REPLAYS && p == sm_pad) { /* test 86 */
 			rl_input(press);
 		} else if (sm_state == SM_SLOTS && p == sm_pad) { /* test 84: the menu's LOAD STATE */
@@ -4048,8 +4867,8 @@ static void sm_frame(uint32_t w[2])
 			sm_hold[p] = w[p]; /* the menu's presses never reach the game */
 		}
 	}
-	if ((sm_state == SM_OPEN || sm_state == SM_OPTS || sm_state == SM_CTRL || sm_state == SM_GADG ||
-	     sm_state == SM_SOUND || sm_state == SM_DIP || sm_state == SM_SLOTS || sm_state == SM_REPLAYS) && !sm_idle) {
+	if ((sm_state == SM_OPEN || sm_state == SM_OPTS || sm_state == SM_CTRL || sm_state == SM_GADG || sm_state == SM_ZONES ||
+	     sm_state == SM_BCOL || sm_state == SM_SOUND || sm_state == SM_DIP || sm_state == SM_SLOTS || sm_state == SM_REPLAYS || sm_state == SM_HIST) && !sm_idle) {
 		opt_leave(0); /* test 81: the PLAY page's settings too */
 		sm_state = SM_CLOSED; /* the other pad started a game, or the service menu came up */
 		log_printf(C_WHITE, "MENU: CLOSED, THE GAME IS NO LONGER IDLE");
@@ -4181,7 +5000,7 @@ static void sm_frame(uint32_t w[2])
 #define IB_PLAYER 0x0C283794u     /* the 1P record (+ IB_SHIP_P2 the 2P one): u32 DC000000 alive, 0 out */
 #define IB_P_SHIPS 0x253u         /* u8: ships in reserve */
 #define IB_P_STARTS 0x26Bu        /* u8: the side's starts in this credit (1 = the first; 0 = never joined) */
-#define IB_CONT_MAX 0x0C395086u   /* u8: the starts a credit allows (the continues + 1) */
+#define IB_CONT_MAX 0x0C395086u   /* u8: the DIP's CONTINUE PLAY value: 0 DISABLE, 1-9 times, 10 FREE; a side continues while its starts byte is <= it */
 #define IB_GAME_OVER 0x0C283750u  /* u8: not 0 from GAME OVER on */
 #define IB_STAGE_LOOP 0x0C28599Cu /* u8: not 0 while the stage loop runs */
 #define CT_START 6                /* the command: Start with the buttons this many vblanks, */
@@ -4467,17 +5286,7 @@ static void inputs_update(void)
 		svc_left--;
 		f &= (u8)~0x02;
 	}
-	{
-		uint32_t any = (pad_word[0] | pad_word[1] | pad_word[2] | pad_word[3]) & A_HASH;
-		if (any && !prev_hash_any) {
-			ram_hash_on = !ram_hash_on;
-			hash_switches++;
-			log_printf(ram_hash_on ? C_YELLOW : C_GREEN, "CHECK: RAM HASH %s FROM FRAME %u (LB)%s",
-			           ram_hash_on ? "ON" : "OFF", (unsigned)frame_count,
-			           checking() ? "" : ", CHECK NOT RUNNING");
-		}
-		prev_hash_any = any;
-	}
+	/* test 143: LB RAM hash check toggle removed */
 	{
 		/* test 33: RB on any pad shows / hides the card; test 55: the button the controls set to it */
 		static uint32_t prev_card_any;
@@ -4530,6 +5339,17 @@ static void inputs_update(void)
 	}
 	if ((c & f & joy[0] & joy[1]) != 0xFF && sound_first_input_frame == ~0u)
 		sound_first_input_frame = (unsigned)frame_count; /* the sound check stops here */
+	for (int s = 0; s < 2; s++) /* test 135: AUTOBOMB's bomb button: 4 = released, 3..1 = pressed */
+		if (ab_press[s] && !rp_play) {
+			if (ab_press[s] == 4)
+				joy[s] |= 0x20;
+			else
+				joy[s] &= (u8)~0x20;
+			ab_press[s]--;
+		}
+	for (int s = 0; s < 2; s++) { /* test 135: batch 2 (ITEM MAGNETISM RELEASE) */
+		shot_age[s] = !(joy[s] & 0x10) ? 0 : shot_age[s] < 255 ? shot_age[s] + 1 : 255;
+	}
 	in_port_c = c;
 	in_port_d = joy[0];
 	in_port_l = joy[1];
@@ -5162,8 +5982,8 @@ static void draw_card(void)
 		         chk.matched, chk.ram_checks);
 	else {
 		ms2(a, sizeof(a), hash_frames ? hash_sum / hash_frames : 0);
-		snprintf(line, sizeof(line), "CHECK %s%u/%u = PC RUN  RAM HASH %s (LB) %u X %s MS", chk.done ? "ALL " : "",
-		         chk.matched, game->expect_frames, ram_hash_on ? "ON" : "OFF", chk.ram_checks, a);
+		snprintf(line, sizeof(line), "CHECK %s%u/%u = PC RUN  RAM HASH %s %u X %s MS", chk.done ? "ALL " : "",
+		         chk.matched, game->expect_frames, ram_hash_on ? "ON" : "OFF", chk.ram_checks, a); /* test 143: (LB) removed */
 	}
 	if (!chk.failed)
 		text(4, ROW(22), chk.off ? C_DIM : chk.stopped ? C_YELLOW : C_GREEN, line);
@@ -5309,7 +6129,9 @@ static void draw_card(void)
 #define LAYOUT_QUADS (6 + SCAN_MAX)       /* test 53: a layout: the card's 2 quads, the game's 2, the scanlines; test
                                           * 88: + NOW LOADING's, + CUSTOM's picture */
 #define LAYOUT_ON 3                       /* test 88: the power-on card layout's quads (+ NOW LOADING) */
-#define VB_QUADS (LAYOUT_ON + 2 * LAYOUT_QUADS) /* the power-on card layout, then two layouts used in turn (layout_apply) */
+#define BOOK_VQUADS_PER 3                 /* test 138 E: transient book quads per frame (page, message, bottom line) */
+#define BOOK_VQUADS (BOOK_VQUADS_PER * 2) /* two banks: queued frames may still read the other */
+#define VB_QUADS (LAYOUT_ON + 2 * LAYOUT_QUADS + BOOK_VQUADS) /* the power-on card layout, then two layouts used in turn (layout_apply), then book */
 static const XsdkVertexElement vlayout[] = {
 	{.usage = XSDK_USAGE_POSITION, .format = XSDK_VERTEX_FLOAT2, .offset_bytes = 0},
 	{.usage = XSDK_USAGE_TEXCOORD, .format = XSDK_VERTEX_FLOAT2, .offset_bytes = 8},
@@ -5403,6 +6225,33 @@ static struct vb make_quad(float x0, float y0, float x1, float y1, const float u
 
 	quad_vertices(q[0], x0, y0, x1, y1, uv);
 	return make_vb(q, 1);
+}
+
+static unsigned book_vq_bank, book_vq_slot; /* test 138 E: transient book quad bank (frames_queued & 1) / slot this frame */
+
+static void book_quad(const XsdkTexture *t, float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1)
+{
+	/* test 138 E: draw one textured quad for book_draw (card path). Shaders/constants set by caller. */
+	static const float (*order_uv)[2] = uv_plain; /* unused; uv passed explicitly */
+	float q[1][QUAD_VERTS][VERT_FLOATS];
+	const float uv[4][2] = {{u0, v0}, {u1, v0}, {u0, v1}, {u1, v1}};
+	volatile uint32_t *dst;
+	const uint32_t *src = (const uint32_t *)q;
+	unsigned i, words = QUAD_BYTES / 4, base;
+
+	(void)order_uv;
+	if (!vmem || book_vq_slot >= BOOK_VQUADS_PER)
+		return;
+	quad_vertices(q[0], x0, y0, x1, y1, uv);
+	base = (LAYOUT_ON + 2 * LAYOUT_QUADS + book_vq_bank * BOOK_VQUADS_PER + book_vq_slot) * QUAD_BYTES / 4;
+	dst = vmem + base;
+	for (i = 0; i < words; i++)
+		dst[i] = src[i];
+	xsdk_gpu_invalidate(xsdk_gpu_address(dst), QUAD_BYTES);
+	xsdk_gpu_set_texture(QUAD_FRAG_SAMPLER_0_0, t, &samp_point);
+	xsdk_gpu_set_vertices(0, xsdk_gpu_address(dst), QUAD_BYTES);
+	xsdk_gpu_draw(XSDK_PRIMITIVE_TRIANGLE_LIST, QUAD_VERTS);
+	book_vq_slot++;
 }
 
 static int ifloor(float x)
@@ -5829,6 +6678,26 @@ static void state_ask(int s, int stage)
 	rt_state_request(s);
 }
 
+/* test 137 C2: BATTLE HISTORY (history.c) counts a run while the achievements' run flag is on (ach_ok: not TRAINING, not a
+ * playback, and a state load ends that flag as it does for the achievements), with no cheats. The ACHIEVEMENTS setting
+ * and XAM do not matter. A run's end (its credit ends, the attract loads, GAME SELECT) asks for the file too */
+#define HIST_SAVE_VBL 18000u /* 5 minutes at 60 vblanks a second: the file's periodic save (when a counter changed) */
+static int hist_run_ok(void)
+{
+	return ach_ok && !cheat_run && !tr_run && !rp_play;
+}
+
+static int hist_game(void)
+{
+	return ARR ? HIST_ARRANGE : game_set == SET_IBARA ? HIST_IBARA : HIST_BLK;
+}
+
+static void hist_end_run(void)
+{
+	hist_run_end(hist_run_ok());
+	hist_save_req = 1;
+}
+
 /* the runtime took slot s (rt_state_taken), soon after host_vblank asked */
 static void state_taken(int s)
 {
@@ -5874,6 +6743,7 @@ static void state_frame(void)
 	 * the scene at once, rec0003 10678 / rec0004 5747, no CAVE logo) or the logo comes, without STATE_RUN_GAP's wait (65
 	 * and 88 vblanks of the title were in test 87's replays) */
 	if (credit_on && (st_out >= STATE_RUN_GAP || (st_out && (sm_back || sm_logo)))) {
+		hist_end_run(); /* test 137 C2: the run's end (its counts, the file asked for) */
 		credit_on = 0;
 		if (tr_run) { /* test 89 */
 			/* test 92: ended by its GAME OVER before TR_GO_HOLD (a Start skips it): the TRAINING page as tr_vblank's */
@@ -5940,6 +6810,7 @@ static void state_frame(void)
 		st_prev = stage;
 		stage_name(t, sizeof(t), stage);
 		if (!credit_on) {
+			hist_run_start(); /* test 137 C2: the credit's start (the ships latched, the run's counts begin) */
 			credit_on = 1;
 			rt_state_drop(SLOT_STAGE);
 			rt_state_drop(SLOT_STATE); /* test 84: a new run's */
@@ -6054,6 +6925,8 @@ static const char *pm_help(void)
 
 	if (r == PM_GSEL) /* test 72 */
 		return !launcher_ok ? "NO IBARA360.XEX BESIDE THIS XEX" : pm_armed == r ? "QUIT? A = YES, B = NO" : pm_helps[r];
+	if ((r == PM_SAVE || r == PM_LOAD) && cheats_on()) /* test 134 */
+		return "OFF WHILE CHEATS ARE ON";
 	if (pm_loads(r) && !state_ok)
 		return "NO MEMORY FOR SAVE STATES";
 	if ((r == PM_QUIT || r == PM_TQUIT) && s < 0)
@@ -6124,7 +6997,8 @@ static void fs_open(void)
 #define SMK_H 90 /* test 70: Kuro BL's start menu (PLAYER alone) */
 #define OPT_W 228
 #define OPT0_W SM_W /* test 70: the options page thinner (user), as wide as the start menu it comes from */
-#define OPT_HELP_Y(n) (16 + 10 * (n)) /* the help line under n rows */
+#define PS2M_PITCH (ps2m_rec ? ps2m_pitch : 10) /* test 140 B: 14 fitted down to 10 for PS2 variant B pages */
+#define OPT_HELP_Y(n) (16 + PS2M_PITCH * (n)) /* the help line under n rows */
 #define HELP2 10 /* test 70: a page whose helps may take two lines has the second one this lower */
 #define BOX_H(last) ((last) + 22) /* a box's height from its last line's offset under its title */
 #define PB_W 60 /* test 56: the word PAUSE only (test 55: 150 x 40, two lines) */
@@ -6292,7 +7166,177 @@ static void pic_box_at(int w, int h, int *bx, int *by)
 	*by = *by < 0 ? 0 : *by > GAME_W - h ? GAME_W - h : *by;
 }
 
-/* the page sm_state names into t; 0 = none. Test 98: sm_draw's (MENU STYLE PS2 runs it recording, ps2menu.c) */
+/* test 140: cached preview strip helpers. The strip is plain CPU memory (bcol_preview_px); bcol_preview_blit copies
+ * its pixels into the game texture at 2x. */
+static void bcol_preview_refresh(void)
+{
+	bulletcol_preview_fill(bcol_preview_px, BULLET_PREVIEW_W, BULLET_PREVIEW_H,
+	                      bcol_edit_harder(), cfg.bullet_colours != 0);
+	bcol_preview_dirty = 0;
+}
+
+static void bcol_preview_blit(volatile uint32_t *t, int x0, int y0)
+{
+	int bx, by, dx, dy;
+
+	if (bcol_preview_dirty)
+		bcol_preview_refresh();
+	for (by = 0; by < BULLET_PREVIEW_H; by++)
+		for (bx = 0; bx < BULLET_PREVIEW_W; bx++) {
+			uint32_t c = bcol_preview_px[by * BULLET_PREVIEW_W + bx];
+			if ((c >> 24) == 0)
+				continue;
+			for (dy = 0; dy < 2; dy++)
+				for (dx = 0; dx < 2; dx++) {
+					int x = x0 + bx * 2 + dx;
+					int y = y0 + by * 2 + dy;
+					if (x >= 0 && x < GAME_H && y >= 0 && y < GAME_W)
+						t[(size_t)x * gtex_pitch + (GAME_W - 1 - y)] = c;
+				}
+		}
+}
+
+static void bcol_preview_drawcb(volatile uint32_t *t, int x, int y, const void *arg)
+{
+	(void)arg;
+	if (bcol_preview_dirty)
+		bcol_preview_refresh();
+	bcol_preview_blit(t, x, y);
+}
+
+/* test 137 C2: BATTLE HISTORY's pages (SM_HIST, drawn by sm_pages in both menu styles). LB/RB and LEFT/RIGHT turn the
+ * pages (wrap), B / BACK goes back to the menu's page. Labels on the left, values right-aligned in one column whose last
+ * character is HIST_TEXT_END (6 px a character; the box is 38 characters wide) */
+#define HIST_TEXT_END 34
+static int hist_pg;                /* 0..2: pages 1..3 */
+
+static void hist_rtext(volatile uint32_t *t, int x0, int y, int end, uint32_t c, const char *s)
+{
+	sm_text(t, x0 + 6 * (end - (int)strlen(s)), y, c, s);
+}
+
+/* the page's rows at (x0, y0) when draw is set (0 measures only); returns the footer line's offset under y0 */
+static int hist_body(volatile uint32_t *t, int x0, int y0, int page, int draw)
+{
+	char lab[11][24], val[11][20];
+	int n, i, c, r, y;
+	const int step = PS2M_PITCH; /* test 141 A: BATTLE HISTORY B uses fitted pitch in PS2 (ARCADE: 10) */
+
+	if (page != 3) {
+		/* 1 letter margin from the box's inner right edge (PS2 8 px, arcade 6 px) */
+		const int end = menu_ps2() ? 27 : 34;
+		n = hist_page_rows(page, lab, val, 11);
+		for (i = 0; i < n && draw; i++) {
+			const int ly = y0 + 14 + step * i;
+
+			sm_text(t, x0 + 6, ly, C_WHITE, lab[i]);
+			hist_rtext(t, x0, ly, end, C_GREEN, val[i]);
+		}
+		return 14 + step * n + 10;
+	}
+	{ /* page 3: the ship grids (SHIP CHOSEN, CLEARS), then ibara's CLEARS BY MODE */
+		static const char *const col_name[5] = {"A", "B", "C", "D", "TOTAL"};
+		static const char *const mode_name[3] = {"ARCADE", "HARDER", "EXTENDED"};
+		unsigned g[4][5], m[3];
+		const char *rn[4];
+		char v[16];
+		const int ibara = hist_game() == HIST_IBARA;
+		int nr = 0;
+		/* test 139 E: right-edge ends; PS2 spans A[9] B[13] C[17] D[21] TOTAL[23-27], vals A-D<=3 [7-9,11-13,15-17,19-21] TOTAL<=4 [24-27]; ARCADE[4-9] HARDER[13-18] EXTENDED[20-27] (no overlap) */
+		const int right = menu_ps2() ? 27 : 34;
+		int col_end[5], mode_end[3];
+
+		col_end[0] = right - 18;
+		col_end[1] = right - 14;
+		col_end[2] = right - 10;
+		col_end[3] = right - 6;
+		col_end[4] = right;
+		mode_end[0] = right - 18;
+		mode_end[1] = right - 9;
+		mode_end[2] = right;
+
+		y = 14;
+		for (int k = 0; k < 2; k++) {
+			if (k)
+				y += 4;
+			hist_grid(k, g, &nr, rn);
+			if (draw) {
+				sm_text(t, x0, y0 + y, C_CYAN, k ? "CLEARS" : "SHIP CHOSEN");
+				for (c = 0; c < 5; c++)
+					hist_rtext(t, x0, y0 + y + step, col_end[c], C_WHITE, col_name[c]);
+			}
+			for (r = 0; r < nr; r++) {
+				const int ry = y0 + y + 2 * step + step * r;
+
+				if (draw)
+					sm_text(t, x0 + 6, ry, C_WHITE, rn[r]);
+				for (c = 0; c < 5; c++) {
+					snprintf(v, sizeof(v), "%u", g[r][c]);
+					if (draw)
+						hist_rtext(t, x0, ry, col_end[c], C_GREEN, v);
+				}
+			}
+			y += 2 * step + step * nr;
+		}
+		if (ibara) {
+			hist_modes(m);
+			y += 4;
+			if (draw)
+				sm_text(t, x0, y0 + y, C_CYAN, "CLEARS BY MODE");
+			for (i = 0; i < 3; i++) {
+				snprintf(v, sizeof(v), "%u", m[i]);
+				if (draw) {
+					hist_rtext(t, x0, y0 + y + step, mode_end[i], C_WHITE, mode_name[i]);
+					hist_rtext(t, x0, y0 + y + 2 * step, mode_end[i], C_GREEN, v);
+				}
+			}
+			y += 4 * step;
+		} else {
+			y += step;
+		}
+	}
+	return y;
+}
+
+static void hist_draw(volatile uint32_t *t)
+{
+	const int page = hist_pg + 1, foot = hist_body(t, 0, 0, page, 0), h = BOX_H(foot);
+	const int bx = (GAME_H - OPT_W) / 2, by = (GAME_W - h) / 2, x0 = bx + 8, y0 = by + 6;
+	char f[40];
+
+	sm_box(t, bx, by, OPT_W, h);
+	sm_text(t, x0, y0, C_YELLOW, "BATTLE HISTORY");
+	(void)hist_body(t, x0, y0, page, 1);
+	snprintf(f, sizeof(f), "LB/RB PAGE %d/%d   B BACK", page, hist_pages());
+	sm_text(t, x0, y0 + foot, C_GREEN, f);
+}
+
+static void hist_open(void)
+{
+	sm_state = SM_HIST;
+	hist_pg = 0;
+	log_printf(C_WHITE, "BATTLE HISTORY: OPEN (EMU %u)", (unsigned)frame_count);
+}
+
+static void hist_turn(int d)
+{
+	hist_pg = (hist_pg + hist_pages() + d) % hist_pages();
+	log_printf(C_WHITE, "BATTLE HISTORY: PAGE %d", hist_pg + 1);
+}
+
+static void hist_input(uint32_t press)
+{
+	if (press & (A_MLB | A_LEFT))
+		hist_turn(-1);
+	if (press & (A_MRB | A_RIGHT))
+		hist_turn(1);
+	if (press & (A_MB | A_COIN)) {
+		sm_state = SM_OPTS;
+		opt_page = 0;
+		log_printf(C_WHITE, "BATTLE HISTORY: BACK");
+	}
+}
+
 static int sm_pages(volatile uint32_t *t)
 {
 	static const char *const label[SM_ROWS] = {"PLAYER", "MODE", "TYPE", "DIP SWITCHES", "START RUN"};
@@ -6307,8 +7351,9 @@ static int sm_pages(volatile uint32_t *t)
 		 * highlighted row; TYPE before MODE (sm_rows_*); the helps the user's */
 		/* test 89: TRAINING the same page, wider (its rows' names), a help in two lines */
 		const int n = sm_nrows(), id = sm_rowid(sm_row), hy = OPT_HELP_Y(n), h2 = sm_train ? HELP2 : 0;
+		const int play_b = ps2m_rec && !sm_train; /* test 141 A: PLAY B (arrows at 11/22, fitted pitch) */
 		/* test 94: the value column two further right on TRAINING ("BOMB FRAGMENTS") */
-		const int h = BOX_H(hy + h2 + (sm_train ? 42 : 32)), bw = sm_train ? OPT_W : SM_W, ca = sm_train ? 17 : 10;
+		const int h = BOX_H(hy + h2 + (sm_train ? 42 : 32)), bw = sm_train ? OPT_W : SM_W, ca = sm_train ? 17 : play_b ? 11 : 10;
 		const int bx = (GAME_H - bw) / 2, by = (GAME_W - h) / 2, x0 = bx + 8, y0 = by + 6;
 		uint32_t vc;
 		char s[24];
@@ -6317,7 +7362,7 @@ static int sm_pages(volatile uint32_t *t)
 		                                         "IBARA  TRAINING") :
 		                             !ib ? "BLACK LABEL  PLAY" : ARR ? "IBARA ARRANGE  PLAY" : "IBARA  PLAY");
 		for (i = 0; i < n; i++) {
-			const int r = sm_rowid(i), sel = i == sm_row, ly = y0 + 14 + 10 * i;
+			const int r = sm_rowid(i), sel = i == sm_row, ly = y0 + 14 + PS2M_PITCH * i;
 			sm_text(t, x0 + 6, ly, sel ? C_YELLOW : C_WHITE, r >= SM_ROW_TR ? tr_names[r - SM_ROW_TR] : label[r]);
 			if (sel)
 				sm_text(t, x0, ly, C_YELLOW, ">");
@@ -6346,7 +7391,7 @@ static int sm_pages(volatile uint32_t *t)
 		sm_help(t, x0, y0 + hy, C_CYAN, id >= SM_ROW_TR ? tr_help(id - SM_ROW_TR) : id == SM_ROW_START ?
 		        (sm_train ? "PLAY WITH THE SETTINGS BELOW\nNO SCORES, INITIALS OR REPLAYS" : "PLAY WITH THE SETTINGS BELOW") :
 		        id == SM_ROW_DIP ? "SERVICE MENU GAME OPTIONS" : id == SM_ROW_TYPE ? "SELECT SHIP TYPE" : id == SM_ROW_MODE ?
-		        "SELECT GAME MODE" : "1P OR 2P SIDE", (bw - 16) / 6);
+		        "SELECT GAME MODE" : "1P OR 2P SIDE", 28); /* 28 letters a line */
 		/* test 101 (user): OPTIONS / FORMATION are EDIT only since test 100, LEFT / RIGHT do nothing there. Test 102
 		 * (user: "keep it all in english like the other games"): the green lines English in JAPANESE too */
 		ps2m_lines_en = 1;
@@ -6384,12 +7429,15 @@ static int sm_pages(volatile uint32_t *t)
 		int r[DIP_ROWS_MAX];
 		const int nr = dip_rows(r), hy = OPT_HELP_Y(nr), h = BOX_H(hy + HELP2 + 32);
 		const int bx = (GAME_H - OPT_W) / 2, by = (GAME_W - h) / 2, x0 = bx + 8, y0 = by + 6;
+		const int dip_vc = ps2m_rec ? 18 : 16; /* test 141 A: B value column 18 (1 + PLAYER COUNTS + 4) */
 		char v[40];
 		sm_box(t, bx, by, OPT_W, h);
 		sm_text(t, x0, y0, C_YELLOW, !ib ? "BLACK LABEL  DIP SWITCHES" : ARR ? "IBARA ARRANGE  DIP SWITCHES" :
 		                                    "IBARA  DIP SWITCHES");
+		if (ps2m_rec)
+			ps2m_val_col = dip_vc;
 		for (i = 0; i < nr; i++) {
-			const int y = y0 + 14 + 10 * i, sel = i == dip_sel, id = r[i];
+			const int y = y0 + 14 + PS2M_PITCH * i, sel = i == dip_sel, id = r[i];
 			const struct dip_item *d = dip_item_of(id);
 			if (sel)
 				sm_text(t, x0, y, C_YELLOW, ">");
@@ -6399,12 +7447,14 @@ static int sm_pages(volatile uint32_t *t)
 			}
 			sm_text(t, x0 + 6, y, sel ? C_YELLOW : C_WHITE, d->name);
 			if (!dip_have()) {
-				sm_text(t, x0 + 6 * 16, y, C_DIM, "NOT IN ARRANGE");
+				sm_text(t, x0 + 6 * dip_vc, y, C_DIM, "NOT IN ARRANGE");
 			} else {
 				dip_text(id, dip_get(id), v, sizeof(v));
-				sm_text(t, x0 + 6 * 16, y, sel ? C_YELLOW : dip_get(id) != d->def ? C_RED : C_GREEN, v);
+				sm_text(t, x0 + 6 * dip_vc, y, sel ? C_YELLOW : dip_get(id) != d->def ? C_RED : C_GREEN, v);
 			}
 		}
+		if (ps2m_rec)
+			ps2m_val_col = 0;
 		sm_help(t, x0, y0 + hy, C_CYAN, dip_help(dip_sel), 35);
 		sm_text(t, x0, y0 + hy + HELP2 + 12, C_DIM, "INVALID SCORE IF NOT DEFAULT"); /* test 82: the user's */
 		sm_text(t, x0, y0 + hy + HELP2 + 22, C_GREEN, "LEFT/RIGHT CHANGE");
@@ -6413,24 +7463,69 @@ static int sm_pages(volatile uint32_t *t)
 		/* test 67: page 1 = the debug menu (its rows are the ones that act from the next power-on, "*", and ibara's
 		 * special mode); the options' page has no "*" line. Test 70: the options' page thinner (OPT0_W), its rows all
 		 * open pages ("A = CONFIRM" among the green lines, user); page 3 = GENERAL SCREEN; a help in up to two lines */
+		/* test 136: per-page value column x = left of names + widest name on that page + one gap (ARCADE 6 px chars;
+		 * PS2 in ps2menu.c). Widen the box or reduce the gap if the values do not fit (reported in work/g136/REPORT.md) */
 		const int n = opt_nrows(), hy = OPT_HELP_Y(n), id = opt_row(opt_sels[opt_page]);
-		const int w = opt_page && opt_page != OPT_PAGE_OPTIONS && opt_page != OPT_PAGE_PAUSE ? OPT_W : OPT0_W;
+		const int varb = ps2m_rec && opt_page != OPT_PAGE_EXDBG; /* test 140 B */
+		int w = opt_page && opt_page != OPT_PAGE_OPTIONS && opt_page != OPT_PAGE_PAUSE ? OPT_W : OPT0_W;
+		int val_chars = 15, val_gap = 4; /* chars from x0: indent(1) + widest valued name + gap; test 139: 4 letters */
+		char v[40];
+		{
+			int mxn = 0, mxv = 0, j;
+			for (j = 0; j < n; j++) {
+				const int rr = opt_row(j), nl = (int)strlen(opt_names[rr]);
+				int vl = opt_value_maxw(rr); /* test 138 D: widest possible value */
+				if (vl > 0 && nl > mxn)
+					mxn = nl; /* test 139: only rows that have a value (no-value/action rows must not push column) */
+				if (vl > mxv)
+					mxv = vl;
+			}
+			val_chars = 1 + mxn + val_gap;
+			if (varb) { /* test 140 B: fixed column (1 + widest valued name + gap), no shrink / no widen; test 141 B: CHEATS +2 */
+				val_gap = opt_page == OPT_PAGE_CHEATS ? 2 : 4;
+				val_chars = 1 + mxn + val_gap;
+				if (ps2m_rec)
+					ps2m_val_gap = val_gap;
+			} else {
+				while (6 * (val_chars + mxv) > w - 16 && val_chars > 1 + mxn) {
+					val_chars--; /* test 139: move left for all rows together */
+					val_gap--;
+				}
+				if (6 * (val_chars + mxv) > w - 16) {
+					w = 16 + 6 * (val_chars + mxv); /* widen box */
+					if (w > GAME_H)
+						w = GAME_H;
+				}
+			}
+		}
 		const int gy = hy + HELP2 + 12; /* gy: the lines under the help */
 #ifdef IB_GAME
 		const int dbg_lines = 10; /* test 112: the debug menu without its "*" line */
 #else
 		const int dbg_lines = 22;
 #endif
-		const int h = BOX_H(gy + (opt_page == OPT_PAGE_EXDBG ? 22 : opt_page == OPT_PAGE_DEBUG ? dbg_lines :
+		const int h = BOX_H(gy + (opt_page == OPT_PAGE_EXDBG ? 22 :
+		                          opt_page == OPT_PAGE_CHEATS ? (n > 14 ? 12 : 22) : /* test 135: batch 2, compact when 15 rows */
+		                          opt_page == OPT_PAGE_DEBUG ? dbg_lines :
 		                          opt_page == OPT_PAGE_SCREEN || opt_page == OPT_PAGE_PAUSE ? 20 : 10)); /* test 100:
 		                                                                       * the pause's OPTIONS 3 lines */
 		int bx = (GAME_H - w) / 2, by = (GAME_W - h) / 2, x0, y0;
 		const char *help = opt_helps[id];
-		char v[40];
 		if (opt_page == OPT_PAGE_GENERAL || opt_page == OPT_PAGE_SCREEN) /* test 89: in a CUSTOM picture's view */
 			pic_box_at(w, h, &bx, &by);
 		x0 = bx + 8;
 		y0 = by + 6;
+		ps2m_val_col = val_chars; /* test 136: fixed value column for the PS2 look */
+		{ /* test 138 D: widest possible value in ARCADE chars (column does not move) */
+			int mxv2 = 0, j;
+			if (!varb)
+				for (j = 0; j < n; j++) {
+					int vl = opt_value_maxw(opt_row(j));
+					if (vl > mxv2)
+						mxv2 = vl;
+				}
+			ps2m_val_maxw = mxv2;
+		}
 		sm_box(t, bx, by, w, h);
 		sm_text(t, x0, y0, C_YELLOW, opt_page == OPT_PAGE_SCREEN ? "PAUSE  SCREEN" :
 		                             opt_page == OPT_PAGE_PAUSE ? "PAUSE  OPTIONS" : /* test 100 */
@@ -6438,37 +7533,39 @@ static int sm_pages(volatile uint32_t *t)
 		                                                                  "BLACK LABEL  GENERAL SCREEN") :
 		                             opt_page == OPT_PAGE_OPTIONS ? (!ib ? "BLACK LABEL  OPTIONS" :
 		                                                             ARR ? "IBARA ARRANGE  OPTIONS" : "IBARA  OPTIONS") :
-		                             opt_page == OPT_PAGE_EXDBG ? (ib ? "IBARA  EX-DEBUG" : "BLACK LABEL  EX-DEBUG") :
-		                             opt_page ? (ib ? "IBARA  DEBUG MENU" : "BLACK LABEL  DEBUG MENU") :
+		                             opt_page == OPT_PAGE_CHEATS ? (!ib ? "BLACK LABEL  CHEATS" : /* test 131 */
+		                                                             ARR ? "IBARA ARRANGE  CHEATS" : "IBARA  CHEATS") :
+		                             opt_page == OPT_PAGE_EXDBG ? (!ib ? "BLACK LABEL  EX-DEBUG" :
+		                                                             ARR ? "IBARA ARRANGE  EX-DEBUG" : "IBARA  EX-DEBUG") :
+		                             opt_page == OPT_PAGE_DEBUG ? (!ib ? "BLACK LABEL  OTHER SETTINGS" : /* test 131 */
+		                                                           ARR ? "IBARA ARRANGE  OTHER SETTINGS" : "IBARA  OTHER SETTINGS") :
+		                             opt_page ? (!ib ? "BLACK LABEL  MENU" : ARR ? "IBARA ARRANGE  MENU" : "IBARA  MENU") :
 		                                        (!ib ? "BLACK LABEL  MENU" : ARR ? "IBARA ARRANGE  MENU" :
 		                                               "IBARA  MENU")); /* test 81: the one menu */
 		for (i = 0; i < n; i++) {
-			const int y = y0 + 14 + 10 * i, sel = i == opt_sels[opt_page], r = opt_row(i);
+			const int y = y0 + 14 + PS2M_PITCH * i, sel = i == opt_sels[opt_page], r = opt_row(i);
 			opt_value(r, v, sizeof(v));
 			if (sel)
 				sm_text(t, x0, y, C_YELLOW, ">");
 			sm_text(t, x0 + 6, y, sel && ((gsel_armed && r == OPT_GSEL) || (svc_armed && r == OPT_SERVICE) ||
-			                              (rk_armed && r == OPT_RANKS) || (ac_armed && r == OPT_ACH)) ? C_RED :
+			                              (rk_armed && r == OPT_RANKS) || (hi_armed && r == OPT_HIST_INIT) || (ac_armed && r == OPT_ACH)) ? C_RED :
 			                      sel ? C_YELLOW : (r == OPT_GSEL && !launcher_ok) || (r == OPT_STYLE && !ps2menu_ok()) ||
-			                      (r == OPT_LANG && !menu_ps2()) ? C_DIM : C_WHITE, opt_names[r]); /* test 98: the two
-			                                                                                          * rows grey when
-			                                                                                          * they cannot act */
+			                      (r == OPT_LANG && !menu_ps2()) || (r == OPT_LOAD && cheats_on()) || (r == OPT_BCOL && !bulletcol_ok()) ||
+			                      (r == OPT_BOOK && !book_avail()) ? C_DIM : C_WHITE, opt_names[r]); /* test 98, 134; test 137 B2; test 138 E */
 			/* test 91 (user's todo list: the picture rows "shouldn't be greyed out when full or integer are selected") */
-			/* test 111 (user: "line up the off texts" on EX-DEBUG): there one column further, past INFINITE LIVES /
-			 * BOMBS (14 letters), whose values the PS2 look pushed 4 px right of the others' */
-			sm_text(t, x0 + 6 * (opt_page == OPT_PAGE_EXDBG ? 16 : 15), y, sel ? C_YELLOW : C_GREEN, v);
+			/* test 136: value at the per-page column (widest name + one gap), not a fixed offset */
+			sm_text(t, x0 + 6 * val_chars, y, sel ? C_YELLOW : C_GREEN, v);
 		}
+		ps2m_val_col = 0; /* test 136 */
+		ps2m_val_maxw = 0; /* test 138 D */
 		if (id == OPT_SPECIAL && cfg.special != special_on)
 			help = "LEAVING THE MENU RESTARTS THE GAME";
 #ifdef IB_GAME
-		else if (id == OPT_DEBUG) /* test 72: no GAME MENU row; test 82: ARRANGE's without SPECIAL MODE; test 85: SERVICE
-		                           * MENU */
-			help = ib && !ARR ? "SPECIAL MODE, STAFF ROLL,\nSERVICE, RANKS, ACHIEVEMENTS" : ARR ? "STAFF ROLL, RANKINGS,\nACHIEVEMENTS" : /* test 102;
-			       * test 112: the debug menu's rows now */
-			       "STAFF ROLL, SERVICE MENU,\nRANKINGS, ACHIEVEMENTS"; /* test 119: ACHIEVEMENTS */
+		else if (id == OPT_DEBUG) /* test 143: OTHER SETTINGS help simplified */
+			help = "GAMEPLAY AND SYSTEM SETTINGS";
 #else
-		else if (id == OPT_DEBUG) /* test 67; test 70: DEBUG CARD there */
-			help = ib ? "SPECIAL MODE, STAFF ROLL,\nGAME, RANKS, ACHIEVEMENTS" : "STAFF ROLL, GAME, SERVICE,\nRANKINGS, ACHIEVEMENTS";
+		else if (id == OPT_DEBUG) /* test 143: OTHER SETTINGS help simplified */
+			help = "GAMEPLAY AND SYSTEM SETTINGS";
 #endif
 		else if (id == OPT_GSEL) /* test 72 */
 			help = !launcher_ok ? "NO IBARA360.XEX\nBESIDE THIS XEX" : gsel_armed ? "QUIT? A = YES, B = NO" : help;
@@ -6483,13 +7580,20 @@ static int sm_pages(volatile uint32_t *t)
 		else if (id == OPT_RANKS && (rk_armed || rk_said)) /* test 101 */
 			help = rk_armed ? "CONFIRM? A = YES, B = NO" : rk_said == 1 ? "RANKINGS INITIALIZED" :
 			       "NOT NOW: TRY AGAIN IN THE ATTRACT";
+		else if (id == OPT_HIST_INIT && (hi_armed || hi_said)) /* test 145 */
+			help = hi_armed ? "CONFIRM? A = YES, B = NO" : hi_said == 1 ? "HISTORY INITIALIZED" :
+			       "NOT NOW: TRY AGAIN IN THE ATTRACT";
+		else if (id == OPT_LOAD && cheats_on()) /* test 134 */
+			help = "OFF WHILE CHEATS ARE ON";
+		else if (id == OPT_BOOK) /* test 138 E: dimmed row shows why when unavailable */
+			help = book_avail() ? opt_helps[id] : "NO IBARABOOK.DAT\nBESIDE THE XEX";
 		else if (id == OPT_PLAY) /* test 81; test 82: ARRANGE's the user's, ibara's in the rows' new order */
 			help = !ib ? "PLAYER SIDE, DIP SWITCHES" : ARR ? "SELECT PLAYER AND SHIP TYPE" :
 			             "PLAYER, TYPE, MODE,\nDIP SWITCHES";
-		ps2m_help_en = opt_page == OPT_PAGE_EXDBG; /* test 112: EX-DEBUG's helps English in JAPANESE (user) */
+		ps2m_help_en = opt_page == OPT_PAGE_EXDBG; /* test 134: CHEATS helps in Japanese too */
 		sm_help(t, x0, y0 + hy, (id == OPT_GSEL && gsel_armed) || (id == OPT_SERVICE && svc_armed) ||
-		        (id == OPT_RANKS && rk_armed) || (id == OPT_ACH && ac_armed) ? C_RED : C_CYAN, help,
-		        (w - 16) / 6);
+		        (id == OPT_RANKS && rk_armed) || (id == OPT_HIST_INIT && hi_armed) || (id == OPT_ACH && ac_armed) ? C_RED : C_CYAN, help,
+		        (w - 16) / 6 < 28 ? (w - 16) / 6 : 28); /* test 138 D2: 28 letters a line */
 		ps2m_help_en = 0;
 		if (opt_page == OPT_PAGE_SCREEN) { /* test 69; test 70: A opens M3 GADGETS (no "A = OPEN" there either) */
 			sm_text(t, x0, y0 + gy, C_GREEN, "LEFT/RIGHT CHANGE, A = CONFIRM");
@@ -6503,12 +7607,20 @@ static int sm_pages(volatile uint32_t *t)
 			/* test 112: the ini's rows came here too: their "*" line on theirs; test 113 (user: "grey help text in
 			 * ex-debug ... should also be converted to english even when language is japanese"): English always */
 			ps2m_help_en = 1;
-			sm_text(t, x0, y0 + gy, C_DIM, id == OPT_EXLIVES || id == OPT_EXINFB || id == OPT_EXINV || id == OPT_EXHIT ?
+			sm_text(t, x0, y0 + gy, C_DIM, id == OPT_EXHIT ?
 			        "UNTIL THE POWER-OFF, NO REPLAY" : id == OPT_EXREPLAY ? "AT ONCE, KEPT IN IBARA360.INI" : /* test 118 */
 			        "* = FROM THE NEXT POWER-ON");
 			ps2m_help_en = 0;
 			sm_text(t, x0, y0 + gy + 12, C_GREEN, "LEFT/RIGHT CHANGE");
 			sm_text(t, x0, y0 + gy + 22, C_GREEN, "B / BACK = OPTIONS");
+		} else if (opt_page == OPT_PAGE_CHEATS) { /* test 131 */
+			sm_text(t, x0, y0 + gy, C_DIM, "NO SAVES, REPLAYS OR SCORES");
+			if (n > 14) { /* test 135: batch 2, 15 rows: drop "LEFT/RIGHT CHANGE" to fit */
+				sm_text(t, x0, y0 + gy + 12, C_GREEN, "B / BACK = OPTIONS");
+			} else {
+				sm_text(t, x0, y0 + gy + 12, C_GREEN, "LEFT/RIGHT CHANGE");
+				sm_text(t, x0, y0 + gy + 22, C_GREEN, "B / BACK = OPTIONS");
+			}
 		} else if (opt_page == OPT_PAGE_DEBUG) {
 #ifdef IB_GAME /* test 112: no "*" row left (they went to EX-DEBUG) */
 			sm_text(t, x0, y0 + gy, C_GREEN, "LEFT/RIGHT CHANGE");
@@ -6540,23 +7652,48 @@ static int sm_pages(volatile uint32_t *t)
 		sm_box(t, bx, by, OPT_W, h);
 		snprintf(v, sizeof(v), "%s  P%d CONTROLS", ib ? "IBARA" : "BLACK LABEL", ctl_pad + 1);
 		sm_text(t, x0, y0, C_YELLOW, v);
-		for (i = 0; i < n; i++) {
-			const int y = y0 + 14 + 10 * i, sel = i == ctl_sel, r = ctl_rowid(i);
-			if (sel)
-				sm_text(t, x0, y, C_YELLOW, ">");
-			sm_text(t, x0 + 6, y, sel ? C_YELLOW : C_WHITE,
-			        r < CTL_N ? settings_ctl_name(r) : r == CTL_ROW_DEAD ? "STICK DEADZONE" :
-			        r == CTL_ROW_AF ? opt_names[OPT_AUTOFIRE] : "DEFAULTS");
-			if (r < CTL_N) {
-				sm_text(t, x0 + 6 * 10, y, sel ? C_YELLOW : c[r] == FN_OFF ? C_DIM : C_GREEN,
-				        settings_fn_name(CTL_SET, c[r]));
-			} else if (r == CTL_ROW_DEAD) { /* test 125 */
-				snprintf(v, sizeof(v), "%d%%", cfg.deadzone[ctl_pad]);
-				sm_text(t, x0 + 6 * 10, y, sel ? C_YELLOW : C_GREEN, v);
-			} else if (r == CTL_ROW_AF) { /* test 67 */
-				opt_value(OPT_AUTOFIRE, v, sizeof(v));
-				sm_text(t, x0 + 6 * 10, y, sel ? C_YELLOW : C_GREEN, v);
+		{ /* test 138 D2: fixed value column; test 139: 4-letter gap, shared, valued names only */
+			int mxn = 0, mxv = 0, vc = 10;
+			for (i = 0; i < n; i++) {
+				const int r = ctl_rowid(i);
+				const char *nm = r < CTL_N ? settings_ctl_name(r) : r == CTL_ROW_DEAD ? "STICK DEADZONE" :
+				                 r == CTL_ROW_AF ? opt_names[OPT_AUTOFIRE] : "DEFAULTS";
+				int nl = (int)strlen(nm), vl = 0;
+				if (r < CTL_N) vl = 17; /* "SUB WEAPON CHANGE" */
+				else if (r == CTL_ROW_DEAD) vl = 3; /* "95%" */
+				else if (r == CTL_ROW_AF) vl = 6; /* "7.5 HZ" */
+				if (vl > 0 && nl > mxn) mxn = nl; /* test 139: only rows that have a value */
+				if (vl > mxv) mxv = vl;
 			}
+			vc = 1 + mxn + 4;
+			if (!ps2m_rec) { /* test 140 B: PS2 uses fixed column, no shrink */
+				while (6 * (vc + mxv) > OPT_W - 16 && vc > 1 + mxn)
+					vc--;
+				ps2m_val_maxw = mxv;
+			} else {
+				ps2m_val_maxw = 0;
+			}
+			ps2m_val_col = vc;
+			for (i = 0; i < n; i++) {
+				const int y = y0 + 14 + PS2M_PITCH * i, sel = i == ctl_sel, r = ctl_rowid(i);
+				if (sel)
+					sm_text(t, x0, y, C_YELLOW, ">");
+				sm_text(t, x0 + 6, y, sel ? C_YELLOW : C_WHITE,
+				        r < CTL_N ? settings_ctl_name(r) : r == CTL_ROW_DEAD ? "STICK DEADZONE" :
+				        r == CTL_ROW_AF ? opt_names[OPT_AUTOFIRE] : "DEFAULTS");
+				if (r < CTL_N) {
+					sm_text(t, x0 + 6 * vc, y, sel ? C_YELLOW : c[r] == FN_OFF ? C_DIM : C_GREEN,
+					        settings_fn_name(CTL_SET, c[r]));
+				} else if (r == CTL_ROW_DEAD) { /* test 125 */
+					snprintf(v, sizeof(v), "%d%%", cfg.deadzone[ctl_pad]);
+					sm_text(t, x0 + 6 * vc, y, sel ? C_YELLOW : C_GREEN, v);
+				} else if (r == CTL_ROW_AF) { /* test 67 */
+					opt_value(OPT_AUTOFIRE, v, sizeof(v));
+					sm_text(t, x0 + 6 * vc, y, sel ? C_YELLOW : C_GREEN, v);
+				}
+			}
+			ps2m_val_col = 0;
+			ps2m_val_maxw = 0;
 		}
 		if (id == CTL_ROW_DEF) {
 			help = "A = RESTORE DEFAULT"; /* test 71: the user's */
@@ -6600,47 +7737,259 @@ static int sm_pages(volatile uint32_t *t)
 		const int bx = (GAME_H - OPT_W) / 2, by = (GAME_W - h) / 2, x0 = bx + 8, y0 = by + 6;
 		sm_box(t, bx, by, OPT_W, h);
 		sm_text(t, x0, y0, C_YELLOW, ib ? "IBARA  M3 GADGETS" : "BLACK LABEL  M3 GADGETS");
-		for (i = 0; i < n; i++) { /* test 70: the values a column further (SPECIAL FORMATIONS' 18 letters) */
-			const int y = y0 + 14 + 10 * i, sel = i == gp_sel, r = gp_row(i);
-			if (sel)
-				sm_text(t, x0, y, C_YELLOW, ">");
-			sm_text(t, x0 + 6, y, sel ? C_YELLOW : C_WHITE, r < GD_N ? gadgets_name(r) : r == GP_STAGE ? "STAGE MAP" : r == GP_COOP ? "CO-OP" : "ALL");
-			if (r < GD_N) /* test 67: CONTROLS STICK / TEXT / OFF; test 88: XTC SMALL / FULL / OFF, the stick dim under
-			               * XTC FULL (not drawn) */
-				sm_text(t, x0 + 6 * 20, y, sel ? C_YELLOW : cfg.gadget[r] ?
-				        C_GREEN : C_DIM, !cfg.gadget[r] ? "OFF" : r == GD_XTC ? (cfg.xtc_full ? "FULL" : "SMALL") :
-				        r != GD_CONTROLS ? "ON" : ctl_text_now() ? "TEXT" : "STICK");
-			else if (r == GP_STAGE) /* test 121 item 5: OFF without the file */
-				sm_text(t, x0 + 6 * 20, y, sel ? C_YELLOW : cfg.stage_map && gadgets_stagemap_avail() ? C_GREEN : C_DIM,
-				        cfg.stage_map && gadgets_stagemap_avail() ? "ON" : "OFF");
-			else if (r == GP_COOP) /* test 71 */
-				sm_text(t, x0 + 6 * 20, y, sel ? C_YELLOW : cfg.coop ? C_GREEN : C_DIM, cfg.coop ? "ON" : "OFF");
-			else /* test 68 */
-				sm_text(t, x0 + 6 * 20, y, sel ? C_YELLOW : all ? C_GREEN : C_DIM,
-				        all == 1 ? "ON" : all == 0 ? "OFF" : "MIXED");
+		{ /* test 138 D2: fixed value column; test 139: 4-letter gap, shared (all rows have values) */
+			int mxn = 0, mxv = 6, vc = 20; /* widest possible value: "BOTTOM"/"MIXED" class */
+			for (i = 0; i < n; i++) {
+				const int r = gp_row(i);
+				const char *nm = r < GD_N ? gadgets_name(r) : r == GP_STAGE ? "STAGE MAP" : r == GP_COOP ? "CO-OP" : r == GP_ZONES ? "NO ITEM ZONES" : "ALL";
+				int nl = (int)strlen(nm);
+				if (nl > mxn) mxn = nl; /* test 139: valued rows only (all rows have a value here) */
+			}
+			vc = 1 + mxn + 4;
+			if (!ps2m_rec) { /* test 140 B */
+				while (6 * (vc + mxv) > OPT_W - 16 && vc > 1 + mxn)
+					vc--;
+				ps2m_val_maxw = mxv;
+			} else {
+				ps2m_val_maxw = 0;
+			}
+			ps2m_val_col = vc;
+			for (i = 0; i < n; i++) { /* test 70: the values a column further (SPECIAL FORMATIONS' 18 letters) */
+				const int y = y0 + 14 + PS2M_PITCH * i, sel = i == gp_sel, r = gp_row(i);
+				if (sel)
+					sm_text(t, x0, y, C_YELLOW, ">");
+				sm_text(t, x0 + 6, y, sel ? C_YELLOW : C_WHITE, r < GD_N ? gadgets_name(r) : r == GP_STAGE ? "STAGE MAP" : r == GP_COOP ? "CO-OP" : r == GP_ZONES ? "NO ITEM ZONES" : "ALL"); /* test 137 */
+				if (r < GD_N) /* test 67: CONTROLS STICK / TEXT / OFF; test 88: XTC SMALL / FULL / OFF, the stick dim under
+				               * XTC FULL (not drawn) */
+					sm_text(t, x0 + 6 * vc, y, sel ? C_YELLOW : cfg.gadget[r] ?
+					        C_GREEN : C_DIM, !cfg.gadget[r] ? "OFF" : r == GD_XTC ? (cfg.xtc_full ? "FULL" : "SMALL") :
+					        r != GD_CONTROLS ? "ON" : ctl_text_now() ? "TEXT" : "STICK");
+				else if (r == GP_STAGE) /* test 121 item 5: OFF without the file */
+					sm_text(t, x0 + 6 * vc, y, sel ? C_YELLOW : cfg.stage_map && gadgets_stagemap_avail() ? C_GREEN : C_DIM,
+					        cfg.stage_map && gadgets_stagemap_avail() ? "ON" : "OFF");
+				else if (r == GP_COOP) /* test 71 */
+					sm_text(t, x0 + 6 * vc, y, sel ? C_YELLOW : cfg.coop ? C_GREEN : C_DIM, cfg.coop ? "ON" : "OFF");
+				else if (r == GP_ZONES) /* test 137 */
+					sm_text(t, x0 + 6 * vc, y, sel ? C_YELLOW : cfg.zones_show ? C_GREEN : C_DIM, zones_show_name(cfg.zones_show));
+				else /* test 68 */
+					sm_text(t, x0 + 6 * vc, y, sel ? C_YELLOW : all ? C_GREEN : C_DIM,
+					        all == 1 ? "ON" : all == 0 ? "OFF" : "MIXED");
+			}
+			ps2m_val_col = 0;
+			ps2m_val_maxw = 0;
 		}
 		sm_help(t, x0, y0 + hy, C_CYAN, ARR && g == GD_FORMATION ? "FORMATIONS INFO" /* test 83 */ :
 		        g == GD_CONTROLS && ctl_stick_off() ? "TEXT OR OFF WHILE XTC IS FULL" /* test 88; test 89 */ :
 		        g == GP_STAGE ? (gadgets_stagemap_avail() ? "16:9 ONLY: MAP AND VIEW LEFT, BOSS RIGHT, OTHER GADGETS OFF"
 		        : "NO IBARAWEB.DAT BESIDE THE XEX FILES") /* test 121 item 5 */ :
 		        g < GD_N ? helps[g] : g == GP_COOP ? "P1 AND P2 GADGETS WHILE CO-OP\n"
-		        "PLAY IS ACTIVE" : "TOGGLE ALL GADGETS ON/OFF", 35); /* test 82: CO-OP's the user's */
+		        "PLAY IS ACTIVE" : g == GP_ZONES ? "SHOWS WHERE KILLED ENEMIES DROP NO ITEMS" /* test 137 */ : "TOGGLE ALL GADGETS ON/OFF", 28); /* test 138 D2: 28 letters a line */
 		if (cfg.picture == PIC_CUSTOM) /* test 88: the picture resize turns them off */
 			sm_text(t, x0, y0 + gy, C_RED, "OFF: PICTURE SIZE IS CUSTOM");
 		else
 			sm_text(t, x0, y0 + gy, C_DIM, "LEFT/RIGHT: TOGGLE ON/OFF"); /* test 69: no GADGETS row any more; test 82 */
 		sm_text(t, x0, y0 + gy + 12, C_GREEN, menu_paused ? "B / BACK = OPTIONS, START = RESUME" : /* test 100 */
 		        "B / BACK = OPTIONS");
+	} else if (sm_state == SM_ZONES) { /* test 137: NO ITEM ZONES sub-menu */
+		const int hy = OPT_HELP_Y(ZN_N), h = BOX_H(hy + 24 + (menu_paused ? 10 : 0));
+		const int bx = (GAME_H - OPT_W) / 2, by = (GAME_W - h) / 2, x0 = bx + 8, y0 = by + 6;
+		char v[32];
+		sm_box(t, bx, by, OPT_W, h);
+		sm_text(t, x0, y0, C_YELLOW, menu_paused ? "PAUSE  NO ITEM ZONES" : "NO ITEM ZONES");
+		{ /* test 138 D2: fixed value column; test 139: 4-letter gap, shared, valued names only */
+			int mxn = 0, mxv = 6, vc = 14; /* widest possible value: "BOTTOM" */
+			for (i = 0; i < ZN_N; i++) {
+				int nl = (int)strlen(zn_names[i]);
+				if (i != ZN_RESET && nl > mxn) mxn = nl; /* test 139: only rows that have a value */
+			}
+			vc = 1 + mxn + 4;
+			if (!ps2m_rec) { /* test 140 B */
+				while (6 * (vc + mxv) > OPT_W - 16 && vc > 1 + mxn)
+					vc--;
+				ps2m_val_maxw = mxv;
+			} else {
+				ps2m_val_maxw = 0;
+			}
+			ps2m_val_col = vc;
+			for (i = 0; i < ZN_N; i++) {
+				const int y = y0 + 14 + PS2M_PITCH * i, sel = i == zn_sel;
+				if (sel)
+					sm_text(t, x0, y, C_YELLOW, ">");
+				sm_text(t, x0 + 6, y, sel ? C_YELLOW : C_WHITE, zn_names[i]);
+				v[0] = 0;
+				switch (i) {
+				case ZN_SHOW:
+					snprintf(v, sizeof(v), "%s", zones_show_name(cfg.zones_show));
+					break;
+				case ZN_RED:
+					snprintf(v, sizeof(v), "%d", cfg.zones_r & 255);
+					break;
+				case ZN_GREEN:
+					snprintf(v, sizeof(v), "%d", cfg.zones_g & 255);
+					break;
+				case ZN_BLUE:
+					snprintf(v, sizeof(v), "%d", cfg.zones_b & 255);
+					break;
+				case ZN_ALPHA:
+					snprintf(v, sizeof(v), "%d%%", cfg.zones_alpha);
+					break;
+				case ZN_RESET:
+					v[0] = 0;
+					break;
+				}
+				if (v[0])
+					sm_text(t, x0 + 6 * vc, y, sel ? C_YELLOW : C_GREEN, v);
+			}
+			ps2m_val_col = 0;
+			ps2m_val_maxw = 0;
+		}
+		sm_help(t, x0, y0 + hy, C_CYAN,
+		        zn_sel == ZN_RESET ? "A = RESTORE DEFAULTS" : zn_helps[zn_sel], 28); /* test 138 D2 */
+		sm_text(t, x0, y0 + hy + 12, C_GREEN, "LEFT/RIGHT CHANGE");
+		if (menu_paused)
+			sm_text(t, x0, y0 + hy + 22, C_GREEN, "B / BACK = M3 GADGETS, START = RESUME");
+		else
+			sm_text(t, x0, y0 + hy + 22, C_GREEN, "B / BACK = M3 GADGETS");
+	} else if (sm_state == SM_BCOL) { /* test 138 C4; test 139 D; test 141 D: BULLET COLORS sub-menu */
+		const int on = cfg.bullet_colours != 0, edit_h = bcol_edit_harder();
+		const int nr = bcol_nrows();
+		const int hy = 14 + PS2M_PITCH * nr + 68; /* help start: rows + preview (48) + caption (12) + margin */
+		const int h = BOX_H(hy + 24 + (menu_paused ? 10 : 0));
+		const int bx = (GAME_H - OPT_W) / 2, by = (GAME_W - h) / 2, x0 = bx + 8, y0 = by + 6;
+		const int pv = y0 + 14 + PS2M_PITCH * nr + 4; /* preview top (needles 2x: 48 px) */
+		char v[32];
+
+		sm_box(t, bx, by, OPT_W, h);
+		sm_text(t, x0, y0, C_YELLOW, "BULLET COLORS"); /* test 141: attract menu only (not in the pause) */
+		{ /* test 141 D1: per bullet type presets, fixed value column 1 + widest valued name + 4 */
+			int mxn = 0, mxv = 12, vc = 18; /* widest value: LIGHT PURPLE/LIGHT ORANGE */
+			int k;
+			for (k = 0; k < bulletcol_color_preset_n(); k++) {
+				int l = (int)strlen(bulletcol_color_preset_name(k));
+				if (l > mxv) mxv = l;
+			}
+			for (k = 0; k < nr; k++) {
+				const int kind = bcol_kind(k), nl = (int)strlen(bcol_row_label(k));
+				if (kind != BCOLK_RESET && nl > mxn) /* valued names only */
+					mxn = nl;
+			}
+			vc = 1 + mxn + 4;
+			if (!ps2m_rec) { /* ARCADE: shrink/widen as before */
+				while (6 * (vc + mxv) > OPT_W - 16 && vc > 1 + mxn)
+					vc--;
+				ps2m_val_maxw = mxv;
+			} else {
+				ps2m_val_maxw = 0;
+			}
+			ps2m_val_col = vc;
+			if (ps2m_rec) {
+				ps2m_val_gap = 4;
+			}
+			for (k = 0; k < nr; k++) {
+				const int kind = bcol_kind(k), y = y0 + 14 + PS2M_PITCH * k, sel = k == bcol_sel;
+				const int dim = kind != BCOLK_COLORS && !on;
+				v[0] = 0;
+				if (sel)
+					sm_text(t, x0, y, C_YELLOW, ">");
+				sm_text(t, x0 + 6, y, sel ? C_YELLOW : dim ? C_DIM : C_WHITE, bcol_row_label(k));
+				switch (kind) {
+				case BCOLK_COLORS:
+					snprintf(v, sizeof(v), "%s", on ? "CUSTOM" : "DEFAULT");
+					break;
+				case BCOLK_MODE: /* test 139 D2 */
+					snprintf(v, sizeof(v), "%s", bcol_mode_label());
+					break;
+				case BCOLK_PPRESET: { /* test 141 D1 */
+					const int slot = bcol_preset_slot_id(kind);
+					const int pi = bulletcol_color_preset_current(bcol_preset_slot_val(kind), slot);
+					snprintf(v, sizeof(v), "%s", bulletcol_color_preset_name(pi));
+					break;
+				}
+				case BCOLK_SPRESET: { /* test 141 D1 */
+					const int slot = bcol_preset_slot_id(kind);
+					const int pi = bulletcol_color_preset_current(bcol_preset_slot_val(kind), slot);
+					snprintf(v, sizeof(v), "%s", bulletcol_color_preset_name(pi));
+					break;
+				}
+				case BCOLK_RESET:
+					break;
+				default: /* sliders */
+					if (bcol_slider_row(k)) {
+						if (on)
+							snprintf(v, sizeof(v), "%d", bcol_row_ch(k));
+						else
+							snprintf(v, sizeof(v), "N/A");
+					}
+					break;
+				}
+				if (v[0])
+					sm_text(t, x0 + 6 * vc, y, sel ? C_YELLOW : dim ? C_DIM : C_GREEN, v);
+			}
+			ps2m_val_col = 0;
+			ps2m_val_maxw = 0;
+		}
+		/* test 140: preview strip and colour line (test 141 D3: unchanged) */
+		{
+			const int px0 = bx + (OPT_W - 188) / 2;
+			char cap[40];
+			uint32_t pur = (edit_h ? cfg.bullet_purple_h : cfg.bullet_purple) & 0xFFFFFFu;
+			uint32_t sec = (edit_h ? cfg.bullet_red : cfg.bullet_blue) & 0xFFFFFFu;
+			if (bcol_preview_dirty)
+				bcol_preview_refresh();
+			if (ps2m_rec)
+				ps2m_custom(px0, pv, 188, 48, bcol_preview_drawcb, NULL);
+			else
+				bcol_preview_blit(t, px0, pv);
+			snprintf(cap, sizeof(cap), "PURPLE %06X  %s %06X", pur, edit_h ? "RED" : "BLUE", sec);
+			sm_text(t, x0, pv + 52, C_GREEN, cap);
+		}
+		/* test 142: help as sm_help (PI_HELP) on every row, like the other pages */
+		{
+			const int kind = bcol_kind(bcol_sel);
+			if (kind == BCOLK_COLORS) {
+				sm_help(t, x0, y0 + hy, C_CYAN, "DEFAULT OR CUSTOM BULLET COLORS", 28);
+			} else if (kind == BCOLK_MODE) {
+				if (bcol_mode_edit) {
+					sm_help(t, x0, y0 + hy, C_CYAN, "HARDER AND EXTENDED MODES' BULLETS", 28);
+				} else {
+					sm_help(t, x0, y0 + hy, C_CYAN, "ARCADE MODE'S BULLETS", 28);
+				}
+			} else if (kind == BCOLK_PPRESET || kind == BCOLK_SPRESET) {
+				sm_help(t, x0, y0 + hy, C_CYAN, "QUICK COLOR SETS", 28);
+			} else if (kind == BCOLK_RESET) {
+				sm_help(t, x0, y0 + hy, C_CYAN, "BACK TO THIS MODE'S DEFAULTS", 28);
+			} else {
+				/* slider rows (R/G/B): LB/RB step 16 (test 142, user) */
+				sm_help(t, x0, y0 + hy, C_CYAN, "LB/RB QUICK TOGGLE", 28);
+			}
+		}
+		sm_text(t, x0, y0 + hy + 22, C_GREEN, "B / BACK = GENERAL SCREEN"); /* test 141: attract menu only */
 	} else if (sm_state == SM_SOUND) { /* test 68; test 69: the pause's without the tests (user: "minus the sound test") */
 		const int nr = menu_paused ? SR_MTEST : SR_N, hy = OPT_HELP_Y(nr), h = BOX_H(hy + 24 + (menu_paused ? 10 : 0));
 		const int bx = (GAME_H - OPT_W) / 2, by = (GAME_W - h) / 2, x0 = bx + 8, y0 = by + 6;
 		const struct snd_track tr = snd_track_of(snd_track);
 		const char *help;
 		char v[40], d[40];
+		int snd_vc = 12;
+		if (ps2m_rec) { /* test 140 B: fixed value column for PS2 variant B */
+			int mxn = 0;
+			for (i = 0; i < nr; i++) {
+				int nl = (int)strlen(sr_names[i]);
+				if (nl > mxn)
+					mxn = nl;
+			}
+			snd_vc = 1 + mxn + 4;
+		}
+		ps2m_val_col = ps2m_rec ? snd_vc : 0;
+		ps2m_val_maxw = 0;
+		if (ps2m_rec && !menu_paused) { /* test 144 D: fixed window height across all SOUND rows (tallest help = 2 lines) */
+			ps2m_help_min_lines = 2;
+			ps2m_help_min_y = y0 + hy + 12; /* grey line under help (d / "HEARD ONCE...") */
+		}
 		sm_box(t, bx, by, OPT_W, h);
 		sm_text(t, x0, y0, C_YELLOW, menu_paused ? "PAUSE  SOUND" : ib ? "IBARA  SOUND" : "BLACK LABEL  SOUND");
 		for (i = 0; i < nr; i++) {
-			const int y = y0 + 14 + 10 * i, sel = i == snd_sel;
+			const int y = y0 + 14 + PS2M_PITCH * i, sel = i == snd_sel;
 			const int vol = i == SR_MUSIC ? cfg.vol_music : i == SR_SFX ? cfg.vol_sfx : i == SR_VOICE ? cfg.vol_voice :
 			                cfg.vol_attract;
 			uint32_t c = C_GREEN;
@@ -6653,6 +8002,8 @@ static int sm_pages(volatile uint32_t *t)
 			} else if (i == SR_TRACK) { /* test 99: PS2 dimmed while ps2music.bin is not good */
 				snprintf(v, sizeof(v), "%s", cfg.soundtrack == TRACK_PS2 ? "PS2" : "ARCADE");
 				c = cfg.soundtrack == TRACK_PS2 && ps2music_state() != PS2M_OK ? C_DIM : C_GREEN;
+			} else if (i == SR_TRACKLIST) { /* test 132 */
+				snprintf(v, sizeof(v), "%s", cfg.tracklist ? "ALTERNATIVE" : "ORIGINAL");
 			} else if (i == SR_AUDIO) { /* test 112 */
 				snprintf(v, sizeof(v), "%s", cfg.mono ? "MONO" : "STEREO");
 			} else if (i == SR_MTEST) {
@@ -6672,9 +8023,10 @@ static int sm_pages(volatile uint32_t *t)
 				sm_text(t, x0, y, C_YELLOW, ">");
 			sm_text(t, x0 + 6, y, sel ? C_YELLOW : C_WHITE, sr_names[i]);
 			ps2m_keep_x = i == SR_MTEST; /* test 102 (user: tracks 08, 12, 13, 17, 18 where the others start) */
-			sm_text(t, x0 + 6 * 12, y, sel ? C_YELLOW : c, v);
+			sm_text(t, x0 + 6 * (ps2m_rec ? snd_vc : 12), y, sel ? C_YELLOW : c, v);
 			ps2m_keep_x = 0;
 		}
+		ps2m_val_col = 0;
 		if (snd_sel == SR_TRACK) { /* test 99: the reason PS2 is not there, or what it plays */
 			help = sr_helps[snd_sel];
 			if (ps2music_state() != PS2M_OK)
@@ -6688,7 +8040,7 @@ static int sm_pages(volatile uint32_t *t)
 				snprintf(d, sizeof(d), "%s", cfg.soundtrack == TRACK_PS2 ? "THE PS2 PORT'S STREAMS" :
 				         "THE ARCADE BOARD'S MUSIC");
 		} else if (snd_sel < SR_MTEST) {
-			help = sr_helps[snd_sel];
+			help = snd_sel == SR_TRACKLIST ? sr_tracklist_help() : sr_helps[snd_sel]; /* test 143 */
 			snprintf(d, sizeof(d), "LEFT/RIGHT CHANGE");
 		} else if (snd_sel == SR_MTEST) {
 			/* test 71 (user: "use better wording for the grey line for music test"): what the track does, not its
@@ -6722,9 +8074,9 @@ static int sm_pages(volatile uint32_t *t)
 		sm_text(t, x0, y0, C_YELLOW, tr_run ? (ib ? "IBARA  TRAINING PAUSE" : "BLACK LABEL  TRAINING PAUSE") :
 		                             ib ? "IBARA  PAUSE" : "BLACK LABEL  PAUSE");
 		for (int k = 0; k < nr; k++) {
-			const int i = rows[k], y = y0 + 14 + 10 * k, sel = i == pm_sel;
+			const int i = rows[k], y = y0 + 14 + PS2M_PITCH * k, sel = i == pm_sel; /* test 141 A */
 			/* test 72; test 84: SAVE / LOAD with the files, FULL RESTART from the title too */
-			const int can = i == PM_GSEL ? launcher_ok : i == PM_SAVE || i == PM_LOAD ? hdd_ok :
+			const int can = i == PM_GSEL ? launcher_ok : i == PM_SAVE || i == PM_LOAD ? hdd_ok && !cheats_on() :
 			                i == PM_FULL ? pm_slot(i) >= 0 || pm_slot(PM_QUIT) >= 0 : !pm_loads(i) || pm_slot(i) >= 0;
 			const uint32_t c = sel && pm_armed == i ? C_RED : sel ? C_YELLOW : can ? C_WHITE : C_DIM;
 			if (sel)
@@ -6740,6 +8092,8 @@ static int sm_pages(volatile uint32_t *t)
 		}
 		sm_help(t, x0, y0 + hy, pm_armed == pm_sel ? C_RED : C_CYAN, pm_help(), (OPT_W - 16) / 6);
 		sm_text(t, x0, y0 + hy + HELP2 + 12, C_GREEN, pm_armed == pm_sel ? "START = RESUME" : "B / BACK / START = RESUME");
+	} else if (sm_state == SM_HIST) { /* test 137 C2: BATTLE HISTORY (both menu styles, through sm_pages) */
+		hist_draw(t);
 	} else if (sm_state == SM_REPLAYS || sm_state == SM_RPBOX) { /* test 86 */
 		rl_draw(t);
 	} else if (sm_state == SM_RPPAUSE) { /* test 87 */
@@ -6951,6 +8305,7 @@ static void fps_draw(volatile uint32_t *t)
  * with alpha 0xFE is the game itself (ps2menu.c's window outside its vines) and goes in as a game pixel. */
 static uint32_t *mshadow;
 
+/* the page sm_state names into t; 0 = none. Test 98: sm_draw's (MENU STYLE PS2 runs it recording, ps2menu.c) */
 static void sm_draw(void)
 {
 	int s;
@@ -6985,10 +8340,66 @@ static void sm_draw(void)
 
 	if (menu_ps2()) {
 		int drawn;
-		ps2m_begin();
-		ps2m_rec = 1;
-		drawn = sm_pages(t);
-		ps2m_rec = 0;
+		const int varb = sm_state == SM_CTRL || sm_state == SM_GADG || sm_state == SM_ZONES ||
+		                 sm_state == SM_BCOL || sm_state == SM_SOUND || sm_state == SM_HIST ||
+		                 sm_state == SM_OPEN || sm_state == SM_DIP || sm_state == SM_PAUSE ||
+		                 (sm_state == SM_OPTS && opt_page != OPT_PAGE_EXDBG); /* test 140 B; test 141 A */
+		if (varb) {
+			/* test 140 B fix: cache the fitted pitch (record+layout is 3-5x/frame on CHEATS/GADGETS). Key = page
+			 * identity + logical row count + language; re-search when it changes or the cached pitch no longer fits. */
+			static int pm_fit_ok, pm_fit_state, pm_fit_page, pm_fit_rows, pm_fit_ja, pm_fit_pitch;
+			const int ja = menu_ja();
+			int rows = 0, pitch, need_search = 1;
+
+			switch (sm_state) {
+			case SM_OPTS:  rows = opt_nrows(); break;
+			case SM_CTRL:  rows = ctl_nrows(); break;
+			case SM_GADG:  rows = gp_nrows(); break;
+			case SM_ZONES: rows = ZN_N; break;
+			case SM_BCOL:  rows = bcol_nrows(); break;
+			case SM_SOUND: rows = menu_paused ? SR_MTEST : SR_N; break;
+			case SM_HIST:  rows = (hist_pg + 1) * 100; break; /* test 141 A */
+			case SM_OPEN:  rows = sm_nrows() + (sm_train ? 1000 : 0); break; /* test 141 A */
+			case SM_DIP: { int _dr[DIP_ROWS_MAX]; rows = dip_rows(_dr); break; } /* test 141 A */
+			case SM_PAUSE: { int _nr; (void)pm_rows(&_nr); rows = _nr; break; } /* test 141 A */
+			default:       rows = 0; break;
+			}
+			if (pm_fit_ok && pm_fit_state == sm_state && pm_fit_page == opt_page &&
+			    pm_fit_rows == rows && pm_fit_ja == ja) {
+				ps2m_pitch = pm_fit_pitch;
+				ps2m_begin();
+				ps2m_rec = 1;
+				drawn = sm_pages(t);
+				ps2m_rec = 0;
+				if (!drawn || ps2m_layout(ja)) {
+					need_search = 0; /* cached pitch still fits (or nothing drawn) */
+				}
+			}
+			if (need_search) {
+				for (pitch = sm_state == SM_BCOL ? 10 : 14; pitch >= 10; pitch--) { /* test 142: BULLET COLORS at pitch 10 = the approved preview (window y 38-262, centred like the box) */
+					ps2m_pitch = pitch;
+					ps2m_begin();
+					ps2m_rec = 1;
+					drawn = sm_pages(t);
+					ps2m_rec = 0;
+					if (!drawn || ps2m_layout(ja) || pitch == 10) {
+						pm_fit_state = sm_state;
+						pm_fit_page = opt_page;
+						pm_fit_rows = rows;
+						pm_fit_ja = ja;
+						pm_fit_pitch = pitch;
+						pm_fit_ok = 1;
+						break;
+					}
+				}
+			}
+		} else {
+			ps2m_pitch = 10;
+			ps2m_begin();
+			ps2m_rec = 1;
+			drawn = sm_pages(t);
+			ps2m_rec = 0;
+		}
 		if (drawn) {
 			const struct ps2m_target tg = {t, gtex_pitch, cv1k_vram, CV1K_VRAM_STRIDE, tex_sx, tex_sy};
 			static uint64_t pm_sum, pm_max;
@@ -7181,6 +8592,8 @@ static void present(void)
 		show = !load_pic && !load_tk && (!game_running || (card_on && card_handoffs != card_on_at));
 		/* test 58: GADGETS: the artwork under the game alone; test 60: both games, 16:9 or tate on 16:9 or 4:3 */
 		view = !show && !load_pic && cfg.gadgets && gd_stats.ready && cfg.picture != PIC_CUSTOM ? gadgets_view() : GV_NONE;
+		if (book_is_open()) /* test 138 E: full screen book over black, no game view */
+			view = GV_NONE;
 		gadgets_mask(settings_gadget_mask()); /* test 64: the M3 GADGETS page's */
 		gadgets_stagemap_set(cfg.stage_map, cfg.language == LANG_JAPANESE); /* test 121 item 5 */
 		/* test 71: every frame (the pause's changes at once); test 88: XTC FULL and the picture's scale on the 720-line
@@ -7197,7 +8610,7 @@ static void present(void)
 		}
 		xsdk_built_shader_set_literals(&quad_vert);
 		xsdk_built_shader_set_literals(&quad_frag);
-		if (load_pic) { /* test 88: NOW LOADING alone; test 93: black (the ticker comes with the ini) */
+		if (load_pic || book_is_open()) { /* test 88: NOW LOADING alone; test 138 E: book over black */
 		} else {
 			const struct vb *g = show ? &vb_game : cfg.picture == PIC_FULL ? &vb_full : cfg.picture == PIC_CUSTOM ?
 			                     &vb_cust : &vb_int; /* test 88: CUSTOM */
@@ -7276,7 +8689,7 @@ static void present(void)
 				xsdk_built_shader_set_literals(&quad_frag);
 			}
 		}
-		if (!show && !load_pic && scan_quads) { /* test 37: picture = picture * grey */
+		if (!show && !load_pic && !book_is_open() && scan_quads) { /* test 37: picture = picture * grey */
 			xsdk_gpu_set_blend(&blend_mul);
 			xsdk_gpu_set_texture(QUAD_FRAG_SAMPLER_0_0, &stex, &samp_point);
 			xsdk_gpu_set_vertices(0, vb_scan.address, vb_scan.bytes);
@@ -7285,7 +8698,20 @@ static void present(void)
 		}
 		if (view != GV_NONE) /* test 58: the values over the artwork */
 			gadgets_draw(1, view, frames_queued, s.flips);
-		if (show) {
+		if (book_is_open()) { /* test 138 E: black screen + book page (menus' layer/orientation) */
+			book_vq_bank = frames_queued & 1u;
+			book_vq_slot = 0;
+			xsdk_gpu_set_shaders(&vs, &ps);
+			{
+				const float t[4] = {cfg.flip ? -1.0f : 1.0f, 0.0f, 0.0f, 0.0f};
+				xsdk_gpu_set_vertex_constants(QUAD_VERT_PUSH, t, 1);
+			}
+			xsdk_built_shader_set_literals(&quad_vert);
+			xsdk_built_shader_set_literals(&quad_frag);
+			/* test 139 F2: spread when menus are drawn upright (TATE off) */
+			book_set_spread(cfg.tate == TATE_OFF);
+			book_draw((unsigned)fb_w, (unsigned)fb_h, par, book_quad);
+		} else if (show) {
 			xsdk_gpu_set_shaders(&vs, &ps); /* gadgets_draw leaves other shaders; test 124 */
 			{ /* test 124: ROTATION UPSIDE DOWN */
 				const float t[4] = {cfg.flip ? -1.0f : 1.0f, 0.0f, 0.0f, 0.0f};
@@ -7300,7 +8726,7 @@ static void present(void)
 		/* the next frame lands on this clear; test 94 (user's todo list: "is the blue background normal? can it be
 		 * removed?" under NOW LOADING): black around the ticker's picture too, the card's blue only around the card */
 		xsdk_gpu_resolve(address, (uint32_t)fb_w, (uint32_t)fb_h,
-		                 (game_running && !card_on) || load_pic || load_tk ? C_BLACK : CLEAR_BORDER);
+		                 (game_running && !card_on) || load_pic || load_tk || book_is_open() ? C_BLACK : CLEAR_BORDER);
 		xsdk_present_end();
 		presented = 1; /* test 125: a frame handed to the display */
 		q_due[frames_queued % QD] = due;
@@ -7417,6 +8843,27 @@ static void halt_loop(void)
  * the screen again and its frame log line has PF_PAUSED. No emulated vblank passes, so the recording and the PC replays
  * never see a pause (a load is a "# load" line). */
 
+/* test 139: hold the emulation while the BOOK is open (attract MENU): no frames stepped, sound muted, the menu's
+ * attract loop stopped until the book closes. book input is handled by sm_frame (inputs_update). */
+static void book_hold_loop(void)
+{
+	const int sp = sound_paused;
+	int was = 0;
+	while (book_wants_hold()) {
+		if (!was) {
+			sound_paused = 1;
+			log_printf(C_WHITE, "BOOK: EMULATION HELD");
+			was = 1;
+		}
+		present();
+		inputs_update(); /* sm_frame processes the book's input and closes it on B/BACK */
+	}
+	if (was) {
+		sound_paused = sp;
+		log_printf(C_WHITE, "BOOK: EMULATION GOES ON");
+	}
+}
+
 /* the frozen picture into the game texture no queued frame samples, which then shows (the menu's boxes differ in
  * size: each one is drawn over the whole picture again) */
 static void pause_picture(void)
@@ -7440,7 +8887,14 @@ static void pause_picture(void)
 
 static void pause_redraw(void)
 {
+	const int ib = game_set == SET_IBARA;
 	pause_picture();
+	{ /* test 137: NO ITEM ZONES, right after pause_picture() (the frozen picture), before ARRANGE's HUD / the menus
+	 * that draw into the game texture, so they stay on top and are not erased by the VRAM-sourced zone pixels */
+		const int kval_run = tr_run || (credit_on && *RAMP(ib ? IB_DEMO : BLK_DEMO) != 1);
+		if (zones_draw(gtex[tex_cur].texels, gtex_pitch, !ib, kval_run || menu_paused, tex_sx, tex_sy))
+			gtex_dirty[tex_cur] = 1;
+	}
 	arrhud_draw(gtex[tex_cur].texels, gtex_pitch, tex_sx, tex_sy, 1); /* test 79: ARRANGE's HUD on the frozen picture */
 	sm_draw(); /* the page sm_state names, menu_paused */
 }
@@ -7494,6 +8948,10 @@ static int pause_input(uint32_t press, int *done)
 			return 1;
 		case PM_SAVE: /* test 84: the SLOTS page */
 		case PM_LOAD:
+			if (cheats_on()) { /* test 134 */
+				log_printf(C_YELLOW, "CHEATS: SAVE/LOAD STATE REFUSED");
+				return 1;
+			}
 			if (hdd_ok) {
 				hdd_msg[0] = 0;
 				sl_open(pm_sel == PM_SAVE);
@@ -7623,6 +9081,9 @@ static int pause_input(uint32_t press, int *done)
 		id = opt_row(opt_sels[opt_page]);
 		if (pic_row(id)) {
 			/* test 89: pause_loop's pic_input */
+		} else if ((press & A_MA) && id == OPT_BCOL) { /* test 137 B2: A opens BULLET COLOURS (N/A does nothing) */
+			if (bulletcol_ok())
+				bcol_open();
 		} else {
 			if (press & A_LEFT)
 				opt_step(id, -1);
@@ -7643,14 +9104,39 @@ static int pause_input(uint32_t press, int *done)
 			gp_sel = (gp_sel + 1) % n;
 		if (press & A_LEFT)
 			gp_step(gp_sel, -1);
-		if ((press & A_RIGHT) || ((press & A_MA) && gp_row(gp_sel) != GD_N))
+		if (press & A_RIGHT)
 			gp_step(gp_sel, 1);
+		if (press & A_MA) { /* test 137 */
+			if (gp_row(gp_sel) == GP_ZONES)
+				zn_open();
+			else if (gp_row(gp_sel) != GD_N)
+				gp_step(gp_sel, 1);
+		}
 		if (back) {
 			pause_options(); /* test 100 */
 			log_printf(C_WHITE, "M3 GADGETS: BACK TO OPTIONS");
 		}
 		return press != 0;
 	}
+	if (sm_state == SM_ZONES) { /* test 137 */
+		if (press & A_UP)
+			zn_sel = (zn_sel + ZN_N - 1) % ZN_N;
+		if (press & A_DOWN)
+			zn_sel = (zn_sel + 1) % ZN_N;
+		if (press & A_LEFT)
+			zn_step(zn_sel, -1);
+		if (press & A_RIGHT)
+			zn_step(zn_sel, 1);
+		if (press & A_MA)
+			zn_step(zn_sel, 1);
+		if (back) {
+			sm_state = SM_GADG;
+			log_printf(C_WHITE, "NO ITEM ZONES: BACK TO M3 GADGETS");
+		}
+		return press != 0;
+	}
+	/* test 141: BULLET COLORS not reachable from the pause (pause SCREEN page has no row) */
+
 	if (sm_state == SM_SOUND) { /* the volumes and MUTE (SR_MUSIC .. SR_MUTE) */
 		if (press & A_UP)
 			snd_sel = (snd_sel + SR_MTEST - 1) % SR_MTEST;
@@ -7729,12 +9215,23 @@ static void pause_loop(int pad)
 				done = 1;
 				by = p;
 				how = "START";
+				bcol_close(); /* test 137 B2: a changed BULLET COLOURS is kept when the menu closes on START */
 				menu_se(sm_state, 0, press, 1); /* test 98 */
 				continue;
 			}
 			if (p == pm_pad && sm_state == SM_OPTS && pic_row(opt_row(opt_sels[opt_page]))) /* test 89: every vblank */
 				dirty |= pic_input(opt_row(opt_sels[opt_page]), w, press);
-			if (p == pm_pad && press) {
+			if (p == pm_pad && sm_state == SM_BCOL) { /* test 138 C4: held slider repeat, every vblank */
+				const int se_st = sm_state; /* test 98 */
+				const uint32_t se_sig = menu_sig();
+				dirty |= pause_input(press, &done);
+				menu_se(se_st, se_sig, press, done);
+				if (done) {
+					by = p;
+					how = state_load_slot >= 0 || gsel_req ? pm_names[pm_sel] : hs_slot >= 0 ? "SAVE STATE" : /* test 84 */
+					      hl_slot >= 0 ? "LOAD STATE" : press & A_MA ? "RESUME" : "B / BACK";
+				}
+			} else if (p == pm_pad && press) {
 				const int se_st = sm_state; /* test 98 */
 				const uint32_t se_sig = menu_sig();
 				dirty |= pause_input(press, &done);
@@ -7813,6 +9310,7 @@ static void game_select_quit(const char *from)
 	sound_stop();
 	if (opt_changes)
 		settings_save_request();
+	hist_end_run(); /* test 137 C2: a run in progress ends here (a quit counts) and the file is asked for */
 	/* test 91: the write gate open from now on: with the game busy in its last 30 frames (an attract demo under the menu)
 	 * it held the ini, the EEPROM and the recording up to 20 s, past the two passes below (test 90's Kuro BL log: the
 	 * GENERAL SCREEN changes, then GAME SELECT, no "INI: ... SAVED") */
@@ -7851,6 +9349,7 @@ static uint64_t t_resume; /* (defined with the game's below) */
  * and the next host_vblank is frame_count + 1 */
 static void state_load_now(void)
 {
+	cfx_reset(); /* test 135: batch 2 */
 	const char *const why = state_load_why ? state_load_why : "A RECORDING'S LOAD";
 	const int s = state_load_slot;
 	/* test 70: red for the pause's RESTART STAGE past the first stage only (a replay's load: the same rule; the gadgets
@@ -7871,12 +9370,15 @@ static void state_load_now(void)
 		return;
 	}
 	state_loads++;
+	hist_state_loaded(); /* test 138 A4: relatch the trackers (every load, any slot) */
 	stage_name(t, sizeof(t), slot_stage[s]);
 	rec_state((uint32_t)frame_count, full ? 3 : 1, s); /* test 84: "full" for FULL RESTART's */
 	/* test 86 (user: "if a run used a stage restart, or load state, simply ignore it"): FULL RESTART starts the replay
 	 * again (the credit's slot, the ports from the next vblank), any other load ends it (a playback's own loads: rp_play).
 	 * Test 87 (user: "a run restarted from stage 1 with "stage restart" is still eligible for replay saving"): a RESTART
 	 * STAGE of stage 1 loads the credit's slot too (not red, test 70) and starts it again as FULL RESTART does */
+	if (s == SLOT_ATTRACT) /* test 145: QUIT TO ATTRACT: the run ends (and counts) before the load clears ach_ok */
+		hist_end_run();
 	if (s == SLOT_CREDIT && (full || !red)) /* test 105: a new run from the credit's state, as the replay's start */
 		ach_start(full ? "FULL RESTART" : "RESTART STAGE OF STAGE 1");
 	else if (ach_ok) {
@@ -7913,7 +9415,9 @@ static void state_load_now(void)
 		gadgets_breakdown_void(0);
 	arrhud_reset(); /* test 79 */
 	if (s == SLOT_ATTRACT) { /* the credit's, the stage's and the state's dropped above */
+		/* test 145: the run now ends at the top, before ach_ok is cleared (and counts) */
 		credit_on = 0;
+		cheat_run = 0; /* test 131 */
 		stage_slot = -1;
 		st_prev = -1;
 		if (tr_run && !tr_keep) /* test 89 */
@@ -7935,6 +9439,8 @@ static void state_load_now(void)
 	sm_check_at = 0;
 	sm_runhold = 0;
 	host_reapply_due = 1; /* test 81: the slot's RAM has the settings of its moment */
+	if (s == SLOT_ATTRACT) /* test 138 C3: back to ARCADE (the demos); ARRANGE stays HARDER */
+		bulletcol_set_mode(ARR ? 1 : 0);
 	sm_after = 0;
 	sm_logo = 0;
 	/* test 70 (user: "upon quitting to attract and pressing start again quickly, the game skipped the start menu and
@@ -7984,6 +9490,10 @@ static void state_load_now(void)
 	logo_hold_n = 0;
 	t_resume = tb_read();
 	rt_state_load(s);
+	/* test 137: after save-state load, recolour VRAM-resident bullet pages
+	 * from cv1k_nand (which already has the custom colours applied) */
+	if (bulletcol_ok())
+		bulletcol_vram();
 }
 
 /* ---- test 84: save states on the hard disk (hddstate.c) ----------------------------------------------------------- */
@@ -8021,6 +9531,7 @@ static void sl_open(int save)
 	sl_save = save;
 	sl_paused = menu_paused;
 	sl_armed = -1;
+	sl_arm_del = 0;
 	if (sl_sel < 0 || sl_sel >= HDD_SLOTS)
 		sl_sel = 0;
 	sm_state = SM_SLOTS;
@@ -8046,12 +9557,14 @@ static int sl_input(uint32_t press, int *done)
 	if (press & (A_UP | A_DOWN)) {
 		sl_sel = (sl_sel + HDD_SLOTS + (press & A_UP ? -1 : 1)) % HDD_SLOTS;
 		sl_armed = -1;
+		sl_arm_del = 0;
 		hdd_msg[0] = 0;
 		return 1;
 	}
 	if (press & (A_MB | A_COIN)) {
 		if (sl_armed >= 0) { /* the question taken back */
 			sl_armed = -1;
+			sl_arm_del = 0;
 			return 1;
 		}
 		sm_state = sl_paused ? SM_PAUSE : SM_OPTS;
@@ -8061,14 +9574,36 @@ static int sl_input(uint32_t press, int *done)
 		log_printf(C_WHITE, "%s: BACK TO THE %s", sl_save ? "SAVE STATE" : "LOAD STATE", sl_paused ? "PAUSE MENU" : "MENU");
 		return 1;
 	}
+	if (!sl_save && (press & A_MX) && i->state == HDD_OK) { /* test 141: DELETE? */
+		sl_armed = sl_sel;
+		sl_arm_del = 1;
+		hdd_msg[0] = 0;
+		return 1;
+	}
 	if (!(press & A_MA) || (!sl_save && i->state != HDD_OK))
 		return 0;
+	if (sl_armed == sl_sel && sl_arm_del) { /* test 141: delete a used slot (LOAD STATE) */
+		const int num = sl_sel + 1;
+		sl_armed = -1;
+		sl_arm_del = 0;
+		if (hdd_slot_delete(sl_sel) == 0) {
+			rec_hdd((uint32_t)frame_count, 3, sl_sel, 0);
+			log_printf(C_YELLOW, "LOAD STATE: SLOT %d DELETED (EMU %u)", num, (unsigned)frame_count);
+			hdd_say(C_YELLOW, "STATE %d DELETED", num);
+		} else {
+			log_printf(C_RED, "LOAD STATE: SLOT %d NOT DELETED: %s", num, hdd_why());
+			hdd_say(C_RED, "NOT DELETED: %s", hdd_why());
+		}
+		return 1;
+	}
 	if (sl_armed != sl_sel && !(sl_save && i->state == HDD_EMPTY)) { /* OVERWRITE? / LOAD? (an empty slot saves at once) */
 		sl_armed = sl_sel;
+		sl_arm_del = 0;
 		hdd_msg[0] = 0;
 		return 1;
 	}
 	sl_armed = -1;
+	sl_arm_del = 0;
 	if (sl_save) {
 		hs_slot = sl_sel;
 		hs_replay = 0;
@@ -8197,12 +9732,12 @@ static void sl_draw(volatile uint32_t *t)
 			help = hdd_msg;
 			hc = hdd_msg_c;
 		} else if (sl_armed == sl_sel) { /* test 88 (user's todo list): both pages' "CONFIRM? A = YES, B = NO" */
-			help = "CONFIRM? A = YES, B = NO";
+			help = sl_arm_del ? "DELETE? A = YES, B = NO" : "CONFIRM? A = YES, B = NO"; /* test 141 */
 			hc = C_RED;
 		} else if (sl_save) { /* test 88 (user): "A = OVERWRITE" over a slot in use */
 			help = si->state == HDD_EMPTY ? "A = SAVE" : "A = OVERWRITE";
 		} else {
-			help = si->state == HDD_OK ? "A = LOAD, INVALIDATES SCORE" : "NOTHING TO LOAD";
+			help = si->state == HDD_OK ? "A = LOAD, INVALIDATES SCORE\nX = DELETE" : "NOTHING TO LOAD"; /* test 141, test 142 no comma */
 		}
 		sm_help1(t, x0, y0 + 150, hc, help); /* test 98 */
 		sm_text(t, x0, y0 + gy, C_GREEN, "UP/DOWN SLOT, A = CONFIRM");
@@ -8469,6 +10004,8 @@ static void hl_load(void)
 		           cr_side + 1, pad, 1 + pad_swap, 2 - pad_swap, was == pad_swap ? "" : " (CHANGED)");
 	}
 	credit_on = 1;
+	if (from != HL_REPLAY)
+		hist_run_start(); /* test 137 C2: a loaded file's run (its playtime counts; a load: not an eligible run) */
 	tr_from_file(hh.tr_on, hh.tr_val); /* test 89 */
 	ps2music_slot_put(SLOT_STATE, hh.ps2m_m); /* test 99: the file's records (0 in an older file: none) */
 	if (ss >= 0)
@@ -8555,6 +10092,9 @@ static uint32_t rp_chk_off;      /* where its hashes start in rp_buf */
 static uint16_t rp_cr_eep[256];  /* the run's start: the EEPROM, the clock, BULLET DESIGN */
 static uint8_t rp_cr_rtc[8];
 static int rp_cr_bullets;
+static int rp_cr_nocont;         /* test 132: the run's CONTINUES setting (saved in rh.join_pad[0]) */
+static int rp_cr_trk;            /* test 133: the run's TRACKLIST setting (saved in rh.join_pad[1]) */
+static int rp_pb_nocont;         /* test 132: a playback's (rh.join_pad[0]) */
 static uint32_t rp_join_k[2];    /* test 117: the run's HOST_JOIN writes (struct rp_host's join_k / join_b) */
 static uint8_t rp_join_b[2];
 static int rp_red, rp_stage, rp_players; /* the run: its SCORE went red, the last stage, the sides that played */
@@ -8567,6 +10107,7 @@ static unsigned rp_label_left;   /* vblanks the label stays */
 static uint32_t rp_prev[NPADS];  /* the pads at the last vblank (a playback's B / BACK) */
 static unsigned rp_wait;         /* vblanks a playback has waited for the attract's slot */
 static unsigned rp_saves, rp_plays;
+static uint8_t rp_cont_starts[2]; /* last starts byte per side (a rise from >= 1 = a continue) */
 
 /* the PC harness replays a recording (its lines answer and start, its "# load" lines load) */
 static int rp_harness(void)
@@ -8577,7 +10118,8 @@ static int rp_harness(void)
 static const char *rp_why(int why)
 {
 	static const char *const w[RPB_N] = {"-", "A STAGE RESTART", "A LOAD STATE", "QUIT TO ATTRACT",
-	                                     "LONGER THAN 2 HOURS", "A VBLANK NOT KEPT", "EX-DEBUG CHANGED THE GAME"};
+	                                     "LONGER THAN 2 HOURS", "A VBLANK NOT KEPT", "CHEATS WERE USED",
+	                                     "A CONTINUE WAS USED"};
 	return why > 0 && why < RPB_N ? w[why] : "?";
 }
 
@@ -8623,6 +10165,16 @@ static void ach_step(void)
 		           "ON: WRITTEN TO THE SIGNED-IN PROFILE" : "OFF: XAM IS NOT ASKED ABOUT THEM", (unsigned)frame_count);
 	}
 	ai.eligible = ach_ok && !tr_run && !rp_play && !dip_changed();
+	{ /* test 134 (user: "cheats will also turn off achievements"): a cheated run earns none (any cheat on too: ex_vblank,
+	   * which sets cheat_run, may come later in this vblank) */
+		static int cheat_said;
+		const int cheated = cheat_run || (cheats_on() && !rp_play);
+		if (cheated && ai.eligible && !cheat_said)
+			log_printf(C_YELLOW, "ACHIEVEMENTS: NONE FOR THIS RUN (CHEATS) FROM EMU %u", (unsigned)frame_count);
+		cheat_said = cheated;
+		if (cheated)
+			ai.eligible = 0;
+	}
 	n = ach_frame(&ai, ids, ACH_COUNT);
 	for (int k = 0; k < n; k++) {
 		log_printf(C_GREEN, "ACHIEVEMENT: %s (%s) AT EMU %u%s", ach_name(ids[k]), ach_note() ? ach_note() : "-",
@@ -8634,12 +10186,44 @@ static void ach_step(void)
 		achx_frame();
 }
 
+/* a side's player record and its fields (ibara / ARRANGE, Kuro BL) */
+#define TRB_PLAYER 0x0C29D1D8u /* Kuro BL's 1P record, 2P's TRB_P2 on (work/g89/blk/REPORT.md) */
+#define TRB_P2 0x2A0u
+struct tr_rec {
+	uint32_t base;
+	unsigned lives, shot, small, bombs, frags, inv, starts;
+};
+
+static struct tr_rec tr_rec_of(int s)
+{
+	struct tr_rec r;
+
+	if (game_set == SET_IBARA)
+		r = (struct tr_rec){IB_PLAYER + (uint32_t)s * IB_SHIP_P2, 0x253, 0x254, 0x255, 0x256, 0x257, 0x269, 0x26B};
+	else
+		r = (struct tr_rec){TRB_PLAYER + (uint32_t)s * TRB_P2, 0x25A, 0x25B, 0x25C, 0x25D, 0x25E, 0x288, 0x28A};
+	return r;
+}
+
 /* state_taken (SLOT_CREDIT, base = this vblank) or state_load_now (FULL RESTART, base = the next vblank): a replay
  * from here, what a load leaves as it is kept as it is now */
 static void rp_capture_start(uint32_t base, const char *from)
 {
+	cheat_run = 0; /* test 131: a new run starts */
+	ab_press[0] = ab_press[1] = 0; /* test 135 */
+	ab_left[0] = ab_left[1] = 0;
+	ab_bomb[0] = ab_bomb[1] = 0;
+	ab_seen[0] = ab_seen[1] = 0;
+	ab_off[0] = ab_off[1] = 0;
+	fr_have = 0;
+	cfx_reset(); /* test 135: batch 2 */
 	if (!rp_ok || rp_play)
 		return;
+	/* test 131: remember the starts bytes (a rise from >= 1 = a continue) */
+	for (int s = 0; s < 2; s++) {
+		const struct tr_rec r = tr_rec_of(s);
+		rp_cont_starts[s] = *RAMP(r.base + r.starts);
+	}
 	if (tr_run) { /* test 89: a training run saves no replay */
 		log_printf(C_WHITE, "REPLAY: NONE FOR THIS RUN (TRAINING, EMU %u)", (unsigned)frame_count);
 		return;
@@ -8658,6 +10242,8 @@ static void rp_capture_start(uint32_t base, const char *from)
 	memset(rp_cr_rtc, 0, sizeof(rp_cr_rtc));
 	rtc9701_get(rp_cr_rtc);
 	rp_cr_bullets = host_val[HOST_BULLETS];
+	rp_cr_nocont = !cfg.continues; /* test 132 */
+	rp_cr_trk = cfg.tracklist; /* test 133 */
 	rp_join_k[0] = rp_join_k[1] = 0; /* test 117 */
 	log_printf(C_WHITE, "REPLAY: THE RUN'S PORTS KEPT FROM EMU %u (%s)", (unsigned)base, from);
 }
@@ -8788,6 +10374,8 @@ static void rp_write(int num, int harness)
 	memcpy(rh.eep, rp_cr_eep, sizeof(rh.eep));
 	memcpy(rh.rtc, rp_cr_rtc, sizeof(rh.rtc));
 	rh.bullets = rp_cr_bullets;
+	rh.join_pad[0] = (uint8_t)rp_cr_nocont; /* test 132 */
+	rh.join_pad[1] = (uint8_t)rp_cr_trk; /* test 133 */
 	for (int s = 0; s < 2; s++) { /* test 117 */
 		rh.join_k[s] = rp_join_k[s];
 		rh.join_b[s] = rp_join_b[s];
@@ -9059,6 +10647,8 @@ static void rp_start(int harness)
 	rp_n = rh.frames;
 	rp_chk_off = rh.frames * 4u;
 	rp_num = e->num;
+	rp_pb_nocont = rh.join_pad[0] & 1; /* test 132 */
+	rp_pb_trk = rh.join_pad[1] & 1; /* test 133 */
 	rp_base = (uint32_t)frame_count + 1; /* rt_state_load counts this vblank: the next host_vblank is the replay's 0 */
 	rp_play = 1;
 	rp_plays++;
@@ -9537,6 +11127,7 @@ static uint32_t menu_sig(void)
 	MS(snd_sel), MS(snd_track), MS(snd_voice), MS(snd_sfx), MS(snd_music_on), MS(rl_sel), MS(rl_top), MS(rl_armed);
 	MS(rl_pick), MS(sl_sel), MS(sl_armed), MS(tr_box), MS(tr_box_sel), MS(opt_changes), MS(gsel_armed), MS(svc_armed), MS(rk_armed);
 	MS(ac_armed); /* test 106 */
+	MS(hi_armed); /* test 145 */
 	MS(pm_sel), MS(pm_armed), MS(pm_to_state), MS(rpm_sel), MS(fs_row), MS(fs_side), MS(fs_type), MS(fs_again);
 	MS(sm_side), MS(sm_mode), MS(sm_type), MS(rp_box);
 	for (i = 0; i < TR_N; i++)
@@ -9698,6 +11289,9 @@ static void pause_frame(void)
 		rp_pause_loop(pad);
 	else if (pad >= 0 && in_run && cfg.back_pause && sm_state == SM_CLOSED && !rp_play)
 		pause_loop(pad);
+	/* test 139: BOOK holds the emulation (attract MENU) */
+	if (book_wants_hold())
+		book_hold_loop();
 }
 
 /* test 48: the display's shape (1 = 16:9, 0 = 4:3) and the pixel aspect it gives the front
@@ -10712,9 +12306,7 @@ static const uint16_t tri_entry[4][6] = {
 #if !defined(IB_GAME) || IB_GAME == 0
 #include "ib_boss.h"
 #endif
-/* Kuro BL (work/g89/blk/REPORT.md) */
-#define TRB_PLAYER 0x0C29D1D8u /* the 1P record, 2P's TRB_P2 on */
-#define TRB_P2 0x2A0u
+/* Kuro BL (work/g89/blk/REPORT.md); test 131: TRB_PLAYER / TRB_P2 moved up to tr_rec_of */
 #define TRB_RANK 0x0C297A3Cu   /* u32: smaller = harder */
 #define TRB_CEIL 0x0C237C0Cu   /* u32: rank_down's limit and the respawn's value */
 #define TRB_DEPTH 0x0C2A6D90u  /* u8: the script call depth (BLK_GAME_ON) */
@@ -10890,22 +12482,7 @@ static void wr32(uint32_t a, uint32_t v)
 	p[3] = (u8)v;
 }
 
-/* a side's player record and its fields (ibara / ARRANGE, Kuro BL) */
-struct tr_rec {
-	uint32_t base;
-	unsigned lives, shot, small, bombs, frags, inv, starts;
-};
-
-static struct tr_rec tr_rec_of(int s)
-{
-	struct tr_rec r;
-
-	if (game_set == SET_IBARA)
-		r = (struct tr_rec){IB_PLAYER + (uint32_t)s * IB_SHIP_P2, 0x253, 0x254, 0x255, 0x256, 0x257, 0x269, 0x26B};
-	else
-		r = (struct tr_rec){TRB_PLAYER + (uint32_t)s * TRB_P2, 0x25A, 0x25B, 0x25C, 0x25D, 0x25E, 0x288, 0x28A};
-	return r;
-}
+/* test 131: tr_rec/tr_rec_of moved earlier (rp_capture_start, rp_cont_check) */
 
 /* after a load in a training run (RESTART STAGE, FULL RESTART, LOAD STATE): the sides as the slot has them (a starts
  * byte of 1 has had no values yet), the stage and boss checks as their conditions say */
@@ -11456,49 +13033,244 @@ static void tr_rank_vblank(int ib)
 	}
 }
 
+/* test 131: a cheated run must not enter initials/ranking once the run is over */
+static void cheat_rank_block(void)
+{
+	if (!cheat_run || rp_play)
+		return;
+	{
+		const int ib = game_set == SET_IBARA;
+		const int ending = *RAMP(ib ? TRI_ENDING : TRB_ENDING) != 0;
+		const int game_over = *RAMP(ib ? IB_GAME_OVER : TRB_GAME_OVER) != 0;
+		/* review: at GAME OVER itself (no continue after it: ct_waiting), not sm_after, which comes SM_RUN_HOLD
+		 * vblanks after the game byte falls, when the ranking may already have taken the side */
+		if (!ending && !game_over)
+			return;
+	}
+	for (int s = 0; s < 2; s++) {
+		const struct tr_rec r = tr_rec_of(s);
+		u8 *st = RAMP(r.base + r.starts);
+		if (*st == 1)
+			*st = 2;
+	}
+}
+
 /* HITBOX: each playing ship's own kill box into the converted picture (a frame the game drew; the texture keeps it
  * until the next): ibara / ARRANGE half 2 x 1 pixels, Kuro BL half 1 x 1 (work/g88/blkhit), 2 pixels up (Bond) or down
  * (Dyne) of the ship's position, in white with a black edge. The texture's row y, column x = the game's own pixel */
-/* test 108: EX-DEBUG's INVINCIBLE and INFINITE BOMBS in any run that is not TRAINING (whose own rows do it) nor a
- * replay's playback, as TRAINING writes them (the hit counter kept at 2 while the ship is alive, the full bombs at 4).
- * Achievements stay on (the user's: to test the hard ones); a run they changed keeps no replay (its playback, without
- * the writes, would part from it). Test 110: INFINITE LIVES keeps the ships in reserve at EX_LIVES at least (a death
- * with none left would end the run; the game counts down from it, so the reserve never runs out) */
+/* test 131: a continue (a side's starts byte up from >= 1; a join 0 -> 1 is not) cancels the replay */
+static void rp_cont_check(void)
+{
+	if (!rp_cap || rp_pending || rp_play)
+		return;
+	for (int s = 0; s < 2; s++) {
+		const struct tr_rec r = tr_rec_of(s);
+		const uint8_t cur = *RAMP(r.base + r.starts);
+		if (cur > rp_cont_starts[s] && rp_cont_starts[s] >= 1) {
+			rp_cancel(RPB_CONT);
+			rp_cont_starts[0] = *RAMP(tr_rec_of(0).base + tr_rec_of(0).starts);
+			rp_cont_starts[1] = *RAMP(tr_rec_of(1).base + tr_rec_of(1).starts);
+			return;
+		}
+		rp_cont_starts[s] = cur;
+	}
+}
+
+/* test 134: HITBOX SIZE: the ship kill boxes the collision code reads (entry 0 W / H of each ship list) */
+static void ex_hitsize_apply(void)
+{
+	static const uint32_t ib_l[2] = {0x0C163554u, 0x0C163B5Cu};
+	const int ib = game_set == SET_IBARA;
+	const unsigned pct = (rp_play || *RAMP(ib ? IB_DEMO : BLK_DEMO) == 1) ? 100u : ex_hitsize_pct[ex_hitsize];
+	const uint32_t w0 = ib ? 0x00020000u : 0x00010000u, h0 = 0x00010000u;
+	const uint32_t w = (uint32_t)(((uint64_t)w0 * pct) / 100u), h = (uint32_t)(((uint64_t)h0 * pct) / 100u);
+	const int n = ib ? 2 : 1;
+	static const uint32_t ib_dx[2] = {0x00020000u, 0xFFFE0000u}; /* test 134 review: entry 0 DX of each ibara list */
+	for (int k = 0; k < n; k++) {
+		const uint32_t a = ib ? ib_l[k] : 0x0C175810u;
+		if ((BE32(RAMP(a)) & 0xF0000000u) != 0 || BE32(RAMP(a + 8)) != (ib ? ib_dx[k] : 0x00020000u) ||
+		    BE32(RAMP(a + 12)) != 0 || BE32(RAMP(a + 16)) != 0x200E0000u || BE32(RAMP(a + 20)) != 0x00130000u)
+			continue; /* test 134 review: only the game's own list (DX/DY + the graze entry after it as in RAM) */
+		if (BE32(RAMP(a)) != w)
+			wr32(a, w);
+		if (BE32(RAMP(a + 4)) != h)
+			wr32(a + 4, h);
+	}
+}
+
+/* test 131: CHEATS in any run, including TRAINING. A cheated run keeps no replay, no initials/ranking and no
+ * save/load state. test 134: BOMB INVINCIBILITY, AUTOBOMB, HITBOX SIZE, FIXED RANK. */
 #define EX_LIVES 2
 static void ex_vblank(void)
 {
 	const int ib = game_set == SET_IBARA;
+	const int demo = *RAMP(ib ? IB_DEMO : BLK_DEMO) == 1;
 	int wrote = 0;
 
-	if ((!ex_inv && !ex_infb && !ex_lives) || tr_run || rp_play || *RAMP(ib ? IB_DEMO : BLK_DEMO) == 1) {
+	if (game_running)
+		ex_hitsize_apply(); /* test 134: always (restore in playback/demo) */
+
+	if ((!cheats_on() && !cheat_run) || rp_play || demo) {
 		if (!tr_run) { /* test 126: training's cheats set it */
 			gadgets_inv_held(0, 0);
 			gadgets_inv_held(1, 0);
 		}
+		if (ex_fixrank && fr_have && !ib && !rp_play && !demo && !tr_run) {
+			wr32(TRB_CEIL, 0xFFFFFFu); /* test 134: release to the game's own ceiling */
+			fr_have = 0;
+		} else if (!ex_fixrank && fr_have && !ib) {
+			wr32(TRB_CEIL, 0xFFFFFFu);
+			fr_have = 0;
+		} else if (!ex_fixrank)
+			fr_have = 0;
+		cfx_reset(); /* test 135: batch 2 */
 		return;
 	}
+	if (cheats_on() && !demo && !rp_play) {
+		if (!cheat_run) {
+			cheat_run = 1;
+			if (rp_cap && !rp_pending)
+				rp_cancel(RPB_EXDBG);
+		} else if (rp_cap && !rp_pending)
+			rp_cancel(RPB_EXDBG);
+	}
+
+	/* test 134: FIXED RANK (not when tr_run: TRAINING has its own RANK MODE) */
+	if (!tr_run) {
+		if (ex_fixrank) {
+			const uint32_t ra = ib ? TRI_RANK : TRB_RANK;
+			int in_run = 0;
+			for (int s = 0; s < 2; s++) {
+				const struct tr_rec r = tr_rec_of(s);
+				if (BE32(RAMP(r.base)) == 0xDC000000u) { in_run = 1; break; }
+			}
+			if (in_run) {
+				if (!fr_have) {
+					fr_rank = BE32(RAMP(ra));
+					fr_have = 1;
+					log_printf(C_YELLOW, "CHEATS: FIXED RANK AT %06X (EMU %u)", (unsigned)fr_rank, (unsigned)frame_count);
+				}
+				wr32(ra, fr_rank);
+				if (!ib)
+					wr32(TRB_CEIL, fr_rank);
+			}
+		} else if (fr_have) {
+			if (!ib)
+				wr32(TRB_CEIL, 0xFFFFFFu);
+			fr_have = 0;
+		}
+	} else if (!ex_fixrank && fr_have) {
+		if (!ib)
+			wr32(TRB_CEIL, 0xFFFFFFu);
+		fr_have = 0;
+	}
+
 	for (int s = 0; s < 2; s++) {
 		const struct tr_rec r = tr_rec_of(s);
 		const int alive = BE32(RAMP(r.base)) == 0xDC000000u;
-		const int inv_held = ex_inv && alive && (ib || BE32(RAMP(r.base + 8)) < 0x10); /* test 126 */
-		if (inv_held && *RAMP(r.base + r.inv) < 2) {
-			*RAMP(r.base + r.inv) = 2;
-			wrote = 1;
+		const int tr_inv = tr_run && (tr_val[TR_INV] || tr_turbo);
+		const int ab_counting = ab_left[s] > 0;
+
+		if (ab_bomb[s] && (!alive || (ab_left[s] == 0 && ab_seen[s] && !gadgets_bomb_on(s))))
+			ab_bomb[s] = 0; /* test 135 */
+		/* test 135: AUTOBOMB: armed while the side has a full bomb (user: full bombs only; fragments never) */
+		if (ab_off[s] > 0)
+			ab_off[s]--;
+		{
+			const int armed = ex_autobomb && alive && *RAMP(r.base + r.bombs) > 0 && ab_off[s] == 0;
+			const unsigned inv0 = *RAMP(r.base + r.inv);
+			if (ab_left[s] > 0) { /* the 30 vblanks after a trigger: the bomb must start */
+				if (gadgets_bomb_on(s))
+					ab_seen[s] = 1;
+				if (--ab_left[s] == 0 && !ab_seen[s]) {
+					log_printf(C_YELLOW, "CHEATS: AUTOBOMB %dP: NO BOMB STARTED, THE HIT IS LET THROUGH (EMU %u)", s + 1,
+					           (unsigned)frame_count);
+					ab_bomb[s] = 0;
+					ab_off[s] = 60; /* the guard off 1 s: the game's own hit can land (no endless invincibility) */
+				}
+			}
+			if (armed && ab_left[s] == 0 && !gadgets_bomb_on(s) && inv0 <= 2 && hitbox_touch(!ib, ARR, s)) {
+				ab_press[s] = 4; /* 1 vblank released, then 3 pressed (an edge even if the player holds the button) */
+				ab_left[s] = 30;
+				ab_seen[s] = 0;
+				ab_bomb[s] = 1;
+				log_printf(C_YELLOW, "CHEATS: AUTOBOMB %dP AT EMU %u (FULL BOMBS %u)", s + 1, (unsigned)frame_count,
+				           (unsigned)*RAMP(r.base + r.bombs));
+			}
+			/* the guard: the game hits only at 0 and counts the byte down once a game frame, so 2 = no hit next frame */
+			if (alive && (armed || ab_left[s] > 0 || (ab_bomb[s] && gadgets_bomb_on(s))) && *RAMP(r.base + r.inv) < 2)
+				*RAMP(r.base + r.inv) = 2;
 		}
-		gadgets_inv_held(s, inv_held);
+		if (alive && (ex_bombinv || ab_bomb[s]) && gadgets_bomb_on(s) && *RAMP(r.base + r.inv) < 2) /* test 134 */
+			*RAMP(r.base + r.inv) = 2;
+		if ((ex_inv || tr_inv) && alive && *RAMP(r.base + r.inv) < 2) {
+			*RAMP(r.base + r.inv) = 2;
+			if (ex_inv)
+				wrote = 1;
+		}
+		{ /* test 135: INVINCIBLE mark: ab_left window or the autobomb's bomb; plain guard (armed) no */
+			const int inv_mark = ab_counting || ab_left[s] > 0 || (ab_bomb[s] && gadgets_bomb_on(s));
+			gadgets_inv_held(s, inv_mark || (alive && (ex_bombinv && gadgets_bomb_on(s))) ||
+			                       ((ex_inv || tr_inv) && alive && (ib || BE32(RAMP(r.base + 8)) < 0x10)));
+		}
+
 		if (!alive)
 			continue;
-		if (ex_infb && *RAMP(r.base + r.bombs) < 4) {
+
+		if ((ex_infb || (tr_run && tr_val[TR_INFB])) && *RAMP(r.base + r.bombs) < 4) {
 			*RAMP(r.base + r.bombs) = 4;
-			wrote = 1;
+			if (ex_infb)
+				wrote = 1;
 		}
 		if (ex_lives && *RAMP(r.base + r.lives) < EX_LIVES) {
 			*RAMP(r.base + r.lives) = EX_LIVES;
 			wrote = 1;
 		}
 	}
+	{ /* test 135: CHEATS batch 2; test 136: MAGNET RANGE */
+		static const unsigned ifall_pct[6] = {50, 75, 100, 125, 150, 200};
+		struct cfx_cfg cc = {!ib, ARR, 50u + 10u * (unsigned)ex_bspeed, ex_fewer, ifall_pct[ex_ifall], ex_suction,
+		                     ex_magnet, ex_medalpen, ex_magrange, {shot_age[0] < 8, shot_age[1] < 8}};
+		int mag_act = (ex_magnet != magnet_start()); /* test 136 */
+		if (cc.fewer || cc.bspeed != 100 || cc.ifall != 100 || cc.suction || mag_act || cc.medalpen)
+			cfx_vblank(&cc);
+		else
+			cfx_reset();
+	}
 	if (wrote && rp_cap && !rp_pending)
 		rp_cancel(RPB_EXDBG);
+}
+
+static int cont_held; /* test 133: CONTINUES OFF held the live byte at 0 (DIP DISABLE, not during training) */
+
+/* test 133: CONTINUES ON/OFF (OTHER SETTINGS): hold the game's live "starts a credit allows" byte at 0 when OFF, so a
+ * run has no continue (a side continues while its starts byte is <= it). Training owns the byte while tr_run. */
+static void cont_vblank(void)
+{
+	const int ib = game_set == SET_IBARA;
+	u8 *cap = RAMP(ib ? IB_CONT_MAX : TRB_CONT_MAX);
+	const int want_off = rp_play ? rp_pb_nocont : !cfg.continues;
+
+	if (tr_run)
+		return;
+	if (want_off) {
+		if (*cap != 0) {
+			if (!cont_held)
+				log_printf(C_WHITE, "CONTINUES: OFF (HELD AT 0 = DIP DISABLE)");
+			*cap = 0;
+		} else if (!cont_held) {
+			log_printf(C_WHITE, "CONTINUES: OFF (HELD AT 0 = DIP DISABLE)");
+		}
+		cont_held = 1;
+		return;
+	}
+	if (cont_held) {
+		const u8 e = *RAMP(ib ? 0x0C21CCA6u : 0x0C2322C6u);
+		if (e <= 10)
+			*cap = e;
+		cont_held = 0;
+		log_printf(C_WHITE, "CONTINUES: ON (%u FROM THE EEPROM)", (unsigned)*cap);
+	}
 }
 
 static void tr_hitbox(void)
@@ -11822,6 +13594,19 @@ void host_vblank(sh3_t *c)
 	int b, late_after_load = 0, turbo;
 
 	hsum = screen_frame(); /* waits for the bands; test 14: the hash goes into the recording */
+	{ /* test 137: NO ITEM ZONES, right after the frame's conversion / hash and before every other overlay that writes
+	 * into the game texture (ARRANGE's HUD, ticker, hitbox, turbo box, the menus), so those stay on top and are not
+	 * erased by the VRAM-sourced zone pixels (the source is the game's own VRAM pixel, converted as the frame does) */
+		const int ib = game_set == SET_IBARA;
+		const int kval_run = tr_run || (credit_on && *RAMP(ib ? IB_DEMO : BLK_DEMO) != 1);
+		const uint32_t cam = BE32(RAMP(ib ? 0x0C3929E0u : 0x0C3C4048u));
+		if (kval_run && !rp_play)
+			zones_run_start(cam);
+		else
+			zones_run_end();
+		if (zones_draw(gtex[tex_cur].texels, gtex_pitch, !ib, kval_run && !rp_play, tex_sx, tex_sy))
+			gtex_dirty[tex_cur] = 1;
+	}
 	logo_hold_frame();     /* test 121: the attract's logos after a quit, black (after the hash) */
 	boot_check();          /* test 112: the boot unpaced (its corners before the HUD and the ticker) */
 	arrhud_frame(); /* test 79: ARRANGE's HUD: its own state a step a game frame, then over the picture, after the hash */
@@ -11863,10 +13648,17 @@ void host_vblank(sh3_t *c)
 		in.dip_changed = dip_changed(); /* test 81: the SCORE red */
 		in.booted = *RAMP(game_set == SET_IBARA ? IB_SCENE : BLK_SCENE) != 0 || game_booted; /* test 89 */
 		game_booted = in.booted;
-		in.training = tr_run; /* test 89 */
+		in.training = tr_run || cheat_run; /* test 131: cheated runs red as training */
 		gadgets_frame(&in);
 	}
 	ach_step(); /* test 105 */
+	{ /* test 137 C2: BATTLE HISTORY's counts after the gadgets and ach_step (the zones' run gate, the achievements' flag) */
+		const int in_run = (tr_run || (credit_on && *RAMP(game_set == SET_IBARA ? IB_DEMO : BLK_DEMO) != 1)) && !rp_play;
+
+		hist_vblank(in_run, hist_run_ok());
+		if ((unsigned)frame_count % HIST_SAVE_VBL == 0) /* every 5 minutes: the file (when a counter changed) */
+			hist_save_req = 1;
+	}
 
 	turbo = turbo_frame(); /* test 89: START AT BOSS's skip shows one frame in TURBO_SHOW */
 	if (boot_turbo ? boot_show : !turbo || ++tr_turbo_n % TURBO_SHOW == 0) /* test 112: the boot's shown frames */
@@ -12008,7 +13800,10 @@ void host_vblank(sh3_t *c)
 	state_frame(); /* test 69: the save states this vblank asks for */
 	tr_vblank();   /* test 89: a training run's writes */
 	attract_hold(); /* test 121: ATTRACT DEMO OFF holds the title (before the game's next frame, as the writes above) */
-	ex_vblank();   /* test 108: EX-DEBUG's */
+	ex_vblank();   /* test 131: CHEATS / EX-DEBUG */
+	cont_vblank(); /* test 132: CONTINUES ON/OFF */
+	rp_cont_check(); /* test 131: a continue cancels the replay */
+	cheat_rank_block(); /* test 131: no initials/ranking after a cheated run */
 	rp_capture(hsum); /* test 86: and a run's replay its ports */
 	{
 		/* test 14: this vblank's entry; the display vblanks this frame took, from the
@@ -12354,6 +14149,9 @@ static void game_start(void)
 	cv1k_nand = (u8 *)u2;
 	cv1k_nand_size = n2;
 	memset(cv1k_ram, 0, RAM_SIZE);
+	/* test 137 B1: initialize bullet colour module after U2 is loaded; test 138 C3: initial mode */
+	bulletcol_init(game_set == SET_IBARABLK && !ARR);
+	bulletcol_set_mode(ARR ? 1 : 0);
 #ifdef IB_ARRANGE
 	if (arrange_apply(n4)) {
 		log_printf(C_RED, "ARRANGE: THIS U4 IS NOT THE ONE THE PATCH WAS MADE FOR, NOT STARTING");
@@ -12382,6 +14180,8 @@ static void game_start(void)
 	workers_up = 1;
 	blitter_fast = 0;
 	controls_apply(); /* test 55: the game's controls from the ini */
+	if (!cfg.bullet_colours)
+		bulletcol_apply(); /* test 138 C3: DEFAULT once (CUSTOM was applied by set_mode at init) */
 	{ /* test 58; test 60: both games; test 113: unpacked while the ROMs loaded (game_task's gadgets_init_start) */
 		unsigned un_ms, wait_ms;
 		if (gadgets_init_finish(&un_ms, &wait_ms) == 0)
@@ -12485,8 +14285,8 @@ static void game_start(void)
 		         "# test 84: slot 3 = a save state's moment; \"# load <frame> <slot> full\" = FULL RESTART's load;\n"
 		         "#   \"# hddsave <frame> <file slot>\" = SAVE STATE asked its moment at that vblank (the next frame's\n"
 		         "#   ports as this one's), \"# hddsaved <frame> <file slot> <crc>\" = the file written,\n"
-		         "#   \"# hddload <frame> <file slot> <crc>\" = a file loaded at that vblank (then \"# load <frame> 3\");\n"
-		         "#   the PC harness repeats them with its own files\n"
+		         "#   \"# hddload <frame> <file slot> <crc>\" = a file loaded at that vblank (then \"# load <frame> 3\"),\n"
+		         "#   \"# sldel <frame> <file slot>\" = a slot deleted; the PC harness repeats them with its own files\n"
 		         "# test 85: F 02 (S3, the service menu) is pressed only by the debug menu's SERVICE MENU row (R3 no longer)\n"
 		         "# test 86: \"# rpsave <frame> <num>\" = SAVE REPLAY?'s A (the game paused at that vblank), \"# rpsaved\n"
 		         "#   <frame> <num> <crc>\" = its file, \"# rpno <frame> 0\" = its B, \"# rpplay <frame> <num> <crc>\" = a\n"
@@ -12667,7 +14467,7 @@ static uint32_t game_task(void *u)
 		else
 			log_printf(C_YELLOW, "PS2 MENUS: %s: MENU STYLE STAYS ARCADE", ps2menu_why());
 	}
-	log_printf(C_WHITE, "IBARA360 " XEX_VERSION XEX_GAME " XEX (TEST " XEX_TEST "; TEST 101 XEX; TEST 102: LANGUAGE ON OPTIONS, TRAINING GREEN LINES ENGLISH, "
+	log_printf(C_WHITE, "IBARA360 " XEX_VERSION XEX_GAME " XEX (TEST " XEX_TEST "; TEST 145: BATTLE HISTORY RUNTIME SAVED ON QUIT, BOOK ZOOM SHOWS THE OTHER PAGE, QUIT TO ATTRACT COUNTS THE RUN, INITIALIZE HISTORY ROW; TEST 144: TEXT REFINEMENTS (LANGUAGE, ACHIEVEMENTS, LOW LATENCY, CONTINUES, SOUNDTRACK HELPS, AUTO FREQUENCY, JAPANESE HELPS), SOUND WINDOW FIXED; TEST 143: TRACKLIST HELP PER GAME, NO BULLET DESIGN ROW, NO LB RAM HASH, SHORTER HISTORY/OTHER SETTINGS HELPS, KURO BL BULLET COLORS PREVIEW; TEST 101 XEX; TEST 102: LANGUAGE ON OPTIONS, TRAINING GREEN LINES ENGLISH, "
 	           "BLACK LABEL TITLES, MUSIC TEST NAMES AT ONE COLUMN, 4:3 GADGETS SPREAD + XTC FULL, ARRANGE: NO SERVICE "
 	           "MENU, ARRANGE VER + TAITO ON THE TITLE; TEST 111: THE TOAST FIX AT THE START, EX-DEBUG VALUES IN ONE COLUMN, "
 	           "START KEPT FROM THE RANKING UNTIL THE CAVE LOGO; TEST 112: AUDIO MONO/STEREO, EX-DEBUG BY LB+RB+A WITH THE INI'S "
@@ -12703,6 +14503,7 @@ static uint32_t game_task(void *u)
 	while (!romload_scanned())
 		present();
 	settings_load(romload_scan_device()); /* test 33: the ini, before any other file work */
+	cfg.arr_bullets = 0; /* test 143: BULLET DESIGN row removed, always NORMAL */
 	if (cfg.menu_style == MENU_PS2 && !ps2menu_ok()) /* test 120 */
 		log_printf(C_YELLOW, "PS2 MENU RESOURCES UNAVAILABLE (%s)", ps2menu_why());
 	else if (cfg.menu_style == MENU_PS2 && cfg.language == LANG_JAPANESE && !ps2menu_jp_ok())
@@ -12717,6 +14518,7 @@ static uint32_t game_task(void *u)
 	log_printf(launcher_ok ? C_WHITE : C_YELLOW, "LAUNCH: %s %s BESIDE THIS XEX%s", LAUNCHER_XEX,
 	           launcher_ok ? "IS" : "IS NOT", launcher_ok ? " (GAME SELECT IN THE OPTIONS AND THE PAUSE)" : "");
 #ifdef IB_ARRANGE
+	ex_magnet = magnet_start(); /* test 136 (FIX1 B.6): ARRANGE follows the ibara program */
 	if (ps2data_games_init()) { /* test 99 (user): ARRANGE's pictures and HUD frames are the PS2 disc's: no start without */
 		uint32_t last[NPADS];
 		int p;
@@ -12751,6 +14553,8 @@ static uint32_t game_task(void *u)
 	game_set = game_choose();
 	if (game_set >= 0) {
 		game = &games[game_set];
+		ps2music_set_game(game_set); /* test 134: Kuro BL's TRACKLIST swap needs the chosen game */
+		ex_magnet = magnet_start(); /* test 136 (FIX1 B.6): program chosen, match per-program start */
 		game_chosen = 1;
 		tr_defaults(); /* test 91: the TRAINING page's start values, the game's own */
 	}
@@ -12766,6 +14570,16 @@ static uint32_t game_task(void *u)
 		eeprom_seed(romload_set_name(SET_IBARA)); /* test 77: its first start from ibara's (settings: FREE PLAY) */
 		eeprom_arrange_table();                   /* test 81: its own score table (table 3), once */
 	}
+	{ /* test 137 C2: BATTLE HISTORY's file: <device>/ibara360/history/<game>.dat (the ini's folder), the game chosen */
+		const char *const hd = romload_scan_device();
+		char hp[192] = "";
+
+		if (hd)
+			snprintf(hp, sizeof(hp), "%s/ibara360/history/%s.dat", hd,
+			         ARR ? "ibaraarr" : game_set == SET_IBARA ? "ibara" : "ibarablk");
+		hist_init(hist_game(), hp);
+	}
+	book_init(glyph); /* test 138 E: before the OPTIONS row can be drawn */
 	game_start();
 	return 0;
 }

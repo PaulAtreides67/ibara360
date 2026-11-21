@@ -113,12 +113,37 @@ static int seq_stream(int seq)
 	return seq >= 0 && seq < 34 && seq_tab[seq].kind != K_NONE ? seq_tab[seq].s : -1;
 }
 
+static int m_set, m_arrange;
+static volatile int m_tracklist;             /* test 132: TRACKLIST ALTERNATIVE (Kuro BL: swap stream pairs) */
+/* test 132: Kuro BL's PS2 streams swap in ALTERNATIVE (its ROM has no Show Time/Sky High) */
+static int psm_swap_seq(int seq)
+{
+	switch (seq) {
+	case 15: return 27; case 27: return 15;
+	case 16: return 28; case 28: return 16;
+	case 17: return 31; case 31: return 17;
+	case 18: return 32; case 32: return 18;
+	case 23: return 29; case 29: return 23;
+	case 24: return 30; case 30: return 24;
+	default: return seq;
+	}
+}
+
+static int psm_alt_blk(void)
+{
+	return m_tracklist && m_set == SET_IBARABLK;
+}
+
+static int psm_play_seq(int seq)
+{
+	return psm_alt_blk() ? psm_swap_seq(seq) : seq;
+}
+
 /* ---- shared between the threads ---------------------------------------------------------------------------------- */
 
 static volatile int m_state = PS2M_NONE;
 static char m_why[64] = "NO PS2DATA.BIN (ITS SOUNDTRACK TABLE)";
 static volatile int m_enabled;               /* the SOUNDTRACK row (game thread) */
-static int m_set, m_arrange;
 static uint32_t tab_bytes[STREAMS];          /* bgm.table's sizes */
 
 /* the player's request (sound thread) -> the reader; a seqlock of req_gen */
@@ -542,13 +567,14 @@ static volatile unsigned rec_snaps[RT_SLOTS];
 
 /* the records for the log (the game thread formats them) */
 enum { LR_START, LR_CONT, LR_ARCADE, LR_STOP, LR_FADE, LR_FADED, LR_LOOP, LR_END, LR_DATA, LR_UNDER, LR_UNDEREND,
-       LR_SNAP, LR_LOAD, LR_TEST, LR_TESTEND, LR_OFF, LR_LOST, LR_STOPPED, LR_RESUME };
+       LR_SNAP, LR_LOAD, LR_TEST, LR_TESTEND, LR_OFF, LR_LOST, LR_STOPPED, LR_RESUME, LR_SWAP /* test 132 */ };
 static struct lrec {
 	uint8_t type, k, a, b;
 	uint32_t x, y, f;
 } lrq[LRQ];
 static volatile unsigned lr_w, lr_r;
 static unsigned lr_lost;
+static uint32_t psm_swap_logged; /* test 132: first time each Kuro BL swapped sequence was used */
 
 static void lr_push(int type, int k, int a, int b, uint32_t x, uint32_t y, uint32_t f)
 {
@@ -595,7 +621,7 @@ static void wr_hook(u64 sample, u8 reg, u8 data)
 		if ((data & 6) == 2) {
 			/* the board's music hushed from a mapped track's start on; an unmapped one is the board's (a stop keeps the
 			 * hush: the stopped phrase's block still plays out at its old level) */
-			cs.hush = en_now() && seq_stream(cs.seq0) >= 0;
+			cs.hush = en_now() && seq_stream(psm_play_seq(cs.seq0)) >= 0; /* test 132: Kuro BL stream swap */
 			cs.on = 1;
 			hush_apply();
 			ev_push(EV_START, cs.seq0, ymz_chip_time());
@@ -631,7 +657,7 @@ static void slot_hook(int load, int slot, u64 t)
 		cs.on = r->con;
 		/* test 100: a state kept under ARCADE loaded under PS2 hushes its playing track too (EV_LOAD starts its
 		 * stream from the board's place) */
-		cs.hush = en_now() && (r->hush || (cs.on && seq_stream(cs.seq0) >= 0));
+		cs.hush = en_now() && (r->hush || (cs.on && seq_stream(psm_play_seq(cs.seq0)) >= 0)); /* test 132 */
 	} else {
 		cs.hush = 0; /* an older state's: the board's music */
 		cs.on = 0;
@@ -756,7 +782,12 @@ static void ev_apply(const struct ev *e)
 	pl.f = e->f;
 	switch (e->type) {
 	case EV_START: {
-		const int seq = e->a, k = seq_stream(seq), kind = k >= 0 ? seq_tab[seq].kind : K_NONE;
+		const int seq = e->a, play = psm_play_seq(seq), k = seq_stream(play);
+		const int kind = k >= 0 ? seq_tab[play].kind : K_NONE; /* test 132: Kuro BL swaps stream, keeps level math on seq */
+		if (psm_alt_blk() && play != seq && seq >= 0 && seq < 32 && !(psm_swap_logged & (1u << seq))) {
+			psm_swap_logged |= 1u << seq;
+			lr_push(LR_SWAP, 0, seq, play, 0, 0, e->f);
+		}
 		/* test 100: the board's model first (a loop sequence of the stream it plays goes on in it) */
 		if (!(bd.on && bd.k == k && k >= 0 && (kind == K_LOOP || kind == K_SELF))) {
 			bd.v0 = kind == K_LOOP ? st_tab[k].n - st_tab[k].P : 0;
@@ -982,7 +1013,7 @@ static void pl_commands(void)
 				lr_push(LR_OFF, pl.k, 0, 0, pl.v, 0, (uint32_t)frame_count);
 			}
 		} else { /* test 100: PS2 again: the board's playing track hushed, its stream from its place */
-			cs.hush = cs.on && seq_stream(cs.seq0) >= 0;
+			cs.hush = cs.on && seq_stream(psm_play_seq(cs.seq0)) >= 0; /* test 132 */
 			if (!pl.test && (pl.k < 0 || pl.stopping))
 				board_resume(0);
 		}
@@ -997,7 +1028,7 @@ static void pl_commands(void)
 				board_resume(1); /* test 100 */
 			}
 		} else {
-			const int seq = t_req_seq, k = seq_stream(seq);
+			const int seq = t_req_seq, k = seq_stream(seq); /* test 132: the music test is never swapped */
 			if (k >= 0) {
 				pl_start(k, 0, seq, base_tab[seq], 1);
 				pl.vol0 = (uint8_t)(t_req_vol > 0 ? t_req_vol : base_tab[seq]);
@@ -1213,6 +1244,16 @@ void ps2music_enable(int on)
 	m_enabled = on != 0;
 }
 
+void ps2m_tracklist(int alt) /* test 132 */
+{
+	m_tracklist = alt != 0;
+}
+
+void ps2music_set_game(int set) /* test 134: the chosen game (ps2music_init runs before game_choose) */
+{
+	m_set = set;
+}
+
 int ps2music_active(void)
 {
 	return en_now();
@@ -1220,7 +1261,7 @@ int ps2music_active(void)
 
 int ps2music_has_seq(int seq)
 {
-	return seq_stream(seq) >= 0;
+	return seq_stream(seq) >= 0; /* test 132: the music test plays what it lists (no swap) */
 }
 
 const char *ps2music_seq_name(int seq)
@@ -1381,6 +1422,9 @@ void ps2music_vblank(void)
 		case LR_RESUME: /* test 100 */
 			log_printf(C_WHITE, "PS2 MUSIC: SEQUENCE %u'S STREAM %u %s TAKEN UP AT %s (%s), EMU %u", r.a, r.k, nm, a,
 			           r.b ? "THE MUSIC TEST OVER" : "SOUNDTRACK PS2 AGAIN", (unsigned)r.f);
+			break;
+		case LR_SWAP: /* test 132 */
+			log_printf(C_WHITE, "PS2 MUSIC: TRACKLIST ALTERNATIVE: SEQUENCE %u AS %u", r.a, r.b);
 			break;
 		}
 	}

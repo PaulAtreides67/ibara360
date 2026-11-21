@@ -127,6 +127,7 @@ struct settings {
 	int language;          /* test 98: LANGUAGE: LANG_ENGLISH or LANG_JAPANESE (the helps, under MENU_PS2 only) */
 	int soundtrack;        /* test 99: the SOUND page's SOUNDTRACK: TRACK_ARCADE (the board's music) or TRACK_PS2 (the
 	                        * PS2 port's streams from ps2music.bin: source/ps2music.c) */
+	int tracklist;         /* test 132: SOUND page's TRACKLIST: 0 = ORIGINAL, 1 = ALTERNATIVE (swapped pairs) */
 	int achievements;      /* test 106 (user: "achievements on/off in the debug menu (off by default), so that one could
 	                        * play the game on a profile they take online without the risk of getting banned"): 0 = XAM is
 	                        * never asked about achievements (no list read, no write) */
@@ -147,7 +148,16 @@ struct settings {
 	int color;             /* test 124: SCREEN COLOR (COLOR_STANDARD .. COLOR_NEGATIVE) */
 	int flip;              /* test 124: ROTATION UPSIDE DOWN, the whole 16:9 screen turned half round */
 	int deadzone[2];       /* test 125: STICK DEADZONE per player, percent 0..95 (P1 = pad 0, P2 = pads 1-3), default 50 */
-	int fps_counter;       /* test 125: FPS COUNTER on the DEBUG MENU */
+	int fps_counter;       /* test 125: FPS COUNTER on the OTHER SETTINGS */
+	int continues;         /* test 132: CONTINUES on OTHER SETTINGS (1 = DIP switch's CONTINUE PLAY, 0 = no continue) */
+	/* test 137: NO ITEM ZONES (M3 GADGETS): zones_show 0 OFF, 1 SIDES, 2 BOTTOM, 3 BOTH; zones_r/g/b 0-255; zones_alpha 10-90 step 10 */
+	int zones_show, zones_r, zones_g, zones_b, zones_alpha;
+	/* test 137 B1: BULLET COLOURS; test 138 C1: per mode (ARCADE / HARDER, ibaraarr.xex) */
+	int bullet_colours;       /* 0 DEFAULT, 1 CUSTOM */
+	uint32_t bullet_purple;   /* ARCADE purple, RRGGBB hex */
+	uint32_t bullet_blue;     /* ARCADE blue */
+	uint32_t bullet_red;      /* HARDER / ARRANGE red */
+	uint32_t bullet_purple_h; /* HARDER / ARRANGE purple (ini key "bullet_purple_harder") */
 };
 extern struct settings cfg;
 enum { MENU_PS2 = 0 };              /* test 120: the PS2 menu is the only supported style */

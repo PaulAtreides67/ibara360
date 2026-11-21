@@ -909,6 +909,8 @@ int ymz770_idle(void)
 static u64 chip_time;        /* cycle of the next chip sample */
 static u64 mark_time;        /* samples may be made up to here */
 void (*ymz_write_hook)(u64 sample, u8 reg, u8 data);
+const u8 *volatile ymz_seq_remap; /* test 132 */
+const u8 *volatile ymz_seq_level; /* test 132 */
 
 void ymz_init(const u8 *rom, u32 bytes)
 {
@@ -973,9 +975,29 @@ int ymz_run(void (*sink)(s32 v, u32 rate, u64 time, void *u), void *u)
 					ymz_slot_hook(1, (int)(what & 0xFF), chip_time);
 			}
 			else {
+				/* test 132: sound-only sequence/level remap for the main chip (not zt, not the sequencer) */
+				static u8 seq0_from, seq0_to;
+				u8 reg = (u8)(what >> 8), data = (u8)what;
+				const u8 *map = ymz_seq_remap, *lvl = ymz_seq_level;
+
+				if (reg == 0x80) { /* slot 0's SQSN */
+					seq0_from = seq0_to = data;
+					if (map) {
+						seq0_to = map[data];
+						data = seq0_to;
+					}
+				} else if (reg == 0x41) { /* channel 0's level */
+					if (seq0_from != seq0_to && lvl && lvl[seq0_from] && lvl[seq0_to]) {
+						unsigned v = ((unsigned)data * lvl[seq0_to] + lvl[seq0_from] / 2) / lvl[seq0_from];
+						data = (u8)(v > 255 ? 255 : v);
+					}
+				} else if ((reg & 0x8F) == 0x80 && reg >= 0x90 && reg <= 0xF0) { /* other slots' SQSN */
+					if (map)
+						data = map[data];
+				}
 				if (ymz_write_hook)
-					ymz_write_hook(ymz_samples, (u8)(what >> 8), (u8)what);
-				internal_reg_write(&zm, (u8)(what >> 8), (u8)what);
+					ymz_write_hook(ymz_samples, reg, data);
+				internal_reg_write(&zm, reg, data);
 			}
 			t++;
 		}

@@ -40,13 +40,16 @@ struct settings cfg = {.card = 0, .picture = PIC_INTEGER, .save = 1, .record = 0
                        .pic_size = {[0 ... PIC_SHAPES - 1] = 1000}, .xtc_full = 0,
                        .pic_sx = {[0 ... PIC_SHAPES - 1] = 1000}, .pic_sy = {[0 ... PIC_SHAPES - 1] = 1000}, .smooth = FILTER_NEAREST,
                        .brightness = 100, .menu_style = MENU_PS2, .language = LANG_ENGLISH,
-                       .soundtrack = TRACK_ARCADE, .achievements = 0, .toast_pos = 6, .staff_keep = 1,
+                       .soundtrack = TRACK_ARCADE, .tracklist = 0, .achievements = 0, .toast_pos = 6, .staff_keep = 1,
                        .mono = 0, .replay_save = 1, .attract_demo = 1, .stage_map = 0,
-                       .low_lag = 1, .color = COLOR_STANDARD, .flip = 0, .deadzone = {50, 50}, .fps_counter = 0}; /* test 126 */
+                       .low_lag = 1, .color = COLOR_STANDARD, .flip = 0, .deadzone = {50, 50}, .fps_counter = 0, .continues = 1,
+                       .zones_show = 0, .zones_r = 64, .zones_g = 128, .zones_b = 255, .zones_alpha = 30,
+                       .bullet_colours = 0, .bullet_purple = 0xA040FF, .bullet_blue = 0x4080FF, .bullet_red = 0xFF4080,
+                       .bullet_purple_h = 0xA040FF}; /* test 132: continues, tracklist; test 137: NO ITEM ZONES, BULLET COLOURS; test 138 C1: HARDER purple */
 /* test 112 (user: "keep achievements off as the default, make bottom right toast the default"; EX-DEBUG's "record
  * (default off), frame log (default off), network log (default off)"): netlog 0 and toast_pos 6 (bottom_right) above;
  * an ini from before test 112 (no "defaults = 112") gets those five once (defaults_seen, settings_load) */
-#define DEFAULTS_VER 129 /* test 129: RECORD, FRAME LOG, NETWORK LOG OFF once (the 1.04 release); test 127: RECORD, FRAME LOG, NETWORK LOG ON once (final check-up log); test 126: LOW LATENCY ON once; test 119: the release defaults (EX-DEBUG closed), once */
+#define DEFAULTS_VER 146 /* test 146: RECORD, FRAME LOG, NETWORK LOG OFF once (the 1.05 release); test 131: RECORD, FRAME LOG, NETWORK LOG ON once; test 129: RECORD, FRAME LOG, NETWORK LOG OFF once (the 1.04 release); test 127: RECORD, FRAME LOG, NETWORK LOG ON once (final check-up log); test 126: LOW LATENCY ON once; test 119: the release defaults (EX-DEBUG closed), once */
 static int defaults_seen;
 const int autofire_rates[AUTOFIRE_RATES] = {30, 20, 15, 12, 10, 7}; /* test 129: 7 = 7.5 Hz, every 8 frames */
 
@@ -211,6 +214,8 @@ static unsigned ini_text_more(char *b, unsigned size)
 		"# soundtrack: arcade (the board's own music) or ps2 (the PS2 port's soundtrack: needs ps2music.bin from\n"
 		"#             ps2extract beside the .xex files) (the SOUND page's SOUNDTRACK)\n"
 		"soundtrack = %s\n"
+		"# tracklist: original or alternative (the SOUND page's TRACKLIST: swaps some track pairs)\n"
+		"tracklist = %s\n"
 		"# audio: stereo or mono (both speakers the same mix) (the SOUND page's AUDIO)\n"
 		"audio = %s\n"
 		"\n"
@@ -266,8 +271,24 @@ static unsigned ini_text_more(char *b, unsigned size)
 		"# stage_map: 1 = the 16:9 side panels show the STAGE MAP only (the stage's map with the view, the boss);\n"
 		"#             0 = off (the default; the M3 GADGETS page's STAGE MAP, it needs ibaraweb.dat beside the xex)\n"
 		"stage_map = %d\n"
-		"# fps_counter: 1 = show frames per second (the DEBUG MENU)\n"
+		"# fps_counter: 1 = show frames per second (the OTHER SETTINGS)\n"
 		"fps_counter = %d\n"
+		"# continues: 0 = no continue at GAME OVER (OTHER SETTINGS), 1 = the DIP switch's CONTINUE PLAY\n"
+		"continues = %d\n"
+		"\n"
+		"# zones_show: NO ITEM ZONES shown (M3 GADGETS): 0 = off, 1 = sides, 2 = bottom, 3 = both\n"
+		"# zones_rgb: the zones' colour as RRGGBB in hex (e.g. 4080FF)\n"
+		"# zones_alpha: how see-through the zones are, percent 10 to 90 in steps of 10\n"
+		"zones_show = %d\n"
+		"zones_rgb = %02X%02X%02X\n"
+		"zones_alpha = %d\n"
+		"# bullet_colours: BULLET COLORS 0 = default, 1 = custom\n"
+		"# bullet_purple/blue = ARCADE purple and blue, bullet_purple_harder/red = HARDER and ARRANGE purple and red (RRGGBB)\n"
+		"bullet_colours = %d\n"
+		"bullet_purple = %06X\n"
+		"bullet_blue = %06X\n"
+		"bullet_red = %06X\n"
+		"bullet_purple_harder = %06X\n"
 		"# defaults: the build whose defaults this file has (test 112 set record, framelog, netlog, achievements and\n"
 		"#           toast_position once to 0, 0, 0, 0, bottom_right)\n"
 		"defaults = %d\n"
@@ -280,12 +301,16 @@ static unsigned ini_text_more(char *b, unsigned size)
 		"#   the D-pad and left stick, START and BACK stay as they are (the service menu: the debug menu's row);\n"
 		"#   ibara_p2_..., ibarablk_p2_..., ibaraarr_p2_... = the second pad's (P2 CONTROLS)\n",
 		autofire_label(cfg.autofire_hz[0]), autofire_label(cfg.autofire_hz[1]), gadget_lines(), cfg.vol_music, cfg.vol_sfx,
-		cfg.vol_voice, cfg.vol_attract, cfg.mute, cfg.soundtrack == TRACK_PS2 ? "ps2" : "arcade", cfg.mono ? "mono" : "stereo", arr_bullet_words[cfg.arr_bullets >= 0 && cfg.arr_bullets < 3 ? cfg.arr_bullets : 0],
+		cfg.vol_voice, cfg.vol_attract, cfg.mute, cfg.soundtrack == TRACK_PS2 ? "ps2" : "arcade",
+		cfg.tracklist ? "alternative" : "original", cfg.mono ? "mono" : "stereo", arr_bullet_words[cfg.arr_bullets >= 0 && cfg.arr_bullets < 3 ? cfg.arr_bullets : 0],
 		pic_lines(), filter_words[cfg.smooth >= 0 && cfg.smooth < 4 ? cfg.smooth : 0],
 		color_words[cfg.color >= 0 && cfg.color < 6 ? cfg.color : 0], cfg.low_lag, cfg.flip, cfg.brightness,
 		cfg.deadzone[0], cfg.deadzone[1],
 		cfg.language == LANG_JAPANESE ? "japanese" : "english", cfg.achievements, toast_words[cfg.toast_pos],
-		cfg.staff_keep, cfg.replay_save, cfg.attract_demo, cfg.stage_map, cfg.fps_counter, DEFAULTS_VER);
+		cfg.staff_keep, cfg.replay_save, cfg.attract_demo, cfg.stage_map, cfg.fps_counter, cfg.continues,
+		cfg.zones_show, cfg.zones_r & 255, cfg.zones_g & 255, cfg.zones_b & 255, cfg.zones_alpha,
+		cfg.bullet_colours, cfg.bullet_purple & 0xFFFFFF, cfg.bullet_blue & 0xFFFFFF, cfg.bullet_red & 0xFFFFFF,
+		cfg.bullet_purple_h & 0xFFFFFF, DEFAULTS_VER);
 	int s, i, p;
 
 	for (p = 0; p < CTL_PADS; p++)
@@ -622,6 +647,17 @@ static void ini_line(char *line, unsigned n)
 		}
 		return;
 	}
+	if (!strcasecmp(k, "tracklist")) { /* test 132 */
+		if (!strcasecmp(v, "original"))
+			cfg.tracklist = 0;
+		else if (!strcasecmp(v, "alternative"))
+			cfg.tracklist = 1;
+		else {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: TRACKLIST = %.20s? (ORIGINAL OR ALTERNATIVE)", n, v);
+		}
+		return;
+	}
 	if (!strcasecmp(k, "achievements")) { /* test 106 */
 		if (!strcmp(v, "0") || !strcmp(v, "1")) {
 			cfg.achievements = v[0] - '0';
@@ -677,6 +713,69 @@ static void ini_line(char *line, unsigned n)
 		} else {
 			ini_bad++;
 			log_printf(C_YELLOW, "INI LINE %u: FPS_COUNTER = %.20s? (0 OR 1)", n, v);
+		}
+		return;
+	}
+	if (!strcasecmp(k, "continues")) { /* test 132 */
+		if (!strcmp(v, "0") || !strcmp(v, "1")) {
+			cfg.continues = v[0] - '0';
+		} else {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: CONTINUES = %.20s? (0 OR 1)", n, v);
+		}
+		return;
+	}
+	if (!strcasecmp(k, "zones_show")) { /* test 137 */
+		if (!strcmp(v, "0") || !strcmp(v, "1") || !strcmp(v, "2") || !strcmp(v, "3")) {
+			cfg.zones_show = v[0] - '0';
+		} else {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: ZONES_SHOW = %.20s? (0 TO 3)", n, v);
+		}
+		return;
+	}
+	if (!strcasecmp(k, "zones_rgb")) { /* test 137 */
+		unsigned long rgb = strtoul(v, &end, 16);
+		if (end != v && *trim(end) == 0 && strlen(v) == 6) {
+			cfg.zones_r = (int)((rgb >> 16) & 0xFF);
+			cfg.zones_g = (int)((rgb >> 8) & 0xFF);
+			cfg.zones_b = (int)(rgb & 0xFF);
+		} else {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: ZONES_RGB = %.20s? (RRGGBB)", n, v);
+		}
+		return;
+	}
+	if (!strcasecmp(k, "zones_alpha")) { /* test 137 */
+		long a = strtol(v, &end, 10);
+		if (end != v && *trim(end) == 0 && a >= 10 && a <= 90 && a % 10 == 0) {
+			cfg.zones_alpha = (int)a;
+		} else {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: ZONES_ALPHA = %.20s? (10 TO 90, STEP 10)", n, v);
+		}
+		return;
+	}
+	if (!strcasecmp(k, "bullet_colours")) { /* test 137 B1 */
+		if (!strcmp(v, "0") || !strcmp(v, "1")) {
+			cfg.bullet_colours = v[0] - '0';
+		} else {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: BULLET_COLOURS = %.20s? (0 OR 1)", n, v);
+		}
+		return;
+	}
+	if (!strcasecmp(k, "bullet_purple") || !strcasecmp(k, "bullet_blue") || !strcasecmp(k, "bullet_red") ||
+	    !strcasecmp(k, "bullet_purple_harder")) { /* test 137 B1; test 138 C1 */
+		unsigned long rgb = strtoul(v, &end, 16);
+		if (end != v && *trim(end) == 0 && strlen(v) == 6) {
+			if (!strcasecmp(k, "bullet_purple")) cfg.bullet_purple = rgb;
+			else if (!strcasecmp(k, "bullet_blue")) cfg.bullet_blue = rgb;
+			else if (!strcasecmp(k, "bullet_red")) cfg.bullet_red = rgb;
+			else cfg.bullet_purple_h = rgb;
+		} else {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: %s = %.20s? (RRGGBB)", n, k, v);
 		}
 		return;
 	}
@@ -1120,6 +1219,14 @@ void settings_load(const char *dev)
 			cfg.record = cfg.framelog = cfg.netlog = 0;
 			log_printf(C_WHITE, "INI: FROM BEFORE 1.04: RECORD, FRAME LOG, NETWORK LOG OFF (ONCE)");
 		}
+		if (defaults_seen < 131) { /* test 131: logs on once */
+			cfg.record = cfg.framelog = cfg.netlog = 1;
+			log_printf(C_WHITE, "INI: FROM BEFORE TEST 131: RECORD, FRAME LOG, NETWORK LOG ON (ONCE)");
+		}
+		if (defaults_seen < 146) { /* test 146: the 1.05 release, logs off again once (after 131 turned them on) */
+			cfg.record = cfg.framelog = cfg.netlog = 0;
+			log_printf(C_WHITE, "INI: FROM BEFORE 1.05: RECORD, FRAME LOG, NETWORK LOG OFF (ONCE)");
+		}
 		if (!af2_seen) {
 			cfg.autofire_hz[1] = cfg.autofire_hz[0];
 			log_printf(C_WHITE, "INI: NO AUTOFIRE_P2: P2'S AUTO SHOT RATE AS P1'S");
@@ -1187,11 +1294,27 @@ void settings_log(const char *head)
 		log_printf(C_GREEN, "%s ATTRACT DEMO OFF", head);
 	if (cfg.fps_counter) /* test 125 */
 		log_printf(C_GREEN, "%s FPS COUNTER ON", head);
+	if (!cfg.continues) /* test 132 */
+		log_printf(C_GREEN, "%s CONTINUES OFF", head);
+	{ /* test 137: NO ITEM ZONES */
+		static const char *const zshow[4] = {"OFF", "SIDES", "BOTTOM", "BOTH"};
+		const int zs = cfg.zones_show >= 0 && cfg.zones_show < 4 ? cfg.zones_show : 0;
+		log_printf(C_GREEN, "%s NO ITEM ZONES %s RGB %02X%02X%02X ALPHA %d%%", head, zshow[zs],
+		           cfg.zones_r & 255, cfg.zones_g & 255, cfg.zones_b & 255, cfg.zones_alpha);
+	}
+	{ /* test 138 C1: BULLET COLORS per mode */
+		static const char *const bcol[2] = {"DEFAULT", "CUSTOM"};
+		const int bc = cfg.bullet_colours >= 0 && cfg.bullet_colours < 2 ? cfg.bullet_colours : 0;
+		log_printf(C_GREEN, "%s BULLET COLORS %s ARCADE %06X %06X HARDER %06X %06X", head, bcol[bc],
+		           cfg.bullet_purple & 0xFFFFFF, cfg.bullet_blue & 0xFFFFFF,
+		           cfg.bullet_purple_h & 0xFFFFFF, cfg.bullet_red & 0xFFFFFF);
+	}
 	log_printf(C_GREEN, "%s MENU STYLE %s, LANGUAGE %s", head, cfg.menu_style == MENU_PS2 ? "PS2" : "ARCADE",
 	           cfg.language == LANG_JAPANESE ? "JAPANESE" : "ENGLISH"); /* test 98 */
-	log_printf(C_GREEN, "%s SOUND: MUSIC %d%% SFX %d%% VOICE %d%% ATTRACT %d%%%s, SOUNDTRACK %s, %s", head,
+	log_printf(C_GREEN, "%s SOUND: MUSIC %d%% SFX %d%% VOICE %d%% ATTRACT %d%%%s, SOUNDTRACK %s, TRACKLIST %s, %s", head,
 	           cfg.vol_music, cfg.vol_sfx, cfg.vol_voice, cfg.vol_attract, cfg.mute ? ", MUTED" : "",
-	           cfg.soundtrack == TRACK_PS2 ? "PS2" : "ARCADE", cfg.mono ? "MONO" : "STEREO"); /* test 112: MONO */ /* test 68; test 99 */
+	           cfg.soundtrack == TRACK_PS2 ? "PS2" : "ARCADE", cfg.tracklist ? "ALTERNATIVE" : "ORIGINAL",
+	           cfg.mono ? "MONO" : "STEREO"); /* test 132: TRACKLIST */ /* test 112: MONO */ /* test 68; test 99 */
 	log_printf(C_GREEN, "%s ARRANGE: BULLET DESIGN %s", head, cfg.arr_bullets == 1 ? "COLOR" : cfg.arr_bullets == 2 ?
 	           "COLORLESS" : "NORMAL"); /* test 81 */
 }

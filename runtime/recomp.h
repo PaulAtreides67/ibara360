@@ -151,6 +151,9 @@ void rt_check_folded(u32 a, unsigned len);
 /* ---- runtime services ------------------------------------------------------ */
 void rt_event(sh3_t *c);                       /* IC ran out at block c->pc */
 void rt_call(sh3_t *c, u32 addr);              /* computed call/jump: compiled or interpreted */
+void rt_call_raw(sh3_t *c, u32 addr);          /* test 133: rt_call without the hook below */
+extern volatile u32 rt_hook_addr;              /* test 133: physical address whose computed call is hooked (0 none) */
+extern void (*volatile rt_hook_fn)(sh3_t *c, u32 addr); /* test 133: called INSTEAD of the callee; may call rt_call_raw */
 void rt_resync(sh3_t *c) __attribute__((noreturn)); /* guest control flow left the C call structure */
 void rt_trapa(sh3_t *c, u32 ret, u32 imm);
 void rt_sleep(sh3_t *c);

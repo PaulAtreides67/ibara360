@@ -448,20 +448,35 @@ struct pbox {
 	short x, y, w, h;
 	short nx, ny, nw, nh;
 	short exact; /* test 118: ps2m_exact's */
+	short split_a, split_z; /* split footer halves (box -2) created while laying this box out */
 };
 int ps2m_rec;
 static struct pitem it[PM_ITEMS];
 static struct pbox bx[PM_BOXES];
 static int nit, nbx;
+static int laid_n0, laid, laid_jp; /* layout pass done: original item count, flag and japanese */
 
-int ps2m_lines_en, ps2m_keep_x, ps2m_help_en, ps2m_exact, ps2m_bottom;
+int ps2m_lines_en, ps2m_keep_x, ps2m_help_en, ps2m_exact, ps2m_bottom, ps2m_val_col; /* test 136 */
+int ps2m_val_maxw; /* test 138 D */
+int ps2m_pitch = 10; /* test 140 B */
+int ps2m_val_gap = 4; /* test 141 B */
+int ps2m_help_min_lines; /* test 144: SOUND window fixed height */
+int ps2m_help_min_y; /* test 144: SOUND window fixed height */
 
 void ps2m_begin(void)
 {
 	ps2m_lines_en = 0;
 	ps2m_exact = 0;
 	ps2m_bottom = 0;
+	ps2m_val_col = 0; /* test 136 */
+	ps2m_val_maxw = 0; /* test 138 D */
+	ps2m_val_gap = 4; /* test 141 B */
+	ps2m_help_min_lines = 0; /* test 144: SOUND window fixed height */
+	ps2m_help_min_y = 0; /* test 144: SOUND window fixed height */
 	nit = nbx = 0;
+	laid_n0 = 0;
+	laid = 0;
+	laid_jp = 0;
 }
 
 void ps2m_box(int x, int y, int w, int h)
@@ -605,6 +620,8 @@ static int lay_box(int b, int a, int z, int jp)
 	const int x0 = B->x + 8, ty = B->y + 6;
 	int i, title = -1, help = -1, ts, hy, bottom = 0, R, k;
 	int prev_y = -9999, prev_end = 0, line_top = 0, line_h = 8, last_fy = -1, cx = 0, cy0 = 0, cy1 = -1;
+	int val_nx_fix = 0; /* test 136: uniform per-page value column in PS2 pixels */
+	int namey[24], nnamey = 0; /* test 138 FIX: y of row-name items (x == x0 + 6) for value detection */
 
 	B->nw = (short)(B->exact ? B->w : B->w >= 120 ? PW : 16 + ((B->w - 16) * 4 + 2) / 3);
 	B->nx = (short)(B->exact ? B->x : B->x + B->w / 2 - B->nw / 2);
@@ -615,6 +632,43 @@ static int lay_box(int b, int a, int z, int jp)
 			title = i;
 		if (help < 0 && it[i].kind == PI_HELP)
 			help = i;
+	}
+	if (ps2m_val_col > 0 && !B->exact) { /* test 136: widest name/value in this style's font (8 px) -> one x for all values;
+		                               * test 139: PS2 column = text start + (widest valued name + 4 letters), 8 px letters, shared;
+		                               * test 140 B: fixed column (no push-left), values that pass the right border squeeze;
+		                               * test 141 B: per-page gap via ps2m_val_gap */
+		int max_v = 0, max_nend = 8 + 8, valy[24], nvaly = 0;
+		for (i = a; i < z; i++) {
+			const struct pitem *p = &it[i];
+			if (p->kind != PI_TEXT || p->y > (help >= 0 ? it[help].y : 0x7FFF) || p->y == ty)
+				continue;
+			if (p->x == x0 + 6) {
+				if (nnamey < 24)
+					namey[nnamey++] = p->y; /* test 138 FIX: row name -> a value may share this y */
+			} else if (p->x > x0 + 24) {
+				const int l = (int)strlen(p->s);
+				if (l > max_v)
+					max_v = l;
+				if (nvaly < 24)
+					valy[nvaly++] = p->y; /* test 139: y that has a value */
+			}
+		}
+		/* test 139: max_nend only for name items that have a value on the same y (no-value rows must not push column) */
+		for (i = a; i < z; i++) {
+			const struct pitem *p = &it[i];
+			int jv, hasv = 0;
+			if (p->kind != PI_TEXT || p->x != x0 + 6 || p->y > (help >= 0 ? it[help].y : 0x7FFF) || p->y == ty)
+				continue;
+			for (jv = 0; jv < nvaly; jv++)
+				if (valy[jv] == p->y) { hasv = 1; break; }
+			if (hasv) {
+				const int e = 8 + 8 + 8 * (int)strlen(p->s);
+				if (e > max_nend)
+					max_nend = e;
+			}
+		}
+		val_nx_fix = max_nend + 8 * ps2m_val_gap; /* test 141 B: 1 + widest valued name + gap */
+		(void)max_v;
 	}
 	ts = title >= 0 ? 8 : 0;
 	hy = help >= 0 ? it[help].y : 0x7FFF;
@@ -714,54 +768,80 @@ static int lay_box(int b, int a, int z, int jp)
 			prev_y = p->y;
 			prev_end = 0;
 		}
-		p->nx = (short)(B->exact ? p->x - B->x : 8 + ((p->x - x0) * 4 + 1) / 3); /* test 118: exact 1:1 */
-		if (p->nx < prev_end && !B->exact)
-			p->nx = (short)prev_end;
-		if (p->fy == 1 && jp && !p->en) { /* the Japanese line */
-			int w[2];
-			p->ja = (short)ja_find(p->s, p->v, &p->nv);
-			if (p->ja >= 0) {
-				const int nl = ja_lines(p->ja, w);
-				if (p->nx + 8 * (w[0] > w[1] ? w[0] : w[1]) > R)
-					p->nx = 8;
-				if (16 * nl > line_h)
-					line_h = 16 * nl;
-				if (p->ny + line_h > bottom)
-					bottom = p->ny + line_h;
-				prev_end = p->nx + 8 * w[0] + 8;
-				continue;
+		{
+			int is_val = ps2m_val_col > 0 && p->fy == 0 && !p->title && p->kind == PI_TEXT &&
+			             p->x > x0 + 24 && (help < 0 || p->y < it[help].y); /* test 136/138 D: candidate value row */
+			if (is_val) { /* test 138/140: shares y with a row-name item (x == x0 + 6) */
+				int ny, found = 0;
+				for (ny = 0; ny < nnamey; ny++)
+					if (namey[ny] == p->y) { found = 1; break; }
+				if (!found) { /* robust fallback: scan for a same-y row name */
+					int jn;
+					for (jn = a; jn < z; jn++)
+						if (it[jn].kind == PI_TEXT && it[jn].y == p->y && it[jn].x == x0 + 6) { found = 1; break; }
+				}
+				is_val = found;
 			}
-		}
-		{ /* beside the picture: up to it */
-			const int r = p->ny + 8 > cy0 && p->ny < cy1 && p->nx < cx ? cx - 2 : R;
-			room = r - p->nx;
-		}
-		if (8 * len > room) {
-			int at;
-			if (p->fy == 1 && p->x == x0 && len > COLS && (at = split_at(p->s, COLS)) > 0 && nit < PM_ITEMS) {
-				struct pitem *q = &it[nit++]; /* the second half a line lower (drawn after the box's run) */
-				*q = *p;
-				snprintf(q->s, sizeof(q->s), "%s", p->s + at + (p->s[at] == ',' ? 2 : 1));
-				p->s[at] = 0;
-				len = at;
-				p->n = (short)len;
-				q->n = (short)strlen(q->s);
-				q->ny = (short)(p->ny + 10);
-				q->box = -2;
-				if (line_h < 18)
-					line_h = 18;
+			if (is_val) { /* test 136/139/140 B: fixed per-page value column in this style's font (8 px); never moved left */
+				p->nx = (short)(B->exact ? p->x - B->x : val_nx_fix > 0 ? val_nx_fix : 8 + 8 + 8 * ps2m_val_gap);
 			} else {
-				/* left as far as the text before it, a row's name (beside the cursor) not at all */
-				const int r = p->nx + room, lo = (p->keep || p->x <= x0 + 6) && p->nx > prev_end ? p->nx : prev_end;
-				p->nx = (short)(r - 8 * len >= lo ? r - 8 * len : lo);
-				room = r - p->nx;
-				if (8 * len > room && len > 0)
-					p->adv = (short)(room / len < 6 ? 6 : room / len);
+				p->nx = (short)(B->exact ? p->x - B->x : 8 + ((p->x - x0) * 4 + 1) / 3); /* test 118: exact 1:1 */
 			}
+			if (p->nx < prev_end && !B->exact && !is_val)
+				p->nx = (short)prev_end;
+			if (p->fy == 1 && jp && !p->en) { /* the Japanese line */
+				int w[2];
+				p->ja = (short)ja_find(p->s, p->v, &p->nv);
+				if (p->ja >= 0) {
+					const int nl = ja_lines(p->ja, w);
+					if (p->nx + 8 * (w[0] > w[1] ? w[0] : w[1]) > R)
+						p->nx = 8;
+					if (16 * nl > line_h)
+						line_h = 16 * nl;
+					if (p->x == x0 && p->y == ps2m_help_min_y && 16 * ps2m_help_min_lines > line_h)
+						line_h = 16 * ps2m_help_min_lines; /* test 144: SOUND window fixed height */
+					if (p->ny + line_h > bottom)
+						bottom = p->ny + line_h;
+					prev_end = p->nx + 8 * w[0] + 8;
+					continue;
+				}
+			}
+			{ /* beside the picture: up to it */
+				const int r = p->ny + 8 > cy0 && p->ny < cy1 && p->nx < cx ? cx - 2 : R;
+				room = r - p->nx;
+			}
+			if (is_val) { /* test 140 B: keep at fixed column; squeeze to fit (min adv 6), may end past R, never moved left */
+				if (len > 0 && (room <= 0 || 8 * len > room))
+					p->adv = (short)(room > 0 && room / len >= 6 ? room / len : 6);
+			} else if (8 * len > room) {
+				int at;
+				if (p->fy == 1 && p->x == x0 && len > COLS && (at = split_at(p->s, COLS)) > 0 && nit < PM_ITEMS) {
+					struct pitem *q = &it[nit++]; /* the second half a line lower (drawn after the box's run) */
+					*q = *p;
+					snprintf(q->s, sizeof(q->s), "%s", p->s + at + (p->s[at] == ',' ? 2 : 1));
+					p->s[at] = 0;
+					len = at;
+					p->n = (short)len;
+					q->n = (short)strlen(q->s);
+					q->ny = (short)(p->ny + 10);
+					q->box = -2;
+					if (line_h < 18)
+						line_h = 18;
+				} else {
+					/* left as far as the text before it, a row's name (beside the cursor) not at all */
+					const int r = p->nx + room, lo = (p->keep || p->x <= x0 + 6) && p->nx > prev_end ? p->nx : prev_end;
+					p->nx = (short)(r - 8 * len >= lo ? r - 8 * len : lo);
+					room = r - p->nx;
+					if (8 * len > room && len > 0)
+						p->adv = (short)(room / len < 6 ? 6 : room / len);
+				}
+			}
+			prev_end = p->nx + p->adv * len + 4;
+			if (p->fy == 1 && p->x == x0 && p->y == ps2m_help_min_y && ps2m_help_min_lines > 1 && line_h < 8 + 10 * (ps2m_help_min_lines - 1))
+				line_h = 8 + 10 * (ps2m_help_min_lines - 1); /* test 144: SOUND window fixed height */
+			if (p->ny + (p->fy == 1 ? line_h : 8) > bottom)
+				bottom = p->ny + (p->fy == 1 ? line_h : 8);
 		}
-		prev_end = p->nx + p->adv * len + 4;
-		if (p->ny + (p->fy == 1 ? line_h : 8) > bottom)
-			bottom = p->ny + (p->fy == 1 ? line_h : 8);
 	}
 	if (help >= 0)
 		helpd = &it[help];
@@ -796,26 +876,34 @@ static void draw_item(const struct pbox *B, struct pitem *p, unsigned frame)
 	}
 }
 
-void ps2m_render(const struct ps2m_target *T, unsigned frame, int japanese)
+/* the layout pass: sorts, places every box and records split ranges; 1 = every box fits */
+int ps2m_layout(int japanese)
 {
-	int b, i, a, n0;
+	int b, a, n0, all = 1;
 
-	tg = T;
 	helpd = NULL;
-	if (!ok || !nbx)
-		return;
+	if (!ok || !nbx) {
+		laid_n0 = nit;
+		laid = 1;
+		return 1;
+	}
 	jp_ok = jp_ok && jp8;
 	japanese = japanese && jp_ok;
+	laid_jp = japanese;
 	n0 = nit;
+	laid_n0 = n0;
 	qsort(it, (size_t)nit, sizeof(it[0]), cmp_items);
 	for (b = 0, a = 0; b < nbx; b++) {
 		int z = a, t;
+		const int jp = japanese && !ps2m_lines_en;
 		while (z < n0 && it[z].box == b)
 			z++;
+		bx[b].split_a = (short)nit;
 		/* the title's line first (its letters fit what else is on it) */
 		for (t = a; t < z; t++)
 			if (it[t].kind == PI_TEXT && it[t].y == bx[b].y + 6 && it[t].x == bx[b].x + 8) {
 				int others = 0;
+				int i;
 				for (i = a; i < z; i++)
 					if (i != t && it[i].kind == PI_TEXT && it[i].y == it[t].y)
 						others += 8 * (int)strlen(it[i].s) + 8;
@@ -824,14 +912,35 @@ void ps2m_render(const struct ps2m_target *T, unsigned frame, int japanese)
 			}
 		{
 			const int keep = nit;
-			if (!lay_box(b, a, z, japanese && !ps2m_lines_en) && japanese && !ps2m_lines_en) { /* the Japanese
-				                                                         * lines do not fit: English */
+			int fit = lay_box(b, a, z, jp);
+			if (!fit && jp) { /* the Japanese lines do not fit: English */
+				int i;
 				nit = keep;
 				for (i = a; i < z; i++)
 					it[i].ja = -1;
-				lay_box(b, a, z, 0);
+				fit = lay_box(b, a, z, 0);
 			}
+			if (!fit)
+				all = 0;
 		}
+		bx[b].split_z = (short)nit;
+		a = z;
+	}
+	laid = 1;
+	return all;
+}
+
+/* draw a record whose layout is done (ps2m_layout) */
+static void ps2m_draw_pass(unsigned frame)
+{
+	int b, a, i;
+
+	if (!ok || !nbx)
+		return;
+	for (b = 0, a = 0; b < nbx; b++) {
+		int z = a;
+		while (z < laid_n0 && it[z].box == b)
+			z++;
 		panel(bx[b].nx, bx[b].ny, bx[b].nw, bx[b].nh);
 		for (i = a; i < z; i++)
 			if (it[i].kind == PI_CUR)
@@ -839,11 +948,8 @@ void ps2m_render(const struct ps2m_target *T, unsigned frame, int japanese)
 		for (i = a; i < z; i++)
 			if (it[i].kind != PI_CUR && it[i].kind != PI_HELP)
 				draw_item(&bx[b], &it[i], frame);
-		for (i = n0; i < nit; i++) /* the split lines' second halves */
-			if (it[i].box == -2) {
-				draw_item(&bx[b], &it[i], frame);
-				it[i].box = -3;
-			}
+		for (i = bx[b].split_a; i < bx[b].split_z; i++) /* the split lines' second halves */
+			draw_item(&bx[b], &it[i], frame);
 		a = z;
 	}
 	if (helpd && helpd->s[0]) { /* the description box */
@@ -852,7 +958,7 @@ void ps2m_render(const struct ps2m_target *T, unsigned frame, int japanese)
 		unsigned v[4];
 		int nv = 0;
 		panel(0, DESC_Y, PW, DESC_H);
-		if (japanese && !helpd->en) { /* test 112: EX-DEBUG's helps English */
+		if (laid_jp && !helpd->en) { /* test 112: EX-DEBUG's helps English */
 			ja_asked++;
 			e = ja_find(helpd->s, v, &nv);
 			if (e < 0) {
@@ -899,4 +1005,14 @@ void ps2m_render(const struct ps2m_target *T, unsigned frame, int japanese)
 				text8(at[l], len[l], 8, nl > 3 ? DESC_Y + 5 + 9 * l : DESC_Y + 9 + 12 * l, m, 8, PW - 8);
 		}
 	}
+}
+
+void ps2m_render(const struct ps2m_target *T, unsigned frame, int japanese)
+{
+	tg = T;
+	if (!ok || !nbx)
+		return;
+	if (!laid)
+		ps2m_layout(japanese);
+	ps2m_draw_pass(frame);
 }

@@ -101,6 +101,8 @@ int hdd_step(unsigned budget_us);
 int hdd_progress(void);      /* 0-100 */
 const char *hdd_why(void);   /* the last failure */
 
+/* test 141: a save state's file slot k removed, and the slot empty; 0 = done */
+int hdd_slot_delete(int k);
 /* test 86: the replays. The folder's files into the list (newest first; game thread, ~1 KB read a file); the ms */
 unsigned hdd_rp_scan(void);
 int hdd_rp_count(void);

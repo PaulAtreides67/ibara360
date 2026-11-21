@@ -137,6 +137,12 @@ const char *gadgets_stagemap_why(void);
 /* test 126: the INVINCIBLE gadget shows ON while a cheat holds the ship invincible */
 void gadgets_inv_held(int side, int on);
 
+/* test 134: a bomb of this side is active (bomb_read's bm_on) */
+int gadgets_bomb_on(int side);
+
+/* test 132: TRACKLIST ALTERNATIVE names the track that plays on the MUSIC card */
+void gadgets_tracklist(int alt);
+
 /* for the log and the debug card */
 struct gd_stats {
 	int ready;

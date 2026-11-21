@@ -304,6 +304,22 @@ const struct hdd_info *hdd_slot(int k)
 	return &slots[k];
 }
 
+int hdd_slot_delete(int k)
+{
+	char p[176];
+
+	if (k < 0 || k >= HDD_SLOTS || J.on)
+		return -1;
+	slot_path(p, sizeof(p), k, "sta");
+	if (unlink(p) != 0) {
+		snprintf(J.why, sizeof(J.why), "CANNOT DELETE THE FILE");
+		return -1;
+	}
+	memset(&slots[k], 0, sizeof(slots[k]));
+	slots[k].state = HDD_EMPTY;
+	return 0;
+}
+
 /* ---- test 86: the replays' list --------------------------------------------------------------------------------- */
 
 static void rp_from(struct hdd_rpinfo *r, const struct head *h)

@@ -19,4 +19,7 @@
  * drawn */
 int hitbox_draw(volatile uint32_t *tex, unsigned pitch, int kuro, int mode);
 
+/* test 135: AUTOBOMB: 1 = an enemy bullet or a lethal enemy part touches this side's kill box now (game RAM read, no writes) */
+int hitbox_touch(int kuro, int arr, int side);
+
 #endif

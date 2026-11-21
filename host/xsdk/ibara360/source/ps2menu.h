@@ -43,6 +43,17 @@ extern int ps2m_help_en;
  * already (x from the box's left edge 1:1, no closing up behind the text before); ps2m_begin clears it */
 extern int ps2m_exact;
 extern int ps2m_bottom;
+/* test 136: ARCADE chars from x0 for every value on this page (per-page fixed value column), 0 = auto */
+extern int ps2m_val_col;
+/* test 138 D: widest possible value on this page in ARCADE chars (so the column does not move), 0 = scan */
+extern int ps2m_val_maxw;
+/* test 140 B: row pitch for PS2 layout fitting (14 down to 10), set by main.c before recording */
+extern int ps2m_pitch;
+/* test 141 B: per-page value gap in letters (default 4; CHEATS = 2) */
+extern int ps2m_val_gap;
+/* test 144: SOUND window fixed height (force minimum help/footer height for a fixed window, panel height constant across rows) */
+extern int ps2m_help_min_lines;
+extern int ps2m_help_min_y; /* recorded y of the help/footer line that gets ps2m_help_min_lines */
 void ps2m_begin(void);
 void ps2m_box(int x, int y, int w, int h);
 void ps2m_text(int x, int y, uint32_t c, const char *s);
@@ -61,6 +72,7 @@ struct ps2m_target {
 	unsigned stride;
 	uint32_t sx, sy;
 };
+int ps2m_layout(int japanese); /* layout pass (test 140 B: pitch fitting); 1 = every box fits */
 void ps2m_render(const struct ps2m_target *T, unsigned frame, int japanese);
 
 /* the Japanese of an English line (an exact key or a printf key's pattern), for the log's census; 1 = there */
