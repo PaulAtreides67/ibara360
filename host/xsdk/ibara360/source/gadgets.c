@@ -1896,6 +1896,16 @@ static int ctl_text_shown(const struct gd_lay *L)
 	return ON(GD_CONTROLS) && (L->v43 || (L->wide && ctl_text_eff()));
 }
 
+/* test 149 (user: CONTROLS OFF / STICK / TEXT jerked WEAPON's border): RAPID's row on WEAPON. 16:9: always (one
+ * WEAPON height in every CONTROLS mode), except Kuro BL's stick under XTC SMALL (its stick shows AUTO, no room);
+ * 4:3: as before, only while CONTROLS' text plate is not shown */
+static int rapid_on_weapon_row(const struct gd_lay *L)
+{
+	if (!RAPID_ON_WEAPON || stick_small_xtc(L))
+		return 0;
+	return L->wide ? 1 : !ctl_text_shown(L);
+}
+
 /* rows of 20 pixels: the shot's level (boxes) and the small P toward the next; ibara: the left and right options, the
  * rear one and the formation; Kuro BL (test 64, 16:9): its weapon box; test 64, 16:9: HADOU; test 64, ibara on 16:9:
  * RAPID (test 61's plate). Test 65: the ship, the bombs and the lives went to STATUS (16:9: 5 rows; 4:3: ibara's 3,
@@ -1998,7 +2008,7 @@ static void draw_weapon(const struct gd_lay *L)
 	draw_trail(x, y);
 	/* test 61's RAPID (ibara, 16:9); test 67: always (no switch of its own); test 69: on CONTROLS' text plate when that
 	 * is shown (user: "move the auto shot - auto / now shot frequencies gadgets to the bottom row of it") */
-	if (RAPID_ON_WEAPON && !ctl_text_shown(L) && !stick_small_xtc(L)) /* test 147: the stick's AUTO line instead */
+	if (rapid_on_weapon_row(L)) /* test 147: the stick's AUTO line instead */
 		draw_rapid(x, y + 20);
 }
 
@@ -3390,7 +3400,7 @@ static int weapon_rows(const struct gd_lay *L)
 		n += 2;
 	else if (M->stock)
 		n += gd_compact ? 1 : 3;
-	if (RAPID_ON_WEAPON && !ctl_text_shown(L) && !stick_small_xtc(L)) /* test 147: as draw_weapon's */
+	if (rapid_on_weapon_row(L)) /* test 147: as draw_weapon's */
 		n++;
 	return n;
 }

@@ -785,44 +785,33 @@ int book_input(unsigned press, unsigned held, int stick_x, int stick_y)
 	}
 	hw = bk_zoom ? 0.5f / bk_zf() : 0.5f; /* the view's half width in page widths; test 148 */
 	limx = 0.5f - hw;
-	if (bk_zoom && bk_spread) { /* past the edge of one page (pressed, or the stick held there): the other page of the spread */
+	if (bk_zoom && bk_spread) { /* test 149: stick must never turn the page, only D-pad LEFT/RIGHT at the edge */
 		const float eps = 1e-4f;
-		int go = 0;
 
-		if (bk_side == 1 && bk_has_side(0) && ((press & BOOK_BTN_LEFT) || (sx < 0 && !bk_stick_latch)) &&
+		if (bk_side == 1 && bk_has_side(0) && (press & BOOK_BTN_LEFT) &&
 		    bk_px <= -limx + eps) {
 			bk_side = 0;
 			bk_px = limx;
-			go = 1;
-		} else if (bk_side == 0 && bk_has_side(1) && ((press & BOOK_BTN_RIGHT) || (sx > 0 && !bk_stick_latch)) &&
+		} else if (bk_side == 0 && bk_has_side(1) && (press & BOOK_BTN_RIGHT) &&
 		           bk_px >= limx - eps) {
 			bk_side = 1;
 			bk_px = -limx;
-			go = 1;
 		}
-		if (go && sx != 0) /* the stick must come back to centre before it switches again */
-			bk_stick_latch = 1;
-	} else if (bk_zoom && rot && !bk_spread) { /* test 147: rotated single page - LEFT/RIGHT (as seen) = prev/next */
+	} else if (bk_zoom && rot && !bk_spread) { /* test 147: rotated single page - LEFT/RIGHT (as seen) = prev/next; test 149: stick must never turn the page */
 		const float eps = 1e-4f;
-		int go = 0;
 
-		if (((press & BOOK_BTN_LEFT) || (sx < 0 && !bk_stick_latch)) && bk_px <= -limx + eps) {
+		if ((press & BOOK_BTN_LEFT) && bk_px <= -limx + eps) {
 			const int z = bk_zoom;
 			bk_turn(-1);
 			bk_zoom = z; /* keep zoom across page turn */
 			bk_px = limx;
-			go = 1;
-		} else if (((press & BOOK_BTN_RIGHT) || (sx > 0 && !bk_stick_latch)) && bk_px >= limx - eps) {
+			bk_top = 0;
+		} else if ((press & BOOK_BTN_RIGHT) && bk_px >= limx - eps) {
 			const int z = bk_zoom;
 			bk_turn(1);
 			bk_zoom = z; /* keep zoom across page turn */
 			bk_px = -limx;
-			go = 1;
-		}
-		if (go) {
 			bk_top = 0;
-			if (sx != 0)
-				bk_stick_latch = 1;
 		}
 	}
 	if (sx == 0)
