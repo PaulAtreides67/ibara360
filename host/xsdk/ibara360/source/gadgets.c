@@ -408,6 +408,8 @@ struct gd_pl {
 	int inv;                  /* test 65: the side's frames of invincibility left (0 = can be hit) */
 	int inv_max;              /* and its value when it last went up (the bar's full length) */
 	int inv_held;             /* test 126: a cheat holds it invincible (the gadget shows ON) */
+	int xtc_held;             /* test 150: XTC frozen in training (show held counter, not RAM in-between) */
+	int32_t xtc_held_raw;     /* test 150: the held XTC raw counter (quarters) */
 	uint8_t shot_hist[60];    /* test 61: the shot button's presses (1 = went down) in the last 60 logic frames */
 	unsigned shot_i, shot_n;  /* the next slot; their sum = presses per 60 logic frames (Hz at the game's 60) */
 	int shot_down;
@@ -1082,6 +1084,10 @@ void gadgets_frame(const struct gd_input *in)
 			q->xtc_glow = *RAMP(r + XTC_GLOW);
 			q->xtc_opts = *RAMP(r + XTC_OPTS);
 			q->xtc_hit = (be32(r) & 0x04000000u) != 0;
+			if (q->xtc_held) { /* test 150: hold the shown counter/timer steady while frozen */
+				q->xtc = q->xtc_held_raw >> 2;
+				q->xtc_left = 128;
+			}
 		}
 		/* in the run: its ship seen in play (alive or flying in: work/g65/inv) outside a demo; until the run ends */
 		if (s.run && !s.demo && (be32(r) & 0xCC000000u) == 0xCC000000u)
@@ -4180,6 +4186,16 @@ void gadgets_inv_held(int side, int on)
 {
 	if ((unsigned)side < 2u)
 		pl[side].inv_held = on ? 1 : 0;
+}
+
+/* test 150: XTC frozen in training - show the held counter, not the game's in-between value */
+void gadgets_xtc_held(int side, int on, int32_t raw)
+{
+	if ((unsigned)side < 2u) {
+		pl[side].xtc_held = on ? 1 : 0;
+		if (on)
+			pl[side].xtc_held_raw = raw;
+	}
 }
 
 /* test 134: a bomb of this side is active (bomb_read's bm_on) */

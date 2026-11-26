@@ -136,6 +136,8 @@ const char *gadgets_stagemap_why(void);
 
 /* test 126: the INVINCIBLE gadget shows ON while a cheat holds the ship invincible */
 void gadgets_inv_held(int side, int on);
+/* test 150: XTC frozen in training - hold the shown counter/timer steady */
+void gadgets_xtc_held(int side, int on, int32_t raw);
 
 /* test 134: a bomb of this side is active (bomb_read's bm_on) */
 int gadgets_bomb_on(int side);

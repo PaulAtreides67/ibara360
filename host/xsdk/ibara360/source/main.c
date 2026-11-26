@@ -565,7 +565,7 @@ static volatile int menu_on, menu_sel;         /* the pad menu is up; the highli
  * toggle (TR_ROW_NONE; test 100: EDIT only), A opens the box on EDIT, X in a box all on / off (FORMATION: the next formation for all three
  * slots, "QUICK SWAP"), a row with none set NONE (until test 100); every game's RANK a start value, the game's own rise and falls after it (tr_rank_vblank), X on RANK holds it all the run
  * (TRR_HELD, a "*") */
-#define XEX_TEST "149"  /* test 149: WEAPON keeps the RAPID row on 16:9 (no jerk on CONTROLS changes), Kuro BL TRAINING XTC START shows its value, BOOK stick never turns the page; test 148: rank/bombs/magnet/co-op/stage map helps, MAGNET RANGE with RELEASE, rotated BOOK zoom fit, Kuro BL XTC OFF keeps the column, TRAINING XTC START settable + Y freeze; test 147: MEDAL PENALTY DEFAULT/5 DOWN/3 DOWN (no LOWEST, saved 1->0), TRAINING HITBOX hidden all games (TR_HIT kept), PLAYER HITBOX SIZE/MEDAL MAGNET/ITEM MAGNET renames, ITEM MAGNET help+range gated to ALWAYS, FIXED RANK OFF/0-100% by 1% LB/RB 10% written every vblank, JA helps, logs on once; test 146: the 1.05 release (logs off once); test 145: BATTLE HISTORY RUNTIME SAVED ON QUIT, BOOK ZOOM SHOWS THE OTHER PAGE, QUIT TO ATTRACT COUNTS THE RUN, INITIALIZE HISTORY ROW; test 144: TEXT REFINEMENTS (LANGUAGE, ACHIEVEMENTS, LOW LATENCY, CONTINUES, SOUNDTRACK HELPS, AUTO FREQUENCY, JAPANESE HELPS), SOUND WINDOW FIXED; test 143: TRACKLIST HELP PER GAME, NO BULLET DESIGN ROW, NO LB RAM HASH, SHORTER HISTORY/OTHER SETTINGS HELPS, KURO BL BULLET COLORS PREVIEW; test 142: BULLET COLORS HELP IN THE DESCRIPTION BOX (sm_help on every row), WINDOW AT PITCH 10 CENTRED, LOAD STATE HELP WITHOUT THE COMMA; test 141: PS2 LAYOUT B ON HISTORY/PLAY/DIP/PAUSE, CHEATS +2, BULLET COLORS PER-TYPE PRESETS + FIXED WINDOW, NO PAUSE BULLET COLORS, LOAD STATE DELETE; test 140: BOOK ZOOM IN HALVES (memory), BULLET COLORS PREVIEW STRIP, GROUND ITEMS MAGNET (ibara/ARRANGE), JAPANESE HELPS 135-139, PS2 MENU SPACING B; test 139: MENU ORDER, BOOK IN OPTIONS, BULLET PRESETS, HISTORY FIT, BOOK ZOOM; test 138: BOOK, BULLET COLORS PER MODE, HISTORY RELATCH, OTHER SETTINGS VALUES; test 137: NO ITEM ZONES (M3 GADGETS row + sub-menu, drawing, logs); test 136: CHEATS ALL/CUSTOM, BOMB INVINCIBILITY, per-page value columns, ITEM MAGNETISM per program + MAGNET RANGE, ground items pulled, FEWER BULLETS whole bullets, MEDAL PENALTY fix; test 135: AUTOBOMB rewritten (full bombs, touch-now guard), ALL CHEATS, HITBOX SIZE 100%, CHEATS help; test 134: Kuro BL TRACKLIST ALTERNATIVE (ps2music told the chosen game); test 133: CONTINUES OFF = DIP DISABLE, TRACKLIST AT THE STAGE SCRIPT; test 132: CONTINUES, TRACKLIST; test 131: menu rework, CHEATS; test 130: SCREEN COLOR OUTLINE = per-screen-pixel Sobel, white edges on black; test 129 (1.04): the release: logs off once, version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127 (1.04): record, frame log, network log on once for a check-up log; test 126 (1.04): menus unaffected by FILTER/SCREEN COLOR including BILINEAR, LOW LATENCY on OPTIONS page above LANGUAGE default ON, help text, INVINCIBLE gadget held; test 125 (1.04): menus unaffected by FILTER/SCREEN COLOR, per-player STICK DEADZONE on CONTROLS, FPS COUNTER ON DEBUG MENU; test 124 (1.04): LOW LATENCY, LT hides menus, FILTER, SCREEN COLOR, UPSIDE DOWN, STICK DEADZONE; test 123 (1.03): STAGE MAP boss art from ps2data.bin's gallery cut out, bg.boss right panel; test 122 (1.03): ATTRACT DEMO help (next power on), STAGE MAP box held at the boss + background + border; test 121 (1.03): IKUZE at full volume only in a run (the attract's demos follow the attract volume); the
+#define XEX_TEST "150"  /* test 150: Kuro BL TRAINING XTC freeze holds the timer full and the XTC gadget shows the held value; test 149: WEAPON keeps the RAPID row on 16:9 (no jerk on CONTROLS changes), Kuro BL TRAINING XTC START shows its value, BOOK stick never turns the page; test 148: rank/bombs/magnet/co-op/stage map helps, MAGNET RANGE with RELEASE, rotated BOOK zoom fit, Kuro BL XTC OFF keeps the column, TRAINING XTC START settable + Y freeze; test 147: MEDAL PENALTY DEFAULT/5 DOWN/3 DOWN (no LOWEST, saved 1->0), TRAINING HITBOX hidden all games (TR_HIT kept), PLAYER HITBOX SIZE/MEDAL MAGNET/ITEM MAGNET renames, ITEM MAGNET help+range gated to ALWAYS, FIXED RANK OFF/0-100% by 1% LB/RB 10% written every vblank, JA helps, logs on once; test 146: the 1.05 release (logs off once); test 145: BATTLE HISTORY RUNTIME SAVED ON QUIT, BOOK ZOOM SHOWS THE OTHER PAGE, QUIT TO ATTRACT COUNTS THE RUN, INITIALIZE HISTORY ROW; test 144: TEXT REFINEMENTS (LANGUAGE, ACHIEVEMENTS, LOW LATENCY, CONTINUES, SOUNDTRACK HELPS, AUTO FREQUENCY, JAPANESE HELPS), SOUND WINDOW FIXED; test 143: TRACKLIST HELP PER GAME, NO BULLET DESIGN ROW, NO LB RAM HASH, SHORTER HISTORY/OTHER SETTINGS HELPS, KURO BL BULLET COLORS PREVIEW; test 142: BULLET COLORS HELP IN THE DESCRIPTION BOX (sm_help on every row), WINDOW AT PITCH 10 CENTRED, LOAD STATE HELP WITHOUT THE COMMA; test 141: PS2 LAYOUT B ON HISTORY/PLAY/DIP/PAUSE, CHEATS +2, BULLET COLORS PER-TYPE PRESETS + FIXED WINDOW, NO PAUSE BULLET COLORS, LOAD STATE DELETE; test 140: BOOK ZOOM IN HALVES (memory), BULLET COLORS PREVIEW STRIP, GROUND ITEMS MAGNET (ibara/ARRANGE), JAPANESE HELPS 135-139, PS2 MENU SPACING B; test 139: MENU ORDER, BOOK IN OPTIONS, BULLET PRESETS, HISTORY FIT, BOOK ZOOM; test 138: BOOK, BULLET COLORS PER MODE, HISTORY RELATCH, OTHER SETTINGS VALUES; test 137: NO ITEM ZONES (M3 GADGETS row + sub-menu, drawing, logs); test 136: CHEATS ALL/CUSTOM, BOMB INVINCIBILITY, per-page value columns, ITEM MAGNETISM per program + MAGNET RANGE, ground items pulled, FEWER BULLETS whole bullets, MEDAL PENALTY fix; test 135: AUTOBOMB rewritten (full bombs, touch-now guard), ALL CHEATS, HITBOX SIZE 100%, CHEATS help; test 134: Kuro BL TRACKLIST ALTERNATIVE (ps2music told the chosen game); test 133: CONTINUES OFF = DIP DISABLE, TRACKLIST AT THE STAGE SCRIPT; test 132: CONTINUES, TRACKLIST; test 131: menu rework, CHEATS; test 130: SCREEN COLOR OUTLINE = per-screen-pixel Sobel, white edges on black; test 129 (1.04): the release: logs off once, version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127 (1.04): record, frame log, network log on once for a check-up log; test 126 (1.04): menus unaffected by FILTER/SCREEN COLOR including BILINEAR, LOW LATENCY on OPTIONS page above LANGUAGE default ON, help text, INVINCIBLE gadget held; test 125 (1.04): menus unaffected by FILTER/SCREEN COLOR, per-player STICK DEADZONE on CONTROLS, FPS COUNTER ON DEBUG MENU; test 124 (1.04): LOW LATENCY, LT hides menus, FILTER, SCREEN COLOR, UPSIDE DOWN, STICK DEADZONE; test 123 (1.03): STAGE MAP boss art from ps2data.bin's gallery cut out, bg.boss right panel; test 122 (1.03): ATTRACT DEMO help (next power on), STAGE MAP box held at the boss + background + border; test 121 (1.03): IKUZE at full volume only in a run (the attract's demos follow the attract volume); the
  * quit to the attract's logos held black until the title (no AMI logo flash); ATTRACT DEMO ON/OFF on the debug menu (ibara,
  * Kuro BL: the title held); test 120: release candidate; test 119: EX-DEBUG closed, ACHIEVEMENTS the debug menu's last row */
 #define XEX_VERSION "1.05" /* test 146: 1.05; test 129: 1.04; test 121: 1.03; test 120: PS2-only menus and the 1.02 presentation fixes */
@@ -2437,8 +2437,7 @@ static int launcher_ok, gsel_armed, gsel_req;
 static int game_booted; /* test 89: the game's scene byte has left 0 (its boot is over: gadgets' gd_input.booted) */
 static int tr_run;      /* test 89: this run is a training run (the TRAINING page's START RUN; tr_* below) */
 static int tr_xfrz_on[2];       /* test 148: Kuro BL training Y freeze (per side) */
-static uint32_t tr_xfrz_cnt[2]; /* test 148: captured XTC counter */
-static uint8_t tr_xfrz_tmr[2][2]; /* test 148: captured XTC timer bytes */
+static uint32_t tr_xfrz_cnt[2]; /* test 148: captured XTC counter; test 150: timer held full (not captured) */
 /* test 89: the TRAINING section's (before host_vblank), for the pages, the loads and the vblank */
 static int tr_cfg[TR_N], tr_val[TR_N], tr_armed;
 static int tr_boss_done; /* test 91: state_taken's (START AT BOSS's jump done) */
@@ -12450,8 +12449,6 @@ static void tr_host(int what, int value)
 			if (on) {
 				const struct tr_rec r = tr_rec_of(side);
 				tr_xfrz_cnt[side] = BE32(RAMP(r.base + 0x280)); /* test 148 FIX_1: rd32 does not exist */
-				tr_xfrz_tmr[side][0] = RAMP(r.base + 0x284)[0];
-				tr_xfrz_tmr[side][1] = RAMP(r.base + 0x284)[1];
 				tr_xfrz_on[side] = 1;
 				log_printf(C_WHITE, "TRAINING: %dP XTC FROZEN AT %u (EMU %u)", side + 1,
 				           (unsigned)(tr_xfrz_cnt[side] / 4u), (unsigned)frame_count);
@@ -13064,6 +13061,8 @@ static void tr_vblank(void)
 	 * the early returns below would otherwise leave a stale ON */
 	gadgets_inv_held(0, 0);
 	gadgets_inv_held(1, 0);
+	gadgets_xtc_held(0, 0, 0);
+	gadgets_xtc_held(1, 0, 0); /* test 150 */
 	/* the credit started; test 91: ibara's at its stage loop's first vblank (before its game byte), for the intro skip */
 	if (tr_armed && (sm_run || (ib && *RAMP(IB_DEMO) != 1 && tri_loop_first()))) {
 		tr_armed = 0;
@@ -13204,12 +13203,14 @@ static void tr_vblank(void)
 			wr32(r.base + 0x280, (uint32_t)(xv * 4));
 			RAMP(r.base + 0x284)[0] = 0;
 			RAMP(r.base + 0x284)[1] = 128;
+			gadgets_xtc_held(s, 1, xv * 4); /* test 150 */
 		}
-		/* test 148: Y freeze - hold captured XTC counter/timer every vblank */
+		/* test 148: Y freeze - hold captured XTC counter; test 150: timer held full */
 		if (!ib && tr_run && alive && tr_xfrz_on[s]) {
 			wr32(r.base + 0x280, tr_xfrz_cnt[s]);
-			RAMP(r.base + 0x284)[0] = tr_xfrz_tmr[s][0];
-			RAMP(r.base + 0x284)[1] = tr_xfrz_tmr[s][1];
+			RAMP(r.base + 0x284)[0] = 0;
+			RAMP(r.base + 0x284)[1] = 128;
+			gadgets_xtc_held(s, 1, (int32_t)tr_xfrz_cnt[s]); /* test 150 */
 		}
 		{
 			const int inv_held = alive && (tr_val[TR_INV] || tr_turbo) &&
@@ -13355,6 +13356,8 @@ static void ex_vblank(void)
 		if (!tr_run) { /* test 126: training's cheats set it */
 			gadgets_inv_held(0, 0);
 			gadgets_inv_held(1, 0);
+			gadgets_xtc_held(0, 0, 0);
+			gadgets_xtc_held(1, 0, 0); /* test 150 */
 		}
 		if (ex_fixrank && fr_have && !ib && !rp_play && !demo && !tr_run) {
 			wr32(TRB_CEIL, 0xFFFFFFu); /* test 134: release to the game's own ceiling */
@@ -14714,7 +14717,7 @@ static uint32_t game_task(void *u)
 		else
 			log_printf(C_YELLOW, "PS2 MENUS: %s: MENU STYLE STAYS ARCADE", ps2menu_why());
 	}
-	log_printf(C_WHITE, "IBARA360 " XEX_VERSION XEX_GAME " XEX (TEST " XEX_TEST "; TEST 149: WEAPON RAPID ROW FIXED, XTC START SHOWN, BOOK STICK NO PAGE TURN; TEST 148: RANK/BOMBS/MAGNET/CO-OP/STAGE MAP HELPS, MAGNET RANGE WITH RELEASE, ROTATED BOOK ZOOM FIT, KURO BL XTC OFF KEEPS COLUMN, TRAINING XTC START SETTABLE + Y FREEZE; TEST 147: MEDAL PENALTY NO LOWEST, TRAINING HITBOX HIDDEN, PLAYER HITBOX SIZE/MAGNET RENAMES, ITEM MAGNET RANGE GATED TO ALWAYS, FIXED RANK 0-100%% LB/RB; TEST 145: BATTLE HISTORY RUNTIME SAVED ON QUIT, BOOK ZOOM SHOWS THE OTHER PAGE, QUIT TO ATTRACT COUNTS THE RUN, INITIALIZE HISTORY ROW; TEST 144: TEXT REFINEMENTS (LANGUAGE, ACHIEVEMENTS, LOW LATENCY, CONTINUES, SOUNDTRACK HELPS, AUTO FREQUENCY, JAPANESE HELPS), SOUND WINDOW FIXED; TEST 143: TRACKLIST HELP PER GAME, NO BULLET DESIGN ROW, NO LB RAM HASH, SHORTER HISTORY/OTHER SETTINGS HELPS, KURO BL BULLET COLORS PREVIEW; TEST 101 XEX; TEST 102: LANGUAGE ON OPTIONS, TRAINING GREEN LINES ENGLISH, "
+	log_printf(C_WHITE, "IBARA360 " XEX_VERSION XEX_GAME " XEX (TEST " XEX_TEST "; TEST 150: TRAINING XTC FREEZE STEADY; TEST 149: WEAPON RAPID ROW FIXED, XTC START SHOWN, BOOK STICK NO PAGE TURN; TEST 148: RANK/BOMBS/MAGNET/CO-OP/STAGE MAP HELPS, MAGNET RANGE WITH RELEASE, ROTATED BOOK ZOOM FIT, KURO BL XTC OFF KEEPS COLUMN, TRAINING XTC START SETTABLE + Y FREEZE; TEST 147: MEDAL PENALTY NO LOWEST, TRAINING HITBOX HIDDEN, PLAYER HITBOX SIZE/MAGNET RENAMES, ITEM MAGNET RANGE GATED TO ALWAYS, FIXED RANK 0-100%% LB/RB; TEST 145: BATTLE HISTORY RUNTIME SAVED ON QUIT, BOOK ZOOM SHOWS THE OTHER PAGE, QUIT TO ATTRACT COUNTS THE RUN, INITIALIZE HISTORY ROW; TEST 144: TEXT REFINEMENTS (LANGUAGE, ACHIEVEMENTS, LOW LATENCY, CONTINUES, SOUNDTRACK HELPS, AUTO FREQUENCY, JAPANESE HELPS), SOUND WINDOW FIXED; TEST 143: TRACKLIST HELP PER GAME, NO BULLET DESIGN ROW, NO LB RAM HASH, SHORTER HISTORY/OTHER SETTINGS HELPS, KURO BL BULLET COLORS PREVIEW; TEST 101 XEX; TEST 102: LANGUAGE ON OPTIONS, TRAINING GREEN LINES ENGLISH, "
 	           "BLACK LABEL TITLES, MUSIC TEST NAMES AT ONE COLUMN, 4:3 GADGETS SPREAD + XTC FULL, ARRANGE: NO SERVICE "
 	           "MENU, ARRANGE VER + TAITO ON THE TITLE; TEST 111: THE TOAST FIX AT THE START, EX-DEBUG VALUES IN ONE COLUMN, "
 	           "START KEPT FROM THE RANKING UNTIL THE CAVE LOGO; TEST 112: AUDIO MONO/STEREO, EX-DEBUG BY LB+RB+A WITH THE INI'S "
