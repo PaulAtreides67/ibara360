@@ -565,7 +565,7 @@ static volatile int menu_on, menu_sel;         /* the pad menu is up; the highli
  * toggle (TR_ROW_NONE; test 100: EDIT only), A opens the box on EDIT, X in a box all on / off (FORMATION: the next formation for all three
  * slots, "QUICK SWAP"), a row with none set NONE (until test 100); every game's RANK a start value, the game's own rise and falls after it (tr_rank_vblank), X on RANK holds it all the run
  * (TRR_HELD, a "*") */
-#define XEX_TEST "147"  /* test 147: MEDAL PENALTY DEFAULT/5 DOWN/3 DOWN (no LOWEST, saved 1->0), TRAINING HITBOX hidden all games (TR_HIT kept), PLAYER HITBOX SIZE/MEDAL MAGNET/ITEM MAGNET renames, ITEM MAGNET help+range gated to ALWAYS, FIXED RANK OFF/0-100% by 1% LB/RB 10% written every vblank, JA helps, logs on once; test 146: the 1.05 release (logs off once); test 145: BATTLE HISTORY RUNTIME SAVED ON QUIT, BOOK ZOOM SHOWS THE OTHER PAGE, QUIT TO ATTRACT COUNTS THE RUN, INITIALIZE HISTORY ROW; test 144: TEXT REFINEMENTS (LANGUAGE, ACHIEVEMENTS, LOW LATENCY, CONTINUES, SOUNDTRACK HELPS, AUTO FREQUENCY, JAPANESE HELPS), SOUND WINDOW FIXED; test 143: TRACKLIST HELP PER GAME, NO BULLET DESIGN ROW, NO LB RAM HASH, SHORTER HISTORY/OTHER SETTINGS HELPS, KURO BL BULLET COLORS PREVIEW; test 142: BULLET COLORS HELP IN THE DESCRIPTION BOX (sm_help on every row), WINDOW AT PITCH 10 CENTRED, LOAD STATE HELP WITHOUT THE COMMA; test 141: PS2 LAYOUT B ON HISTORY/PLAY/DIP/PAUSE, CHEATS +2, BULLET COLORS PER-TYPE PRESETS + FIXED WINDOW, NO PAUSE BULLET COLORS, LOAD STATE DELETE; test 140: BOOK ZOOM IN HALVES (memory), BULLET COLORS PREVIEW STRIP, GROUND ITEMS MAGNET (ibara/ARRANGE), JAPANESE HELPS 135-139, PS2 MENU SPACING B; test 139: MENU ORDER, BOOK IN OPTIONS, BULLET PRESETS, HISTORY FIT, BOOK ZOOM; test 138: BOOK, BULLET COLORS PER MODE, HISTORY RELATCH, OTHER SETTINGS VALUES; test 137: NO ITEM ZONES (M3 GADGETS row + sub-menu, drawing, logs); test 136: CHEATS ALL/CUSTOM, BOMB INVINCIBILITY, per-page value columns, ITEM MAGNETISM per program + MAGNET RANGE, ground items pulled, FEWER BULLETS whole bullets, MEDAL PENALTY fix; test 135: AUTOBOMB rewritten (full bombs, touch-now guard), ALL CHEATS, HITBOX SIZE 100%, CHEATS help; test 134: Kuro BL TRACKLIST ALTERNATIVE (ps2music told the chosen game); test 133: CONTINUES OFF = DIP DISABLE, TRACKLIST AT THE STAGE SCRIPT; test 132: CONTINUES, TRACKLIST; test 131: menu rework, CHEATS; test 130: SCREEN COLOR OUTLINE = per-screen-pixel Sobel, white edges on black; test 129 (1.04): the release: logs off once, version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127 (1.04): record, frame log, network log on once for a check-up log; test 126 (1.04): menus unaffected by FILTER/SCREEN COLOR including BILINEAR, LOW LATENCY on OPTIONS page above LANGUAGE default ON, help text, INVINCIBLE gadget held; test 125 (1.04): menus unaffected by FILTER/SCREEN COLOR, per-player STICK DEADZONE on CONTROLS, FPS COUNTER ON DEBUG MENU; test 124 (1.04): LOW LATENCY, LT hides menus, FILTER, SCREEN COLOR, UPSIDE DOWN, STICK DEADZONE; test 123 (1.03): STAGE MAP boss art from ps2data.bin's gallery cut out, bg.boss right panel; test 122 (1.03): ATTRACT DEMO help (next power on), STAGE MAP box held at the boss + background + border; test 121 (1.03): IKUZE at full volume only in a run (the attract's demos follow the attract volume); the
+#define XEX_TEST "148"  /* test 148: rank/bombs/magnet/co-op/stage map helps, MAGNET RANGE with RELEASE, rotated BOOK zoom fit, Kuro BL XTC OFF keeps the column, TRAINING XTC START settable + Y freeze; test 147: MEDAL PENALTY DEFAULT/5 DOWN/3 DOWN (no LOWEST, saved 1->0), TRAINING HITBOX hidden all games (TR_HIT kept), PLAYER HITBOX SIZE/MEDAL MAGNET/ITEM MAGNET renames, ITEM MAGNET help+range gated to ALWAYS, FIXED RANK OFF/0-100% by 1% LB/RB 10% written every vblank, JA helps, logs on once; test 146: the 1.05 release (logs off once); test 145: BATTLE HISTORY RUNTIME SAVED ON QUIT, BOOK ZOOM SHOWS THE OTHER PAGE, QUIT TO ATTRACT COUNTS THE RUN, INITIALIZE HISTORY ROW; test 144: TEXT REFINEMENTS (LANGUAGE, ACHIEVEMENTS, LOW LATENCY, CONTINUES, SOUNDTRACK HELPS, AUTO FREQUENCY, JAPANESE HELPS), SOUND WINDOW FIXED; test 143: TRACKLIST HELP PER GAME, NO BULLET DESIGN ROW, NO LB RAM HASH, SHORTER HISTORY/OTHER SETTINGS HELPS, KURO BL BULLET COLORS PREVIEW; test 142: BULLET COLORS HELP IN THE DESCRIPTION BOX (sm_help on every row), WINDOW AT PITCH 10 CENTRED, LOAD STATE HELP WITHOUT THE COMMA; test 141: PS2 LAYOUT B ON HISTORY/PLAY/DIP/PAUSE, CHEATS +2, BULLET COLORS PER-TYPE PRESETS + FIXED WINDOW, NO PAUSE BULLET COLORS, LOAD STATE DELETE; test 140: BOOK ZOOM IN HALVES (memory), BULLET COLORS PREVIEW STRIP, GROUND ITEMS MAGNET (ibara/ARRANGE), JAPANESE HELPS 135-139, PS2 MENU SPACING B; test 139: MENU ORDER, BOOK IN OPTIONS, BULLET PRESETS, HISTORY FIT, BOOK ZOOM; test 138: BOOK, BULLET COLORS PER MODE, HISTORY RELATCH, OTHER SETTINGS VALUES; test 137: NO ITEM ZONES (M3 GADGETS row + sub-menu, drawing, logs); test 136: CHEATS ALL/CUSTOM, BOMB INVINCIBILITY, per-page value columns, ITEM MAGNETISM per program + MAGNET RANGE, ground items pulled, FEWER BULLETS whole bullets, MEDAL PENALTY fix; test 135: AUTOBOMB rewritten (full bombs, touch-now guard), ALL CHEATS, HITBOX SIZE 100%, CHEATS help; test 134: Kuro BL TRACKLIST ALTERNATIVE (ps2music told the chosen game); test 133: CONTINUES OFF = DIP DISABLE, TRACKLIST AT THE STAGE SCRIPT; test 132: CONTINUES, TRACKLIST; test 131: menu rework, CHEATS; test 130: SCREEN COLOR OUTLINE = per-screen-pixel Sobel, white edges on black; test 129 (1.04): the release: logs off once, version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127 (1.04): record, frame log, network log on once for a check-up log; test 126 (1.04): menus unaffected by FILTER/SCREEN COLOR including BILINEAR, LOW LATENCY on OPTIONS page above LANGUAGE default ON, help text, INVINCIBLE gadget held; test 125 (1.04): menus unaffected by FILTER/SCREEN COLOR, per-player STICK DEADZONE on CONTROLS, FPS COUNTER ON DEBUG MENU; test 124 (1.04): LOW LATENCY, LT hides menus, FILTER, SCREEN COLOR, UPSIDE DOWN, STICK DEADZONE; test 123 (1.03): STAGE MAP boss art from ps2data.bin's gallery cut out, bg.boss right panel; test 122 (1.03): ATTRACT DEMO help (next power on), STAGE MAP box held at the boss + background + border; test 121 (1.03): IKUZE at full volume only in a run (the attract's demos follow the attract volume); the
  * quit to the attract's logos held black until the title (no AMI logo flash); ATTRACT DEMO ON/OFF on the debug menu (ibara,
  * Kuro BL: the title held); test 120: release candidate; test 119: EX-DEBUG closed, ACHIEVEMENTS the debug menu's last row */
 #define XEX_VERSION "1.05" /* test 146: 1.05; test 129: 1.04; test 121: 1.03; test 120: PS2-only menus and the 1.02 presentation fixes */
@@ -2239,7 +2239,7 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
 	"WHERE THE TOASTS POP UP\nA = TEST TOAST",                      /* test 106; test 111: the probes gone (route K at the start) */
 	"CAN'T SKIP STAFF ROLL AND INITIALS\nENTRY SCREEN WITH START",      /* test 109; test 110: the user's */
 	"PLAYER SHIPS CANNOT BE HIT",                 /* test 138 B3 */
-	"BOMB STOCK NEVER RUNS OUT",
+	"BOMB STOCK NEVER RUNS OUT\n(MAY CAUSE SPRITE OVERLOAD)", /* test 148 */
 	"SHOW HITBOXES\nPLAYER ONLY OR ALL",
 	"LIVES NEVER RUN OUT",                 /* test 131: CHEATS */
 	"ENABLE/DISABLE REPLAY SAVING",                                  /* test 118: the user's */
@@ -2253,15 +2253,15 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
 	"ENABLE/DISABLE CONTINUE\nCOUNTDOWN", /* test 144 */
 	"INVINCIBLE DURING BOMBS", /* test 138 B3 */
 	"AUTOMATIC BOMB WHEN HIT\nFULL BOMBS ONLY",
-	"LOCK THE RANK AT A PERCENTAGE\nLB/RB QUICK TOGGLE", /* test 147 */
+	"LOCK RANK AT A PERCENTAGE\nLB/RB QUICK TOGGLE", /* test 148 */
 	"ADJUST PLAYER HITBOX SIZE",
 	"ENABLE/DISABLE ALL CHEATS", /* test 139: no CUSTOM sub-line */
 	"HALVE THE ENEMY BULLETS",
 	"ADJUST ENEMY BULLET SPEED",
 	"ADJUST ITEM FALL SPEED",
 	"ATTRACT MEDALS TO THE SHIP",
-	"ATTRACT ITEMS TO THE SHIP", /* test 147: drop RELEASE line */
-	"ADJUST ITEM MAGNET RANGE\nNEEDS ITEM MAGNET ALWAYS", /* test 147: range only with ALWAYS */
+	"ATTRACT ITEMS TO THE SHIP\nRELEASE = RELEASE SHOT\nTO PULL ITEMS IN", /* test 148 */
+	"ADJUST ITEM MAGNET RANGE\nNEEDS RELEASE OR ALWAYS", /* test 148 */
 	"ADJUST MEDAL VALUE DROP\nWHEN A MEDAL IS LOST",
 	"XTC TIMER DECAY SPEED", /* test 147 */
 	"ENEMY BULLET COLORS", /* test 137 B2: BULLET COLOURS help */
@@ -2436,6 +2436,9 @@ static void layout_apply(const char *why);
 static int launcher_ok, gsel_armed, gsel_req;
 static int game_booted; /* test 89: the game's scene byte has left 0 (its boot is over: gadgets' gd_input.booted) */
 static int tr_run;      /* test 89: this run is a training run (the TRAINING page's START RUN; tr_* below) */
+static int tr_xfrz_on[2];       /* test 148: Kuro BL training Y freeze (per side) */
+static uint32_t tr_xfrz_cnt[2]; /* test 148: captured XTC counter */
+static uint8_t tr_xfrz_tmr[2][2]; /* test 148: captured XTC timer bytes */
 /* test 89: the TRAINING section's (before host_vblank), for the pages, the loads and the vblank */
 static int tr_cfg[TR_N], tr_val[TR_N], tr_armed;
 static int tr_boss_done; /* test 91: state_taken's (START AT BOSS's jump done) */
@@ -2509,10 +2512,10 @@ static int opt_row(int k)
 	return OPT_N;
 }
 
-/* test 147: MAGNET RANGE only when ITEM MAGNET = ALWAYS; greyed and skipped in nav */
+/* test 148: MAGNET RANGE when ITEM MAGNET = RELEASE or ALWAYS; greyed and skipped in nav */
 static int opt_row_disabled(int r)
 {
-	return r == OPT_EXMAGRANGE && ex_magnet != 3;
+	return r == OPT_EXMAGRANGE && ex_magnet != 2 && ex_magnet != 3;
 }
 static void opt_sel_skip(int d)
 {
@@ -2886,8 +2889,8 @@ static void opt_step(int i, int d)
 			if (k < 0) k = 0;
 			if (k > 2) k = 2;
 			ex_magnet = seq[k];
-		} else if (i == OPT_EXMAGRANGE) { /* test 136; test 147: only when ITEM MAGNET ALWAYS */
-			if (ex_magnet != 3)
+		} else if (i == OPT_EXMAGRANGE) { /* test 136; test 148: only when ITEM MAGNET RELEASE or ALWAYS */
+			if (ex_magnet != 2 && ex_magnet != 3)
 				return;
 			ex_magrange ^= 1;
 		} else if (i == OPT_EXMEDALPEN) {
@@ -4054,6 +4057,9 @@ _Static_assert((int)HOST_JOIN < (int)HOST_N, "HOST_N has no room for HOST_JOIN")
 /* test 147 FIX_3: XTC START after HOST_JOIN (replay-compat: HOST_TR_END/RANKS/JOIN unchanged) */
 enum { HOST_TR_XTC = HOST_JOIN + 1 };
 _Static_assert((int)HOST_TR_XTC < (int)HOST_N, "HOST_N has no room for HOST_TR_XTC");
+/* test 148: Kuro BL training Y freeze (replay-compat id after HOST_TR_XTC) */
+enum { HOST_TR_XFRZ = HOST_JOIN + 2 };
+_Static_assert((int)HOST_TR_XFRZ < (int)HOST_N, "HOST_N has no room for HOST_TR_XFRZ");
 static int host_val[HOST_N], host_seen[HOST_N];
 static int rk_result = -1; /* test 101: rank_init's last return */
 static void dip_write(int i, int v);
@@ -4082,6 +4088,8 @@ static void host_set(int what, int value, int menu)
 	} else if (what >= HOST_TR0 && what < HOST_TR_END) { /* test 89; test 91: Kuro BL's ship rows after HOST_TR_GO */
 		tr_host(what, value);
 	} else if (what == HOST_TR_XTC) { /* test 147 FIX_3: XTC START (replay-compat id after HOST_JOIN) */
+		tr_host(what, value);
+	} else if (what == HOST_TR_XFRZ) { /* test 148: Kuro BL training Y freeze */
 		tr_host(what, value);
 	} else if (what == HOST_RANKS) { /* test 101 */
 		rk_result = rank_init(game_set, ARR);
@@ -4619,9 +4627,7 @@ static void sm_frame(uint32_t w[2])
 				sm_play();
 			} else if ((press & A_MX) && sm_train && id == SM_ROW_TR + TR_RPCT) { /* test 96: X = the rank held */
 				tr_cfg[TR_RANK] ^= TRR_HELD;
-			} else if ((press & A_MX) && sm_train && id == SM_ROW_TR + TR_XTC) { /* test 147: X = XTC held all run */
-				tr_cfg[TR_XTC] ^= TRX_HELD;
-			} else if ((press & A_MA) && sm_train && (id == SM_ROW_TR + TR_OPT0 || id == SM_ROW_TR + TR_FRM0) &&
+			} else if ((press & A_MA) && sm_train && (id == SM_ROW_TR + TR_OPT0 || id == SM_ROW_TR + TR_FRM0) && /* test 148: TR_XTC X = LOCK removed */
 			           !(tr_cfg[id - SM_ROW_TR] & TR_ROW_NONE)) { /* test 96: on EDIT only */
 				tr_box = id - SM_ROW_TR; /* test 94: OPTIONS / FORMATION open their box over the page */
 				tr_box_sel = 0;
@@ -5318,6 +5324,25 @@ static void inputs_update(void)
 	for (p = 0; p < 2; p++) {
 		pause_hold[p] &= pw[p];
 		pw[p] &= ~pause_hold[p];
+	}
+	/* test 148: Kuro BL training Y = freeze XTC; mask Y's game function */
+	{
+		static uint32_t y_prev[2];
+		int q;
+		if (tr_run && game_set != SET_IBARA && sm_state == SM_CLOSED && !rp_play) {
+			for (q = 0; q < 2; q++) {
+				const uint32_t y = pad_raw[q] & INPUT_GAMEPAD_Y;
+				const int side = q ^ pad_swap; /* test 148 FIX_1: host value uses side */
+				if (y && !(y_prev[q] & INPUT_GAMEPAD_Y))
+					host_set(HOST_TR_XFRZ, side * 2 + (tr_xfrz_on[side] ? 0 : 1), 0);
+				y_prev[q] = y ? INPUT_GAMEPAD_Y : 0;
+				if (y) /* test 148 FIX_1: mask PAD-indexed pw only while Y held */
+					pw[q] &= ~ctl_bits[q ? 1 : 0][CTL_Y];
+			}
+		} else {
+			y_prev[0] = pad_raw[0] & INPUT_GAMEPAD_Y;
+			y_prev[1] = pad_raw[1] & INPUT_GAMEPAD_Y;
+		}
 	}
 	if (host_reapply_due) /* test 81: a save state was loaded: the host's settings again */
 		host_reapply();
@@ -7496,8 +7521,10 @@ static int sm_pages(volatile uint32_t *t)
 			const char *l[5];
 			int m = 0, j;
 			const int trk = id >= SM_ROW_TR ? id - SM_ROW_TR : -1;
-			if (trk == TR_RPCT || trk == TR_XTC)
+			if (trk == TR_RPCT)
 				l[m++] = "X = LOCK";
+			else if (trk == TR_XTC)
+				l[m++] = "Y = FREEZE XTC IN A RUN"; /* test 148 */
 			if (id >= SM_ROW_TR && tr_quick_row(id - SM_ROW_TR))
 				l[m++] = "LB/RB = QUICK TOGGLE";
 			else if (id == SM_ROW_START || id == SM_ROW_DIP || ((id == SM_ROW_TR + TR_OPT0 || id == SM_ROW_TR + TR_FRM0) &&
@@ -7653,6 +7680,10 @@ static int sm_pages(volatile uint32_t *t)
 		}
 		ps2m_val_col = 0; /* test 136 */
 		ps2m_val_maxw = 0; /* test 138 D */
+		if (ps2m_rec && opt_page == OPT_PAGE_CHEATS) { /* test 148 FIX_1: fixed window height (tallest help = 3 lines), help at y0+hy */
+			ps2m_help_min_lines = 3;
+			ps2m_help_min_y = y0 + hy;
+		}
 		if (id == OPT_SPECIAL && cfg.special != special_on)
 			help = "LEAVING THE MENU RESTARTS THE GAME";
 #ifdef IB_GAME
@@ -7832,6 +7863,10 @@ static int sm_pages(volatile uint32_t *t)
 		const int bx = (GAME_H - OPT_W) / 2, by = (GAME_W - h) / 2, x0 = bx + 8, y0 = by + 6;
 		sm_box(t, bx, by, OPT_W, h);
 		sm_text(t, x0, y0, C_YELLOW, ib ? "IBARA  M3 GADGETS" : "BLACK LABEL  M3 GADGETS");
+		if (ps2m_rec) { /* test 148 FIX_1: fixed window height (tallest help = 3 lines), help at y0+hy */
+			ps2m_help_min_lines = 3;
+			ps2m_help_min_y = y0 + hy;
+		}
 		{ /* test 138 D2: fixed value column; test 139: 4-letter gap, shared (all rows have values) */
 			int mxn = 0, mxv = 6, vc = 20; /* widest possible value: "BOTTOM"/"MIXED" class */
 			for (i = 0; i < n; i++) {
@@ -7875,10 +7910,9 @@ static int sm_pages(volatile uint32_t *t)
 		}
 		sm_help(t, x0, y0 + hy, C_CYAN, ARR && g == GD_FORMATION ? "FORMATIONS INFO" /* test 83 */ :
 		        g == GD_CONTROLS && ctl_stick_off() ? "TEXT OR OFF WHILE XTC IS FULL" /* test 88; test 89 */ :
-		        g == GP_STAGE ? (gadgets_stagemap_avail() ? "16:9 ONLY: MAP AND VIEW LEFT, BOSS RIGHT, OTHER GADGETS OFF"
+		        g == GP_STAGE ? (gadgets_stagemap_avail() ? "STAGE MAP AND BOSS ARTWORK\n(16:9 ONLY, REPLACES\nOTHER GADGETS)" /* test 148 */
 		        : "NO IBARAWEB.DAT BESIDE THE XEX FILES") /* test 121 item 5 */ :
-		        g < GD_N ? helps[g] : g == GP_COOP ? "P1 AND P2 GADGETS WHILE CO-OP\n"
-		        "PLAY IS ACTIVE" : g == GP_ZONES ? "SHOWS WHERE KILLED ENEMIES DROP NO ITEMS" /* test 137 */ : "TOGGLE ALL GADGETS ON/OFF", 28); /* test 138 D2: 28 letters a line */
+		        g < GD_N ? helps[g] : g == GP_COOP ? "P1 AND P2 GADGETS\nDURING CO-OP PLAY" : g == GP_ZONES ? "SHOWS WHERE KILLED ENEMIES DROP NO ITEMS" /* test 137 */ : "TOGGLE ALL GADGETS ON/OFF", 28); /* test 138 D2: 28 letters a line; test 148 */
 		if (cfg.picture == PIC_CUSTOM) /* test 88: the picture resize turns them off */
 			sm_text(t, x0, y0 + gy, C_RED, "OFF: PICTURE SIZE IS CUSTOM");
 		else
@@ -9576,6 +9610,7 @@ static void state_load_now(void)
 			int v[TR_N];
 			memcpy(v, tr_val, sizeof(v));
 			tr_run = 0;
+			tr_xfrz_on[0] = tr_xfrz_on[1] = 0; /* test 148 */
 			tr_send(v);
 		}
 		sm_play();
@@ -11962,6 +11997,29 @@ static void tr_step(int k, int d)
 
 	for (i = 0; i < n && l[i] != tr_cfg[k]; i++)
 		;
+	if (k == TR_XTC) { /* test 147: DEFAULT, 0..9999 by 100 (LEFT/RIGHT); test 148: before TR_OPT0 return */
+		int held = tr_cfg[k] & TRX_HELD;
+		int v = TRX_VAL(tr_cfg[k]);
+		if (TRX_ISDEF(tr_cfg[k])) {
+			v = d > 0 ? 0 : TRX_DEFAULT;
+		} else if (d < 0) {
+			if (v <= 0)
+				v = TRX_DEFAULT;
+			else {
+				int nv = ((v - 1) / 100) * 100; /* down to previous 100 */
+				v = nv < 0 ? 0 : nv;
+			}
+		} else {
+			if (v >= 9999)
+				v = 9999;
+			else {
+				int nv = (v / 100) * 100 + 100;
+				v = nv > 9999 ? 9999 : nv;
+			}
+		}
+		tr_cfg[k] = (v & 0x7FFF) | held;
+		return;
+	}
 	if (k == TR_OPT0 || k == TR_FRM0) /* test 100 (user's list: "eliminate the "none" option ... just leave edit in"):
 	                                    * no NONE / EDIT toggle, A opens the box */
 		return;
@@ -11977,29 +12035,6 @@ static void tr_step(int k, int d)
 	}
 	if (k == TR_RPCT) { /* test 91: by 1%, ends held (0 / 100), RANK becomes LOCK; test 93: DEFAULT below 0% */
 		tr_rank_step(d);
-		return;
-	}
-	if (k == TR_XTC) { /* test 147: DEFAULT, 0..9999 by 100 (LEFT/RIGHT) */
-		int held = tr_cfg[k] & TRX_HELD;
-		int v = TRX_VAL(tr_cfg[k]);
-		if (TRX_ISDEF(tr_cfg[k])) {
-			v = d > 0 ? 0 : TRX_DEFAULT;
-		} else if (d < 0) {
-			if (v <= 0)
-				v = TRX_DEFAULT;
-			else {
-				int n = ((v - 1) / 100) * 100; /* down to previous 100 */
-				v = n < 0 ? 0 : n;
-			}
-		} else {
-			if (v >= 9999)
-				v = 9999;
-			else {
-				int n = (v / 100) * 100 + 100;
-				v = n > 9999 ? 9999 : n;
-			}
-		}
-		tr_cfg[k] = (v & 0x7FFF) | held;
 		return;
 	}
 	if (k == TR_SPEED) /* test 92 (user's todo list: "invert game speed left/right toggle"): RIGHT 50 -> 75 -> 100% */
@@ -12174,14 +12209,13 @@ static uint32_t tr_text(int k, char *s, size_t n)
 		}
 		snprintf(s, n, "%d%%%s", v, tr_cfg[TR_RANK] & TRR_HELD ? "*" : "");
 		break;
-	case TR_XTC: { /* test 147: DEFAULT (no write) or 0..9999, "*" when held */
-		int held = tr_cfg[TR_XTC] & TRX_HELD;
+	case TR_XTC: { /* test 147: DEFAULT (no write) or 0..9999; test 148: no "*" (page cannot set hold) */
 		int xv = TRX_VAL(tr_cfg[TR_XTC]);
 		if (TRX_ISDEF(tr_cfg[TR_XTC])) {
-			snprintf(s, n, "DEFAULT%s", held ? "*" : "");
-			return held ? C_GREEN : C_DIM;
+			snprintf(s, n, "DEFAULT");
+			return C_DIM;
 		}
-		snprintf(s, n, "%d%s", xv, held ? "*" : "");
+		snprintf(s, n, "%d", xv);
 		return C_GREEN;
 	}
 	case TR_SPEED: snprintf(s, n, "%d%%", spd_steps[v % 3]); return v ? C_GREEN : C_DIM;
@@ -12216,7 +12250,7 @@ static const char *tr_help(int k)
 	case TR_XTC: /* test 147: Kuro BL only */
 		return "STARTING XTC VALUE";
 	case TR_INV: return "TOGGLE INVINCIBILITY";
-	case TR_INFB: return "INFINITE BOMBS (MAY LAG)"; /* test 147 FIX_3: was 2 lines */
+	case TR_INFB: return "MAY CAUSE SPRITE OVERLOAD"; /* test 148 */
 	case TR_SPEED: return "TOGGLE GAME SPEED";
 	case TR_KSHIP: return "CHANGE PLAYER TYPE";
 	case TR_KBOMB: return "CHANGE BOMB TYPE";
@@ -12409,6 +12443,25 @@ static void tr_host(int what, int value)
 		tr_val[TR_XTC] = value;
 		return;
 	}
+	if (what == HOST_TR_XFRZ) { /* test 148: value = side * 2 + on */
+		const int side = value >> 1 & 1;
+		const int on = value & 1;
+		if (game_set != SET_IBARA) {
+			if (on) {
+				const struct tr_rec r = tr_rec_of(side);
+				tr_xfrz_cnt[side] = BE32(RAMP(r.base + 0x280)); /* test 148 FIX_1: rd32 does not exist */
+				tr_xfrz_tmr[side][0] = RAMP(r.base + 0x284)[0];
+				tr_xfrz_tmr[side][1] = RAMP(r.base + 0x284)[1];
+				tr_xfrz_on[side] = 1;
+				log_printf(C_WHITE, "TRAINING: %dP XTC FROZEN AT %u (EMU %u)", side + 1,
+				           (unsigned)(tr_xfrz_cnt[side] / 4u), (unsigned)frame_count);
+			} else {
+				tr_xfrz_on[side] = 0;
+				log_printf(C_WHITE, "TRAINING: %dP XTC UNFROZEN (EMU %u)", side + 1, (unsigned)frame_count);
+			}
+		}
+		return;
+	}
 	if (what >= HOST_TR_MORE && what < HOST_TR_END) { /* test 91: Kuro BL's ship rows */
 		tr_val[TR_OLD_N + what - HOST_TR_MORE] = value;
 		return;
@@ -12434,6 +12487,7 @@ static void tr_end(const char *why)
 	tr_go = 0;
 	tr_clear_stage = -1; /* test 95 */
 	tr_run = 0;
+	tr_xfrz_on[0] = tr_xfrz_on[1] = 0; /* test 148 */
 	tr_turbo = 0;
 }
 
@@ -12678,6 +12732,7 @@ static void tr_from_file(int on, const uint8_t *v)
 	for (k = 0; k < TR_N; k++)
 		tr_val[k] = v[k];
 	tr_run = 1;
+	tr_xfrz_on[0] = tr_xfrz_on[1] = 0; /* test 148 */
 	tr_armed = 0;
 	tr_out = 0;
 	tr_settings_log("TRAINING: ON FROM THE SAVE STATE:");
@@ -13016,6 +13071,7 @@ static void tr_vblank(void)
 		tr_out = 0;
 		tr_starts[0] = tr_starts[1] = 0;
 		tr_pend[0] = tr_pend[1] = 0;
+		tr_xfrz_on[0] = tr_xfrz_on[1] = 0; /* test 148 */
 		tr_stage_done = tr_loop2 = tr_boss_done = tr_rank_free = 0;
 		tr_ship_said = tr_open_said = 0; /* test 91 */
 		tr_pfast = tr_val[TR_BOSS] != 0; /* test 91: the stage's own page loads fast too (its intro's FF08) */
@@ -13148,6 +13204,12 @@ static void tr_vblank(void)
 			wr32(r.base + 0x280, (uint32_t)(xv * 4));
 			RAMP(r.base + 0x284)[0] = 0;
 			RAMP(r.base + 0x284)[1] = 128;
+		}
+		/* test 148: Y freeze - hold captured XTC counter/timer every vblank */
+		if (!ib && tr_run && alive && tr_xfrz_on[s]) {
+			wr32(r.base + 0x280, tr_xfrz_cnt[s]);
+			RAMP(r.base + 0x284)[0] = tr_xfrz_tmr[s][0];
+			RAMP(r.base + 0x284)[1] = tr_xfrz_tmr[s][1];
 		}
 		{
 			const int inv_held = alive && (tr_val[TR_INV] || tr_turbo) &&
@@ -14652,7 +14714,7 @@ static uint32_t game_task(void *u)
 		else
 			log_printf(C_YELLOW, "PS2 MENUS: %s: MENU STYLE STAYS ARCADE", ps2menu_why());
 	}
-	log_printf(C_WHITE, "IBARA360 " XEX_VERSION XEX_GAME " XEX (TEST " XEX_TEST "; TEST 147: MEDAL PENALTY NO LOWEST, TRAINING HITBOX HIDDEN, PLAYER HITBOX SIZE/MAGNET RENAMES, ITEM MAGNET RANGE GATED TO ALWAYS, FIXED RANK 0-100%% LB/RB; TEST 145: BATTLE HISTORY RUNTIME SAVED ON QUIT, BOOK ZOOM SHOWS THE OTHER PAGE, QUIT TO ATTRACT COUNTS THE RUN, INITIALIZE HISTORY ROW; TEST 144: TEXT REFINEMENTS (LANGUAGE, ACHIEVEMENTS, LOW LATENCY, CONTINUES, SOUNDTRACK HELPS, AUTO FREQUENCY, JAPANESE HELPS), SOUND WINDOW FIXED; TEST 143: TRACKLIST HELP PER GAME, NO BULLET DESIGN ROW, NO LB RAM HASH, SHORTER HISTORY/OTHER SETTINGS HELPS, KURO BL BULLET COLORS PREVIEW; TEST 101 XEX; TEST 102: LANGUAGE ON OPTIONS, TRAINING GREEN LINES ENGLISH, "
+	log_printf(C_WHITE, "IBARA360 " XEX_VERSION XEX_GAME " XEX (TEST " XEX_TEST "; TEST 148: RANK/BOMBS/MAGNET/CO-OP/STAGE MAP HELPS, MAGNET RANGE WITH RELEASE, ROTATED BOOK ZOOM FIT, KURO BL XTC OFF KEEPS COLUMN, TRAINING XTC START SETTABLE + Y FREEZE; TEST 147: MEDAL PENALTY NO LOWEST, TRAINING HITBOX HIDDEN, PLAYER HITBOX SIZE/MAGNET RENAMES, ITEM MAGNET RANGE GATED TO ALWAYS, FIXED RANK 0-100%% LB/RB; TEST 145: BATTLE HISTORY RUNTIME SAVED ON QUIT, BOOK ZOOM SHOWS THE OTHER PAGE, QUIT TO ATTRACT COUNTS THE RUN, INITIALIZE HISTORY ROW; TEST 144: TEXT REFINEMENTS (LANGUAGE, ACHIEVEMENTS, LOW LATENCY, CONTINUES, SOUNDTRACK HELPS, AUTO FREQUENCY, JAPANESE HELPS), SOUND WINDOW FIXED; TEST 143: TRACKLIST HELP PER GAME, NO BULLET DESIGN ROW, NO LB RAM HASH, SHORTER HISTORY/OTHER SETTINGS HELPS, KURO BL BULLET COLORS PREVIEW; TEST 101 XEX; TEST 102: LANGUAGE ON OPTIONS, TRAINING GREEN LINES ENGLISH, "
 	           "BLACK LABEL TITLES, MUSIC TEST NAMES AT ONE COLUMN, 4:3 GADGETS SPREAD + XTC FULL, ARRANGE: NO SERVICE "
 	           "MENU, ARRANGE VER + TAITO ON THE TITLE; TEST 111: THE TOAST FIX AT THE START, EX-DEBUG VALUES IN ONE COLUMN, "
 	           "START KEPT FROM THE RANKING UNTIL THE CAVE LOGO; TEST 112: AUDIO MONO/STEREO, EX-DEBUG BY LB+RB+A WITH THE INI'S "

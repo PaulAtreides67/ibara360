@@ -738,6 +738,12 @@ static void bk_pan_edges(float limx, float limy)
 	bk_py = bk_clampf(bk_py, limy);
 }
 
+/* test 148: rotated FIT already shows the page's full width, so rotated zoom levels are 2x and 3x WIDTH */
+static float bk_zf(void)
+{
+	return bk_rot ? (float)(bk_zoom + 1) : (float)bk_zoom;
+}
+
 int book_input(unsigned press, unsigned held, int stick_x, int stick_y)
 {
 	float dx = 0, dy = 0;
@@ -777,7 +783,7 @@ int book_input(unsigned press, unsigned held, int stick_x, int stick_y)
 		bk_top = 1;
 		bk_stick_latch = 0;
 	}
-	hw = bk_zoom ? 0.5f / (float)bk_zoom : 0.5f; /* the view's half width in page widths */
+	hw = bk_zoom ? 0.5f / bk_zf() : 0.5f; /* the view's half width in page widths; test 148 */
 	limx = 0.5f - hw;
 	if (bk_zoom && bk_spread) { /* past the edge of one page (pressed, or the stick held there): the other page of the spread */
 		const float eps = 1e-4f;
@@ -926,16 +932,19 @@ void book_draw(unsigned fb_w, unsigned fb_h, float par, book_quad_fn quad)
 		ready = bk_full_pg == page && !bk_busy;
 		if (ready) {
 			bk_idle = 0;
-			if (!bk_zoom) { /* FIT: the whole page height above the line, centred, the game's pixel aspect rule */
-				const float pw = ph * aspect / par;
+			if (!bk_zoom) { /* FIT: fit both ways; test 148: rotated page's width must not exceed the view */
+				const float pwf = ph * aspect / par;
+				const float pw = pwf < fw ? pwf : fw;
+				const float phs = pw * par / aspect;
 				const float x0 = (fw - pw) / 2;
+				const float y0 = (ph - phs) / 2;
 
 				{
 					const float uv[4][2] = {{0, 0}, {1, 0}, {0, 1}, {1, 1}}; /* test 147 FIX_2 */
-					dq(&bk_tex, x0, 0, x0 + pw, ph, uv);
+					dq(&bk_tex, x0, y0, x0 + pw, y0 + phs, uv);
 				}
-			} else { /* test 139 F4: WIDTH = one page's width is the display width; 2x = twice that */
-				const float z = (float)bk_zoom;
+			} else { /* test 139 F4: WIDTH = one page's width is the display width; test 148: rotated 2x/3x WIDTH */
+				const float z = bk_zf();
 				const float hw = 0.5f / z;                      /* the view's half width, page widths */
 				const float hv = 0.5f * ph / (fw * z * par / aspect); /* the view's half height, page heights */
 				const float limx = 0.5f - hw;
@@ -946,7 +955,15 @@ void book_draw(unsigned fb_w, unsigned fb_h, float par, book_quad_fn quad)
 					bk_top = 0;
 				}
 				bk_pan_edges(limx, limy);
-				{
+				if (hv >= 0.5f) { /* test 148: whole page height fits: draw only over the page, V 0..1 */
+					const float phz = fw * z * par / aspect;
+					const float y0 = (ph - phz) / 2;
+					const float u0 = 0.5f + bk_px - hw, u1 = 0.5f + bk_px + hw;
+					const float uv[4][2] = {{u0, 0}, {u1, 0}, {u0, 1}, {u1, 1}};
+
+					bk_py = 0;
+					dq(&bk_tex, 0, y0, fw, y0 + phz, uv);
+				} else {
 					/* test 147 FIX_2: per-corner UVs TL,TR,BL,BR of the zoomed sub-rect */
 					const float u0 = 0.5f + bk_px - hw, v0 = 0.5f + bk_py - hv;
 					const float u1 = 0.5f + bk_px + hw, v1 = 0.5f + bk_py + hv;

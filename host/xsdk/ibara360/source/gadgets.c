@@ -1884,10 +1884,10 @@ static int ctl_text_eff(void)
 }
 
 /* test 147: Kuro BL's XTC SMALL with the stick CONTROLS at the left bottom (one player): no RAPID row on WEAPON, the
- * stick's AUTO line shows instead */
+ * stick's AUTO line shows instead; test 148: OFF uses SMALL's places too */
 static int stick_small_xtc(const struct gd_lay *L)
 {
-	return !coop_now && L->wide && ON(GD_CONTROLS) && M->xtc && ON(GD_XTC) && !ctl_text_eff();
+	return !coop_now && L->wide && ON(GD_CONTROLS) && M->xtc && !ctl_text_eff(); /* test 148: drop ON(GD_XTC) */
 }
 
 /* test 69: CONTROLS' slim text plate is drawn (16:9); test 71: 4:3's always (no stick there) */
@@ -4056,11 +4056,11 @@ void gadgets_draw(int layer, int view, uint32_t queued, uint32_t flips)
 			if (ON(GD_BULLETS) && plate(CP_BULLETS)) /* test 67 */
 				draw_bullets();
 			/* test 97: SCORE, STATUS (three rows) and WEAPON (its rows) down the left column, then SPECIAL FORMATIONS /
-			 * FORMATIONS / XTC under WEAPON (test 147: the same column in SMALL and FULL) */
+			 * FORMATIONS / XTC under WEAPON (test 147: the same column in SMALL and FULL; test 148: Kuro BL OFF keeps it) */
 			const int xfull = M->xtc && ON(GD_XTC) && gd_xtc_full;
 			const float sr = card_plates[CP_STATUS].x[CPV_WIDE] + card_sprites[CS_PLATE_STATUS].w;
 			struct wide_col c;
-			wide_col(L, M->xtc && ON(GD_XTC), &c);
+			wide_col(L, M->xtc, &c); /* test 148: Kuro BL XTC OFF uses SMALL's places */
 			plate_dy = c.dy;
 			if (ON(GD_SCORE) && plate(CP_SCORE))
 				draw_score();
@@ -4091,13 +4091,13 @@ void gadgets_draw(int layer, int view, uint32_t queued, uint32_t flips)
 				draw_xtc();
 			plate_dy = 0;
 			/* test 147: with Kuro BL's XTC the stick (SMALL) sits 28 px higher, under the XTC; CONTROLS' text plate is under
-			 * MUSIC in SMALL and FULL alike (ctl_text_eff) */
+			 * MUSIC in SMALL and FULL alike (ctl_text_eff); test 148: OFF uses SMALL's places too */
 			if (L->wide && ON(GD_CONTROLS) && !ctl_text_eff()) {
-				ctl_dy = M->xtc && ON(GD_XTC) ? XTC_STICK_GAP - 28.0f : 0;
+				ctl_dy = M->xtc ? XTC_STICK_GAP - 28.0f : 0; /* test 148 */
 				draw_controls(RAPID_ON_WEAPON && ON(GD_WEAPON) && !stick_small_xtc(L));
 				ctl_dy = 0;
 			}
-			if (M->xtc && ON(GD_XTC)) {
+			if (M->xtc) { /* test 148: OFF keeps SMALL's CONTROLS place */
 				plate_dx = CTL_UNDER_MUSIC_X - card_plates[CP_CTLTEXT].x[CPV_WIDE];
 				plate_dy = CTL_UNDER_MUSIC_Y - card_plates[CP_CTLTEXT].y[CPV_WIDE];
 			}

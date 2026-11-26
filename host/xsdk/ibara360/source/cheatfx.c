@@ -224,7 +224,7 @@ void cfx_vblank(const struct cfx_cfg *c)
 				continue;
 			x = (int32_t)rd32(sit + 0x28);
 			y = (int32_t)rd32(sit + 0x2C);
-			if (nearest_ship(c->kuro, c->shot_recent, release, !(c->magnet == 3 && c->magrange), x, y, &sx, &sy) < 0) /* test 147: range only with ALWAYS, correct ship records */
+			if (nearest_ship(c->kuro, c->shot_recent, release, !((c->magnet == 2 || c->magnet == 3) && c->magrange), x, y, &sx, &sy) < 0) /* test 148: range with RELEASE or ALWAYS, correct ship records */
 				continue; /* nobody in range (RELEASE: shot held / CLOSE: outside latch radius) */
 
 			/* first free slot F in 0..0xFF (+0x00 == 0); none -> retry next frame */
@@ -442,8 +442,8 @@ void cfx_vblank(const struct cfx_cfg *c)
 				if (want) {
 					int32_t sx = 0, sy = 0;
 					/* test 136 FIX1 A.1/A.2: radius test in nearest_ship; release filter = release && (FULL || !pulled) */
-					/* test 147: MAGNET RANGE only with ITEM MAGNET ALWAYS */
-					const int full_range = (c->magnet == 3 && c->magrange);
+					/* test 148: MAGNET RANGE with ITEM MAGNET RELEASE or ALWAYS */
+					const int full_range = ((c->magnet == 2 || c->magnet == 3) && c->magrange);
 					int need_close = (!full_range && !i_pull[i]);
 					int rel_filter = release && (full_range || !i_pull[i]);
 					int tgt = nearest_ship(c->kuro, c->shot_recent, rel_filter, need_close, x, y, &sx, &sy);
