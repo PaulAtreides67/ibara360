@@ -32,6 +32,19 @@ static inline void wr8(uint32_t a, uint8_t v)
 	RAMP(a)[0] = v;
 }
 
+static inline uint16_t rd16(uint32_t a) /* test 147: XTC DECAY */
+{
+	const u8 *p = RAMP(a);
+	return (uint16_t)((p[0] << 8) | p[1]);
+}
+
+static inline void wr16(uint32_t a, uint16_t v) /* test 147: XTC DECAY */
+{
+	u8 *p = RAMP(a);
+	p[0] = (u8)(v >> 8);
+	p[1] = (u8)v;
+}
+
 static inline int32_t iabs32(int32_t v)
 {
 	return v < 0 ? -v : v;
@@ -48,6 +61,9 @@ static int i_ok[320];
 static int i_pull[320]; /* test 136: pull latch, until collected / freed / changed */
 static unsigned fewer_n;
 static uint8_t med_idx;
+static uint16_t xtc_prev[2]; /* test 147: XTC DECAY, last seen timer per side */
+static unsigned xtc_phase[2];
+static int xtc_have;
 
 static void ship_pos(int kuro, int s, int32_t *x, int32_t *y, int *alive)
 {
@@ -127,6 +143,8 @@ void cfx_reset(void)
 	have = 0;
 	fewer_n = 0;
 	mag_latch_logged = 0; /* test 136 (FIX1 A.5) */
+	xtc_have = 0; /* test 147 */
+	xtc_phase[0] = xtc_phase[1] = 0;
 	for (i = 0; i < 320; i++)
 		i_pull[i] = 0;
 	if (ground_released_n)
@@ -184,7 +202,8 @@ void cfx_vblank(const struct cfx_cfg *c)
 		return;
 
 	/* test 140: ground (attached) items released into a free slot so the magnet pulls them (work/g140/RESEARCH_MAGNET.md) */
-	if (!c->kuro && (c->magnet == 2 || c->magnet == 3 || c->suction)) {
+	/* test 147: also on Kuro BL with ITEM MAGNET ALWAYS (detach like ibara; Kuro RELEASE not offered) */
+	if ((!c->kuro && (c->magnet == 2 || c->magnet == 3 || c->suction)) || (c->kuro && c->magnet == 3)) {
 		unsigned s, j, k;
 
 		for (s = 0x100; s <= 0x13F; s++) {
@@ -198,11 +217,14 @@ void cfx_vblank(const struct cfx_cfg *c)
 
 			if (!(fl & 0x10u) || ty > 7)
 				continue;
-			if (!(c->magnet == 2 || c->magnet == 3 || (c->suction && ty == 3)))
+			if (c->kuro) {
+				if (c->magnet != 3) /* test 147: Kuro BL ground pull only with ITEM MAGNET ALWAYS */
+					continue;
+			} else if (!(c->magnet == 2 || c->magnet == 3 || (c->suction && ty == 3)))
 				continue;
 			x = (int32_t)rd32(sit + 0x28);
 			y = (int32_t)rd32(sit + 0x2C);
-			if (nearest_ship(0, c->shot_recent, release, c->magrange == 0, x, y, &sx, &sy) < 0)
+			if (nearest_ship(c->kuro, c->shot_recent, release, !(c->magnet == 3 && c->magrange), x, y, &sx, &sy) < 0) /* test 147: range only with ALWAYS, correct ship records */
 				continue; /* nobody in range (RELEASE: shot held / CLOSE: outside latch radius) */
 
 			/* first free slot F in 0..0xFF (+0x00 == 0); none -> retry next frame */
@@ -221,7 +243,8 @@ void cfx_vblank(const struct cfx_cfg *c)
 				wr32(fa + k, rd32(sit + k));
 			nf = (fl & ~0x4010u) | 0x4u;
 			wr32(fa, nf);
-			wr8(fa + 0x48, 0);
+			if (!c->kuro)
+				wr8(fa + 0x48, 0); /* test 147: ibara-only field; BL +0x48 meaning unknown */
 			wr32(fa + 0x30, 0);
 			wr32(fa + 0x34, 0);
 			wr32(sit, 0); /* S: +0x00 ONLY */
@@ -419,8 +442,10 @@ void cfx_vblank(const struct cfx_cfg *c)
 				if (want) {
 					int32_t sx = 0, sy = 0;
 					/* test 136 FIX1 A.1/A.2: radius test in nearest_ship; release filter = release && (FULL || !pulled) */
-					int need_close = (c->magrange == 0 && !i_pull[i]);
-					int rel_filter = release && (c->magrange == 1 || !i_pull[i]);
+					/* test 147: MAGNET RANGE only with ITEM MAGNET ALWAYS */
+					const int full_range = (c->magnet == 3 && c->magrange);
+					int need_close = (!full_range && !i_pull[i]);
+					int rel_filter = release && (full_range || !i_pull[i]);
 					int tgt = nearest_ship(c->kuro, c->shot_recent, rel_filter, need_close, x, y, &sx, &sy);
 
 					if (tgt >= 0) {
@@ -433,7 +458,7 @@ void cfx_vblank(const struct cfx_cfg *c)
 							if (ady > l)
 								l = ady;
 						}
-						if (c->magrange == 0 && !i_pull[i] && !mag_latch_logged) {
+						if (!full_range && !i_pull[i] && !mag_latch_logged) { /* test 147 */
 							/* test 136 (FIX1 A.5): first CLOSE latch, whole pixels */
 							const int32_t adx = iabs32(dx), ady = iabs32(dy);
 							const int32_t oct = adx >= ady ? adx + (ady >> 1) : ady + (adx >> 1);
@@ -529,9 +554,7 @@ void cfx_vblank(const struct cfx_cfg *c)
 				if (!init && medals_gone > 0) {
 					uint8_t n = 0;
 
-					if (c->medalpen == 1) {
-						n = 0;
-					} else {
+					{ /* test 147: LOWEST (1) removed - only 5 DOWN (2) and 3 DOWN (3) */
 						const uint8_t k = c->medalpen == 2 ? 5 : 3;
 						n = idx_prev > k ? (uint8_t)(idx_prev - k) : 0;
 					}
@@ -544,6 +567,31 @@ void cfx_vblank(const struct cfx_cfg *c)
 			}
 		}
 		med_idx = rd8(med_addr);
+	}
+
+	/* test 147: XTC DECAY (Kuro BL only, per game frame) */
+	if (c->kuro) {
+		int s;
+		for (s = 0; s < 2; s++) {
+			const uint32_t r = 0x0C29D1D8u + (uint32_t)s * 0x2A0u;
+			uint16_t left = rd16(r + 0x284);
+			if (xtc_have && c->xtcdecay && left > 0) {
+				uint16_t prev = xtc_prev[s];
+				int dec = prev > left ? (int)(prev - left) : 0; /* game's step this frame */
+				if (dec > 0) {
+					if (c->xtcdecay == 1) { /* SLOW: add 1 back every other frame (half speed) */
+						if ((xtc_phase[s]++ & 1u) && left < 0xFFFFu)
+							left++;
+					} else if (c->xtcdecay == 2) { /* FAST: subtract 1 extra (double speed, not below 0) */
+						if (left > 1)
+							left--;
+					}
+					wr16(r + 0x284, left);
+				}
+			}
+			xtc_prev[s] = left;
+		}
+		xtc_have = 1;
 	}
 
 	last_fc = fc;

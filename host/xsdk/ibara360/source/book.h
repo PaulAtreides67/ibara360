@@ -28,11 +28,10 @@
 /* main.c's glyph(): the 5 x 7 font, row by row, bit 0x10 = the left column (the same table sm_text uses) */
 typedef const unsigned char *(*book_glyph_fn)(char c);
 
-/* book_draw's quad: texture t drawn at x0, y0 .. x1, y1 (front buffer pixels, y down) with its uv u0, v0 .. u1, v1
- * (0 .. 1). main.c draws it with its own quad path (the card's: the quad shader, make_quad, set_texture, set_vertices,
- * draw); no alpha, no tint. */
-typedef void (*book_quad_fn)(const XsdkTexture *t, float x0, float y0, float x1, float y1, float u0, float v0, float u1,
-                             float v1);
+/* book_draw's quad: texture t drawn at x0, y0 .. x1, y1 (front buffer pixels, y down) with per-corner UVs uv[4][2]
+ * in TL, TR, BL, BR order of that screen rectangle (0 .. 1). main.c draws it with its own quad path (the card's: the
+ * quad shader, make_quad, set_texture, set_vertices, draw); no alpha, no tint. */
+typedef void (*book_quad_fn)(const XsdkTexture *t, float x0, float y0, float x1, float y1, const float uv[4][2]); /* test 147 FIX_2: per-corner UVs so bk_rot_quad can rotate 90 degrees */
 
 /* the table of ibarabook.dat beside the .xex (launch_path, the same as ibaraweb.dat); logs "BOOK: ibarabook.dat READ, n
  * PAGES" (green), "BOOK: NO IBARABOOK.DAT BESIDE THE XEX FILES" (yellow) or a red reason. 0 = read. Once: later calls
@@ -65,6 +64,11 @@ int book_wants_hold(void);
 /* 1 = the two-page spread (YOKO: left page = even page, cover alone on the right), 0 = one page (TATE). The caller passes
  * cfg.tate == TATE_OFF before each book_draw. Ignored (stays 0) when the file has no H entries for every page. */
 void book_set_spread(int on);
+
+/* test 147: 0 = upright, 1 = TATE LEFT (CCW, game top at screen left), 2 = TATE RIGHT (CW). When set, the book is
+ * drawn turned the same way as the game, one page at a time (no spreads). The caller passes cfg.tate (TATE_OFF/LEFT/RIGHT)
+ * before each book_draw. */
+void book_set_rotation(int rot);
 
 /* the book's buttons and the left stick (raw XInput-style values, -32768 .. 32767, up positive), once per game-thread
  * frame while the book is open. press = the buttons that went down this frame, held = the buttons down now. Returns 1

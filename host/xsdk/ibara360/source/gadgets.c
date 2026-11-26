@@ -1229,13 +1229,13 @@ static void xf(float x, float y, float *cx, float *cy)
 		*cx = x / 480 - 1;
 		*cy = 1 - y / 360;
 		break;
-	case GV_TATE_L: /* 720x1280, its top at the front buffer's right edge (the raster as it is) */
-		*cx = 1 - y / 640;
-		*cy = 1 - x / 360;
-		break;
-	case GV_TATE_R: /* its top at the left edge (the raster turned half a turn) */
+	case GV_TATE_L: /* 720x1280, its top at the front buffer's left edge (test 147: LEFT/RIGHT swapped) */
 		*cx = y / 640 - 1;
 		*cy = x / 360 - 1;
+		break;
+	case GV_TATE_R: /* its top at the right edge (test 147: LEFT/RIGHT swapped) */
+		*cx = 1 - y / 640;
+		*cy = 1 - x / 360;
 		break;
 	default: /* 1280x720 */
 		*cx = x / 640 - 1;
@@ -1245,14 +1245,17 @@ static void xf(float x, float y, float *cx, float *cy)
 }
 
 /* x0, y0 .. x1, y1 (design pixels through tx_*) -> clip space; uv in the texture's 0..1 */
-static void quad(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1, col_t c)
+/* test 147: the same quad with a colour per corner, cc[0] top left, cc[1] top right, cc[2] bottom left, cc[3] bottom
+ * right (a linear gradient is exact across one quad) */
+static void quad_grad(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1, const col_t cc[4])
 {
 	float (*q)[GD_VF];
 	float cx[4][4];
 	static const int order[6] = {0, 1, 2, 2, 1, 3};
 	int i;
 
-	if ((gd_to_point ? gd_npq >= GD_POINT_QUADS : gd_nq >= GD_MAX_QUADS) || c.a <= 0)
+	if ((gd_to_point ? gd_npq >= GD_POINT_QUADS : gd_nq >= GD_MAX_QUADS) ||
+	    (cc[0].a <= 0 && cc[1].a <= 0 && cc[2].a <= 0 && cc[3].a <= 0))
 		return;
 	x0 = t_nx + (x0 - t_ox) * t_kx;
 	x1 = t_nx + (x1 - t_ox) * t_kx;
@@ -1265,6 +1268,7 @@ static void quad(float x0, float y0, float x1, float y1, float u0, float v0, flo
 	q = gd_to_point ? gd_qp[gd_npq++] : gd_q[gd_nq++];
 	for (i = 0; i < 6; i++) {
 		const float *k = cx[order[i]];
+		const col_t c = cc[order[i]];
 		xf(k[0], k[1], &q[i][0], &q[i][1]);
 		q[i][2] = c.r;
 		q[i][3] = c.g;
@@ -1273,6 +1277,13 @@ static void quad(float x0, float y0, float x1, float y1, float u0, float v0, flo
 		q[i][6] = k[2];
 		q[i][7] = k[3];
 	}
+}
+
+static void quad(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1, col_t c)
+{
+	const col_t cc[4] = {c, c, c, c};
+
+	quad_grad(x0, y0, x1, y1, u0, v0, u1, v1, cc);
 }
 
 /* sprite id at x, y, w x h (0 = its own size) */
@@ -1296,6 +1307,16 @@ static void box(float x, float y, float w, float h, col_t c)
 
 	if (w > 0 && h > 0)
 		quad(x, y, x + w, y + h, u, v, u, v, c);
+}
+
+/* test 147: box() with a colour per corner (cc as quad_grad's) */
+static void box_grad(float x, float y, float x1, float y1, const col_t cc[4])
+{
+	const struct card_rect *r = &card_sprites[CS_WHITE];
+	const float u = (r->x + 2.0f) / CARD_ATLAS_W, v = (r->y + 2.0f) / CARD_ATLAS_H;
+
+	if (x1 > x && y1 > y)
+		quad_grad(x, y, x1, y1, u, v, u, v, cc);
 }
 
 /* test 64: a box's outline, t pixels thick */
@@ -1855,10 +1876,24 @@ static void draw_rapid(float x, float y)
 	TEXT2(x + 14 * 18, y, t, pl[CS].shot_max ? WHITE : GREY);
 }
 
+/* test 147: CONTROLS' text plate also with XTC FULL (the stick does not fit beside its 292-row plate); co-op keeps its own
+ * layout (gd_ctl_text only) */
+static int ctl_text_eff(void)
+{
+	return gd_ctl_text || (!coop_now && M->xtc && ON(GD_XTC) && gd_xtc_full);
+}
+
+/* test 147: Kuro BL's XTC SMALL with the stick CONTROLS at the left bottom (one player): no RAPID row on WEAPON, the
+ * stick's AUTO line shows instead */
+static int stick_small_xtc(const struct gd_lay *L)
+{
+	return !coop_now && L->wide && ON(GD_CONTROLS) && M->xtc && ON(GD_XTC) && !ctl_text_eff();
+}
+
 /* test 69: CONTROLS' slim text plate is drawn (16:9); test 71: 4:3's always (no stick there) */
 static int ctl_text_shown(const struct gd_lay *L)
 {
-	return ON(GD_CONTROLS) && (L->v43 || (L->wide && gd_ctl_text));
+	return ON(GD_CONTROLS) && (L->v43 || (L->wide && ctl_text_eff()));
 }
 
 /* rows of 20 pixels: the shot's level (boxes) and the small P toward the next; ibara: the left and right options, the
@@ -1963,7 +1998,7 @@ static void draw_weapon(const struct gd_lay *L)
 	draw_trail(x, y);
 	/* test 61's RAPID (ibara, 16:9); test 67: always (no switch of its own); test 69: on CONTROLS' text plate when that
 	 * is shown (user: "move the auto shot - auto / now shot frequencies gadgets to the bottom row of it") */
-	if (RAPID_ON_WEAPON && !ctl_text_shown(L))
+	if (RAPID_ON_WEAPON && !ctl_text_shown(L) && !stick_small_xtc(L)) /* test 147: the stick's AUTO line instead */
 		draw_rapid(x, y + 20);
 }
 
@@ -2149,6 +2184,74 @@ static void xtc_graph(float gx, float gy, float k, int hb_box)
 	box(cx - dot / 2, cy - dot / 2, dot, dot, YELLOW);
 }
 
+/* test 147: the XTC timer's colours, blue at the empty end (t 0) to cyan at the full end (t 1); each gauge's colours are
+ * fixed to the gauge, so the blue end is the one that drains last */
+static col_t xtc_grad(float t)
+{
+	col_t c;
+
+	c.r = 0.15f + (0.40f - 0.15f) * t;
+	c.g = 0.35f + (1.00f - 0.35f) * t;
+	c.b = 1.00f;
+	c.a = 1;
+	return c;
+}
+
+/* test 147: the timer's fill (0..1 of XTC_TIMER) and its track: a 1 px outline around a near-black backing */
+static float xtc_frac(void)
+{
+	return P->xtc_left >= XTC_TIMER ? 1.0f : P->xtc_left / (float)XTC_TIMER;
+}
+
+static void xtc_track(float x0, float y0, float w, float h)
+{
+	static const col_t dark = {0.10f, 0.08f, 0.10f, 1};
+
+	box(x0 - 1, y0 - 1, w + 2, h + 2, dark);
+	frame(x0 - 1, y0 - 1, w + 2, h + 2, 1, fade(GREY, 0.6f));
+}
+
+/* test 147: the frame count "%dF" (the XTC timer in frames), centred in a gauge's width at y: white with a 1 px black
+ * outline, which reads on the blue/cyan fill and on the dark empty part */
+static void xtc_frames_label(float x0, float w, float y)
+{
+	static const col_t black = {0, 0, 0, 1};
+	char t[16];
+	float x;
+
+	snprintf(t, sizeof(t), "%dF", (int)P->xtc_left);
+	x = floorf(x0 + (w - 14.0f * (float)strlen(t)) / 2);
+	TEXT2(x - 1, y, t, black);
+	TEXT2(x + 1, y, t, black);
+	TEXT2(x, y - 1, t, black);
+	TEXT2(x, y + 1, t, black);
+	TEXT2(x, y, t, WHITE);
+}
+
+/* test 147: SMALL's timer, a horizontal gauge in the number's row, drained right to left: the fill is anchored at the
+ * left end; one quad whose colour runs cyan (left, the full end) to the colour at its right edge */
+static void draw_gauge_h(float x0, float y0, float w, float h)
+{
+	const float fill = floorf(w * xtc_frac() + 0.5f);
+	const col_t cc[4] = {xtc_grad(1.0f), xtc_grad(1.0f - fill / w), xtc_grad(1.0f), xtc_grad(1.0f - fill / w)};
+
+	xtc_track(x0, y0, w, h);
+	if (fill > 0)
+		box_grad(x0, y0, x0 + fill, y0 + h, cc);
+}
+
+/* test 147: FULL's timer, a vertical gauge, filled from the bottom: one quad, blue at its bottom edge to the colour at
+ * its top edge */
+static void draw_gauge_v(float x0, float y0, float w, float h)
+{
+	const float fill = floorf(h * xtc_frac() + 0.5f);
+	const col_t cc[4] = {xtc_grad(fill / h), xtc_grad(fill / h), xtc_grad(0.0f), xtc_grad(0.0f)};
+
+	xtc_track(x0, y0, w, h);
+	if (fill > 0)
+		box_grad(x0, y0 + h - fill, x0 + w, y0 + h, cc);
+}
+
 static void draw_xtc(void)
 {
 	static const col_t XTC_GREEN = {0x30 / 255.0f, 0xF0 / 255.0f, 0x60 / 255.0f, 1}; /* the game's "+XTC" popup */
@@ -2163,10 +2266,13 @@ static void draw_xtc(void)
 	if (!s.run || s.demo)
 		return;
 	xtc_graph(gx, gy, XTC_G, 0);
-	digits(CS_DIGIT_L0, wx + ww - 10, wy + 2, (uint32_t)(P->xtc > 0 ? P->xtc : 0), 1, 19, P->xtc > 0 ? XTC_GREEN : DIM);
-	if (P->xtc > 0)
-		box(tx, wy + 43, (ww - 10 - (tx - wx)) * (P->xtc_left >= XTC_TIMER ? 1.0f : P->xtc_left / (float)XTC_TIMER), 3,
-		    XTC_GREEN);
+	digits(CS_DIGIT_L0, wx + ww - 16, wy + 2, (uint32_t)(P->xtc > 0 ? P->xtc : 0), 1, 17, P->xtc > 0 ? XTC_GREEN : DIM);
+	/* test 147: the timer as a gauge in the number's row, 6 px right of the red box and 6 px left of the number; the
+	 * frame count inside it (the old thin bar under the number is gone) */
+	if (P->xtc > 0) {
+		draw_gauge_h(wx + 104, wy + 9, 133, 26);
+		xtc_frames_label(wx + 104, 133, wy + 14);
+	}
 	/* test 88 (user: "remove the size blue line ... but keep the xx x xx px pixel size") */
 	xtc_half(active ? P->xtc_hold : 8, &hw, &hh);
 	snprintf(t, sizeof(t), "%dX%d", (int)lroundf(2 * hw), (int)lroundf(2 * hh));
@@ -2188,8 +2294,8 @@ static void draw_xtc_full(void)
 	static const col_t XTC_GREEN = {0x30 / 255.0f, 0xF0 / 255.0f, 0x60 / 255.0f, 1};
 	const float wx = CL_XTCFULL_WIN_X, wy = CL_XTCFULL_WIN_Y, ww = CL_XTCFULL_WIN_W;
 	const float k = gd_game_k / CARD_KS; /* design pixels a game pixel */
-	const float gx = wx + 4 + 52 * k, gy = wy + 4 + 47 * k; /* the largest window (104 x 94) at the graph's top left */
-	const float tx = wx + 8 + 104 * k, ty = wy + 12 + 94 * k;
+	const float gx = wx + 2 + 52 * k, gy = wy + 4 + 47 * k; /* the largest window (104 x 94) at the graph's top left */
+	const float ty = wy + 12 + 94 * k;
 	const int active = P->xtc_hit && P->xtc_opts && P->xtc_hold > 4;
 	const char *st;
 	col_t sc;
@@ -2201,11 +2307,15 @@ static void draw_xtc_full(void)
 	gd_to_point = 1;
 	xtc_graph(gx, gy, k, 1);
 	gd_to_point = 0;
-	/* test 99 (user: the number touched the right border): 12 in from the window's right, its bar ending under it */
-	digits(CS_DIGIT_L0, wx + ww - 12, wy + 2, (uint32_t)(P->xtc > 0 ? P->xtc : 0), 1, 19, P->xtc > 0 ? XTC_GREEN : DIM);
-	if (P->xtc > 0)
-		box(tx, wy + 43, (ww - 12 - (tx - wx)) *(P->xtc_left >= XTC_TIMER ? 1.0f : P->xtc_left / (float)XTC_TIMER), 3,
-		    XTC_GREEN);
+	/* test 147: the number 6 px clear of the red box's right edge (4 digits); the vertical gauge from 8 px right of that
+	 * edge to 6 px in from the window's right, the frame count at its top, inside */
+	digits(CS_DIGIT_L0, wx + ww - 11, wy + 2, (uint32_t)(P->xtc > 0 ? P->xtc : 0), 1, 17, P->xtc > 0 ? XTC_GREEN : DIM);
+	if (P->xtc > 0) {
+		const float gxl = wx + 2 + 104 * k + 8, gxr = wx + ww - 6;
+
+		draw_gauge_v(gxl, wy + 48, gxr - gxl, 174);
+		xtc_frames_label(gxl, gxr - gxl, wy + 52);
+	}
 	xtc_half(active ? P->xtc_hold : 8, &hw, &hh);
 	snprintf(t, sizeof(t), "%dX%d", (int)lroundf(2 * hw), (int)lroundf(2 * hh));
 	{
@@ -3280,7 +3390,7 @@ static int weapon_rows(const struct gd_lay *L)
 		n += 2;
 	else if (M->stock)
 		n += gd_compact ? 1 : 3;
-	if (RAPID_ON_WEAPON && !ctl_text_shown(L))
+	if (RAPID_ON_WEAPON && !ctl_text_shown(L) && !stick_small_xtc(L)) /* test 147: as draw_weapon's */
 		n++;
 	return n;
 }
@@ -3333,16 +3443,19 @@ struct wide_col {
 	float status_y, weapon_y, below_y;
 };
 
-static void wide_col(const struct gd_lay *L, int xfull, struct wide_col *c)
+/* test 147: the same rows in SMALL and FULL. xtc: Kuro BL's XTC is on; then the lift is computed from the FULL plate's
+ * height in both modes (so both share one dy: 0 in the normal case, where the plate ends at 709), and it keeps the column
+ * above 720 when CONTROLS is off and RAPID stays on WEAPON */
+static void wide_col(const struct gd_lay *L, int xtc, struct wide_col *c)
 {
-	const float gap = xfull ? 0 : WIDE_GAP;
+	const float gap = WIDE_GAP;
 	float over;
 
 	c->dy = 0;
 	c->status_y = card_plates[CP_STATUS].y[CPV_WIDE];
 	c->weapon_y = c->status_y + status_h() + gap;
 	c->below_y = c->weapon_y + weapon_h(L) + gap;
-	over = xfull ? c->below_y + card_sprites[CS_PLATE_XTCFULL].h - 720 : 0;
+	over = xtc ? c->below_y + card_sprites[CS_PLATE_XTCFULL].h - 720 : 0;
 	if (over > 0) {
 		c->dy = -(over > card_plates[CP_SCORE].y[CPV_WIDE] ? card_plates[CP_SCORE].y[CPV_WIDE] : over);
 		c->status_y += c->dy;
@@ -3943,11 +4056,11 @@ void gadgets_draw(int layer, int view, uint32_t queued, uint32_t flips)
 			if (ON(GD_BULLETS) && plate(CP_BULLETS)) /* test 67 */
 				draw_bullets();
 			/* test 97: SCORE, STATUS (three rows) and WEAPON (its rows) down the left column, then SPECIAL FORMATIONS /
-			 * FORMATIONS / XTC under WEAPON (wide_col: XTC FULL moves the column up to end at the bottom) */
+			 * FORMATIONS / XTC under WEAPON (test 147: the same column in SMALL and FULL) */
 			const int xfull = M->xtc && ON(GD_XTC) && gd_xtc_full;
 			const float sr = card_plates[CP_STATUS].x[CPV_WIDE] + card_sprites[CS_PLATE_STATUS].w;
 			struct wide_col c;
-			wide_col(L, xfull, &c);
+			wide_col(L, M->xtc && ON(GD_XTC), &c);
 			plate_dy = c.dy;
 			if (ON(GD_SCORE) && plate(CP_SCORE))
 				draw_score();
@@ -3977,16 +4090,18 @@ void gadgets_draw(int layer, int view, uint32_t queued, uint32_t flips)
 			else if (M->xtc && ON(GD_XTC) && plate(CP_XTC)) /* test 76: Kuro BL's, in SPECIAL FORMATIONS' place */
 				draw_xtc();
 			plate_dy = 0;
-			if (L->wide && ON(GD_CONTROLS) && !gd_ctl_text && !xfull) {
-				ctl_dy = M->xtc && ON(GD_XTC) ? XTC_STICK_GAP : 0;
-				draw_controls(RAPID_ON_WEAPON && ON(GD_WEAPON));
+			/* test 147: with Kuro BL's XTC the stick (SMALL) sits 28 px higher, under the XTC; CONTROLS' text plate is under
+			 * MUSIC in SMALL and FULL alike (ctl_text_eff) */
+			if (L->wide && ON(GD_CONTROLS) && !ctl_text_eff()) {
+				ctl_dy = M->xtc && ON(GD_XTC) ? XTC_STICK_GAP - 28.0f : 0;
+				draw_controls(RAPID_ON_WEAPON && ON(GD_WEAPON) && !stick_small_xtc(L));
 				ctl_dy = 0;
 			}
-			if (xfull) {
+			if (M->xtc && ON(GD_XTC)) {
 				plate_dx = CTL_UNDER_MUSIC_X - card_plates[CP_CTLTEXT].x[CPV_WIDE];
 				plate_dy = CTL_UNDER_MUSIC_Y - card_plates[CP_CTLTEXT].y[CPV_WIDE];
 			}
-			if (L->wide && ON(GD_CONTROLS) && gd_ctl_text && plate(CP_CTLTEXT)) /* test 67 */
+			if (L->wide && ON(GD_CONTROLS) && ctl_text_eff() && plate(CP_CTLTEXT)) /* test 67 */
 				draw_ctl_text();
 			plate_dx = plate_dy = 0;
 		}

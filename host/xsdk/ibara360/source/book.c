@@ -66,6 +66,7 @@ static volatile int bk_open;             /* the book is open (game thread) */
 static volatile int bk_busy;             /* a texture is being written: the game shows LOADING */
 static volatile int bk_idle;             /* game frames since a texture was last drawn (saturates) */
 static volatile int bk_spread;           /* 1 = two pages side by side (YOKO), 0 = one page (TATE) */
+static volatile int bk_rot;              /* 0 upright, 1 LEFT (CCW), 2 RIGHT (CW) - test 147 */
 static volatile int bk_cur = 1;          /* the page the book is on (a spread: its anchor page, kept across opens) */
 static volatile int bk_zoom;             /* 0 FIT, 1 WIDTH, 2 2x WIDTH */
 static volatile int bk_side;             /* zoomed in a spread: 0 = the left page, 1 = the right page */
@@ -395,10 +396,27 @@ void book_close(void)
 /* book_set_spread (test 139 F2): the layout; a change resets the view (zoom, pan, page side) */
 void book_set_spread(int on)
 {
-	on = on && bk_spread_ok;
+	on = on && bk_spread_ok && !bk_rot; /* test 147: no spreads when the book is rotated */
 	if (on == bk_spread)
 		return;
 	bk_spread = on;
+	bk_zoom = 0;
+	bk_side = 0;
+	bk_px = bk_py = 0;
+	bk_top = 1;
+	bk_stick_latch = 0;
+}
+
+/* test 147: rotation follows the game picture (LEFT = CCW, RIGHT = CW); rotated book shows one page at a time. */
+void book_set_rotation(int rot)
+{
+	if (rot < 0 || rot > 2)
+		rot = 0;
+	if (rot == bk_rot)
+		return;
+	bk_rot = rot;
+	if (bk_rot)
+		bk_spread = 0;
 	bk_zoom = 0;
 	bk_side = 0;
 	bk_px = bk_py = 0;
@@ -723,11 +741,15 @@ static void bk_pan_edges(float limx, float limy)
 int book_input(unsigned press, unsigned held, int stick_x, int stick_y)
 {
 	float dx = 0, dy = 0;
-	const int sx = bk_axis(stick_x), sy = bk_axis(stick_y);
+	int sx, sy;
 	float hw, limx;
+	const int rot = bk_rot; /* test 147 */
 
 	if (!bk_open)
 		return 0;
+	/* test 147 FIX_2: no d-pad/stick remap. ROTATION is a physically turned monitor; the player holds the pad normally,
+	 * so physical LEFT is already left as seen (same as the games). */
+	sx = bk_axis(stick_x); sy = bk_axis(stick_y);
 	if (press & BOOK_BTN_B) {
 		log_printf(C_WHITE, "BOOK: BACK (PAGE %d)", bk_cur);
 		return 1;
@@ -736,6 +758,13 @@ int book_input(unsigned press, unsigned held, int stick_x, int stick_y)
 		bk_turn(-1);
 	if (press & BOOK_BTN_RB)
 		bk_turn(1);
+	/* test 147: rotated single page - LEFT/RIGHT (as seen) = previous/next page */
+	if (rot && !bk_spread && !bk_zoom) {
+		if (press & BOOK_BTN_LEFT)
+			bk_turn(-1);
+		if (press & BOOK_BTN_RIGHT)
+			bk_turn(1);
+	}
 	if (press & BOOK_BTN_A) {
 		if (bk_zoom == BK_MAX_ZOOM)
 			bk_zoom = 0;
@@ -767,6 +796,28 @@ int book_input(unsigned press, unsigned held, int stick_x, int stick_y)
 		}
 		if (go && sx != 0) /* the stick must come back to centre before it switches again */
 			bk_stick_latch = 1;
+	} else if (bk_zoom && rot && !bk_spread) { /* test 147: rotated single page - LEFT/RIGHT (as seen) = prev/next */
+		const float eps = 1e-4f;
+		int go = 0;
+
+		if (((press & BOOK_BTN_LEFT) || (sx < 0 && !bk_stick_latch)) && bk_px <= -limx + eps) {
+			const int z = bk_zoom;
+			bk_turn(-1);
+			bk_zoom = z; /* keep zoom across page turn */
+			bk_px = limx;
+			go = 1;
+		} else if (((press & BOOK_BTN_RIGHT) || (sx > 0 && !bk_stick_latch)) && bk_px >= limx - eps) {
+			const int z = bk_zoom;
+			bk_turn(1);
+			bk_zoom = z; /* keep zoom across page turn */
+			bk_px = -limx;
+			go = 1;
+		}
+		if (go) {
+			bk_top = 0;
+			if (sx != 0)
+				bk_stick_latch = 1;
+		}
 	}
 	if (sx == 0)
 		bk_stick_latch = 0;
@@ -787,6 +838,37 @@ int book_input(unsigned press, unsigned held, int stick_x, int stick_y)
 	return 0;
 }
 
+/* test 147: rotated book quad wrapper. Logical coords (lw=fb_h, lh=fb_w) -> physical screen. */
+/* test 147 FIX_2: per-corner UVs [TL,TR,BL,BR] of the screen rect so 90-degree rotation is real, not a mirror. */
+static book_quad_fn bk_real_quad;
+static unsigned bk_phys_w, bk_phys_h;
+static int bk_draw_rot;
+
+static void bk_rot_quad(const XsdkTexture *t, float x0, float y0, float x1, float y1, const float uv[4][2])
+{
+	float px0, py0, px1, py1;
+	float puv[4][2];
+
+	if (bk_draw_rot == 1) { /* LEFT = CCW: phys_x = ly, phys_y = phys_h - lx */
+		px0 = y0; py0 = (float)bk_phys_h - x1;
+		px1 = y1; py1 = (float)bk_phys_h - x0;
+		/* phys TL<-logical TR, phys TR<-logical BR, phys BL<-logical TL, phys BR<-logical BL */
+		puv[0][0] = uv[1][0]; puv[0][1] = uv[1][1];
+		puv[1][0] = uv[3][0]; puv[1][1] = uv[3][1];
+		puv[2][0] = uv[0][0]; puv[2][1] = uv[0][1];
+		puv[3][0] = uv[2][0]; puv[3][1] = uv[2][1];
+	} else { /* RIGHT = CW: phys_x = phys_w - ly, phys_y = lx */
+		px0 = (float)bk_phys_w - y1; py0 = x0;
+		px1 = (float)bk_phys_w - y0; py1 = x1;
+		/* phys TL<-logical BL, phys TR<-logical TL, phys BL<-logical BR, phys BR<-logical TR */
+		puv[0][0] = uv[2][0]; puv[0][1] = uv[2][1];
+		puv[1][0] = uv[0][0]; puv[1][1] = uv[0][1];
+		puv[2][0] = uv[3][0]; puv[2][1] = uv[3][1];
+		puv[3][0] = uv[1][0]; puv[3][1] = uv[1][1];
+	}
+	bk_real_quad(t, px0, py0, px1, py1, puv);
+}
+
 /* LOADING, or the failure for page fail (red) when fail != 0, centred at cx over the page height ph (21 texels high at
  * BK_MSG_SC) */
 static void bk_message(book_quad_fn quad, float cx, float ph, float kt, float par, int fail)
@@ -805,24 +887,41 @@ static void bk_message(book_quad_fn quad, float cx, float ph, float kt, float pa
 		m = &bk_fail;
 		tw = bk_fail_w;
 	}
-	quad(m, cx - (float)tw * kt / par / 2, ph / 2 - 21.0f * kt / 2, cx + (float)tw * kt / par / 2, ph / 2 + 21.0f * kt / 2, 0, 0,
-	     (float)tw / BK_MSG_W, 21.0f / BK_MSG_H);
+	{
+		/* test 147 FIX_2: per-corner UVs TL,TR,BL,BR */
+		const float uv[4][2] = {{0, 0}, {(float)tw / BK_MSG_W, 0}, {0, 21.0f / BK_MSG_H}, {(float)tw / BK_MSG_W, 21.0f / BK_MSG_H}};
+		quad(m, cx - (float)tw * kt / par / 2, ph / 2 - 21.0f * kt / 2, cx + (float)tw * kt / par / 2, ph / 2 + 21.0f * kt / 2, uv);
+	}
 }
 
 void book_draw(unsigned fb_w, unsigned fb_h, float par, book_quad_fn quad)
 {
-	const float fw = (float)fb_w;
-	const float kt = fb_h >= 720 ? (float)fb_h / 720.0f : 1.0f; /* the text scale: fb_h / 720, never below 1 texel a pixel */
-	const float strip = 28.0f * kt;          /* the band at the bottom for the line */
-	const float ph = (float)fb_h - strip;   /* the page area's height on screen */
-	const float cx = fw / 2;                /* the centre line of the page / the spread */
-	const float aspect = (float)BK_W / (float)BK_H;
+	const int rot = bk_rot; /* test 147 */
+	const unsigned phys_w = fb_w, phys_h = fb_h;
+	book_quad_fn dq = quad;
+	float fw, kt, strip, ph, cx, aspect;
 	int l = 0, r = 0, ready, page = 0;
 	char s[64];
 
 	if (!bk_open || !quad || !bk_made)
 		return;
-	if (bk_zoom || !bk_spread) { /* one page (FIT, or the zoom's page) */
+	if (rot) { /* test 147: draw in logical portrait space, rotate quads onto the physical screen */
+		bk_real_quad = quad;
+		bk_phys_w = phys_w;
+		bk_phys_h = phys_h;
+		bk_draw_rot = rot;
+		dq = bk_rot_quad;
+		fb_w = phys_h;
+		fb_h = phys_w;
+		par = par > 0.001f ? 1.0f / par : 1.0f;
+	}
+	fw = (float)fb_w;
+	kt = fb_h >= 720 ? (float)fb_h / 720.0f : 1.0f; /* the text scale: fb_h / 720, never below 1 texel a pixel */
+	strip = 28.0f * kt;          /* the band at the bottom for the line */
+	ph = (float)fb_h - strip;   /* the page area's height on screen */
+	cx = fw / 2;                /* the centre line of the page / the spread */
+	aspect = (float)BK_W / (float)BK_H;
+	if (bk_zoom || !bk_spread || rot) { /* one page (FIT, or the zoom's page); test 147: always one page when rotated */
 		page = bk_zoom ? bk_zoom_page() : bk_cur;
 		ready = bk_full_pg == page && !bk_busy;
 		if (ready) {
@@ -831,7 +930,10 @@ void book_draw(unsigned fb_w, unsigned fb_h, float par, book_quad_fn quad)
 				const float pw = ph * aspect / par;
 				const float x0 = (fw - pw) / 2;
 
-				quad(&bk_tex, x0, 0, x0 + pw, ph, 0, 0, 1, 1);
+				{
+					const float uv[4][2] = {{0, 0}, {1, 0}, {0, 1}, {1, 1}}; /* test 147 FIX_2 */
+					dq(&bk_tex, x0, 0, x0 + pw, ph, uv);
+				}
 			} else { /* test 139 F4: WIDTH = one page's width is the display width; 2x = twice that */
 				const float z = (float)bk_zoom;
 				const float hw = 0.5f / z;                      /* the view's half width, page widths */
@@ -844,12 +946,18 @@ void book_draw(unsigned fb_w, unsigned fb_h, float par, book_quad_fn quad)
 					bk_top = 0;
 				}
 				bk_pan_edges(limx, limy);
-				quad(&bk_tex, 0, 0, fw, ph, 0.5f + bk_px - hw, 0.5f + bk_py - hv, 0.5f + bk_px + hw, 0.5f + bk_py + hv);
+				{
+					/* test 147 FIX_2: per-corner UVs TL,TR,BL,BR of the zoomed sub-rect */
+					const float u0 = 0.5f + bk_px - hw, v0 = 0.5f + bk_py - hv;
+					const float u1 = 0.5f + bk_px + hw, v1 = 0.5f + bk_py + hv;
+					const float uv[4][2] = {{u0, v0}, {u1, v0}, {u0, v1}, {u1, v1}};
+					dq(&bk_tex, 0, 0, fw, ph, uv);
+				}
 			}
 		} else {
 			if (bk_idle < 1000)
 				bk_idle++;
-			bk_message(quad, cx, ph, kt, par, bk_full_fail == page ? page : 0);
+			bk_message(dq, cx, ph, kt, par, bk_full_fail == page ? page : 0);
 		}
 	} else { /* test 139 F2: the spread, two half pages at FIT, each the page's aspect; the cover's left half is empty */
 		const float hwf = ph * ((float)BK_HW / (float)BK_HH) / par; /* one half page's width on screen */
@@ -859,10 +967,13 @@ void book_draw(unsigned fb_w, unsigned fb_h, float par, book_quad_fn quad)
 		ready = !bk_busy && (!l || bk_half_pg[0] == l) && (!r || bk_half_pg[1] == r);
 		if (ready) {
 			bk_idle = 0;
-			if (l)
-				quad(&bk_half[0], cx - hwf, 0, cx, ph, 0, 0, 1, 1);
-			if (r)
-				quad(&bk_half[1], cx, 0, cx + hwf, ph, 0, 0, 1, 1);
+			{
+				const float uv[4][2] = {{0, 0}, {1, 0}, {0, 1}, {1, 1}}; /* test 147 FIX_2 */
+				if (l)
+					dq(&bk_half[0], cx - hwf, 0, cx, ph, uv);
+				if (r)
+					dq(&bk_half[1], cx, 0, cx + hwf, ph, uv);
+			}
 		} else {
 			if (bk_idle < 1000)
 				bk_idle++;
@@ -870,12 +981,12 @@ void book_draw(unsigned fb_w, unsigned fb_h, float par, book_quad_fn quad)
 				f = l;
 			else if (r && bk_half_fail[1] == r && bk_half_pg[1] != r)
 				f = r;
-			bk_message(quad, cx, ph, kt, par, f);
+			bk_message(dq, cx, ph, kt, par, f);
 		}
 		page = l ? l : r;
 	}
 	/* the line: the page (zoomed: the page on the view), the spread's pages, the keys */
-	if (bk_zoom && bk_spread) { /* test 145: the zoom of a spread: the other page is one LEFT/RIGHT away */
+	if (bk_zoom && bk_spread && !rot) { /* test 145: the zoom of a spread: the other page is one LEFT/RIGHT away */
 		int ol, orp;
 
 		bk_pages_of(bk_spread_of(bk_cur), &ol, &orp);
@@ -885,7 +996,7 @@ void book_draw(unsigned fb_w, unsigned fb_h, float par, book_quad_fn quad)
 			snprintf(s, sizeof(s), "PAGE %d / %d  LEFT = PAGE %d  A ZOOM  B BACK", page, bk_n, ol);
 		else /* test 145: the spread has only one page: the line is unchanged */
 			snprintf(s, sizeof(s), "PAGE %d / %d   LB/RB PAGE   A ZOOM   B BACK", page, bk_n);
-	} else if (bk_zoom || !bk_spread)
+	} else if (bk_zoom || !bk_spread || rot)
 		snprintf(s, sizeof(s), "PAGE %d / %d   LB/RB PAGE   A ZOOM   B BACK", page, bk_n);
 	else if (!l)
 		snprintf(s, sizeof(s), "PAGE 1 / %d   LB/RB PAGE   A ZOOM   B BACK", bk_n);
@@ -897,7 +1008,11 @@ void book_draw(unsigned fb_w, unsigned fb_h, float par, book_quad_fn quad)
 		bk_txt_w = bk_bake(&bk_txt, BK_TXT_W, BK_TXT_H, s, C_YELLOW, BK_TXT_SC);
 		snprintf(bk_txt_s, sizeof(bk_txt_s), "%s", s);
 	}
-	quad(&bk_txt, fw / 2 - (float)bk_txt_w * kt / par / 2, (float)fb_h - strip / 2 - 7.0f * BK_TXT_SC * kt / 2,
-	     fw / 2 + (float)bk_txt_w * kt / par / 2, (float)fb_h - strip / 2 + 7.0f * BK_TXT_SC * kt / 2, 0, 0,
-	     (float)bk_txt_w / BK_TXT_W, (float)(7 * BK_TXT_SC) / BK_TXT_H);
+	{
+		/* test 147 FIX_2: per-corner UVs TL,TR,BL,BR */
+		const float u1 = (float)bk_txt_w / BK_TXT_W, v1 = (float)(7 * BK_TXT_SC) / BK_TXT_H;
+		const float uv[4][2] = {{0, 0}, {u1, 0}, {0, v1}, {u1, v1}};
+		dq(&bk_txt, fw / 2 - (float)bk_txt_w * kt / par / 2, (float)fb_h - strip / 2 - 7.0f * BK_TXT_SC * kt / 2,
+		     fw / 2 + (float)bk_txt_w * kt / par / 2, (float)fb_h - strip / 2 + 7.0f * BK_TXT_SC * kt / 2, uv);
+	}
 }

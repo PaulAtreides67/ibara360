@@ -565,7 +565,7 @@ static volatile int menu_on, menu_sel;         /* the pad menu is up; the highli
  * toggle (TR_ROW_NONE; test 100: EDIT only), A opens the box on EDIT, X in a box all on / off (FORMATION: the next formation for all three
  * slots, "QUICK SWAP"), a row with none set NONE (until test 100); every game's RANK a start value, the game's own rise and falls after it (tr_rank_vblank), X on RANK holds it all the run
  * (TRR_HELD, a "*") */
-#define XEX_TEST "146"  /* test 146: the 1.05 release (logs off once); test 145: BATTLE HISTORY RUNTIME SAVED ON QUIT, BOOK ZOOM SHOWS THE OTHER PAGE, QUIT TO ATTRACT COUNTS THE RUN, INITIALIZE HISTORY ROW; test 144: TEXT REFINEMENTS (LANGUAGE, ACHIEVEMENTS, LOW LATENCY, CONTINUES, SOUNDTRACK HELPS, AUTO FREQUENCY, JAPANESE HELPS), SOUND WINDOW FIXED; test 143: TRACKLIST HELP PER GAME, NO BULLET DESIGN ROW, NO LB RAM HASH, SHORTER HISTORY/OTHER SETTINGS HELPS, KURO BL BULLET COLORS PREVIEW; test 142: BULLET COLORS HELP IN THE DESCRIPTION BOX (sm_help on every row), WINDOW AT PITCH 10 CENTRED, LOAD STATE HELP WITHOUT THE COMMA; test 141: PS2 LAYOUT B ON HISTORY/PLAY/DIP/PAUSE, CHEATS +2, BULLET COLORS PER-TYPE PRESETS + FIXED WINDOW, NO PAUSE BULLET COLORS, LOAD STATE DELETE; test 140: BOOK ZOOM IN HALVES (memory), BULLET COLORS PREVIEW STRIP, GROUND ITEMS MAGNET (ibara/ARRANGE), JAPANESE HELPS 135-139, PS2 MENU SPACING B; test 139: MENU ORDER, BOOK IN OPTIONS, BULLET PRESETS, HISTORY FIT, BOOK ZOOM; test 138: BOOK, BULLET COLORS PER MODE, HISTORY RELATCH, OTHER SETTINGS VALUES; test 137: NO ITEM ZONES (M3 GADGETS row + sub-menu, drawing, logs); test 136: CHEATS ALL/CUSTOM, BOMB INVINCIBILITY, per-page value columns, ITEM MAGNETISM per program + MAGNET RANGE, ground items pulled, FEWER BULLETS whole bullets, MEDAL PENALTY fix; test 135: AUTOBOMB rewritten (full bombs, touch-now guard), ALL CHEATS, HITBOX SIZE 100%, CHEATS help; test 134: Kuro BL TRACKLIST ALTERNATIVE (ps2music told the chosen game); test 133: CONTINUES OFF = DIP DISABLE, TRACKLIST AT THE STAGE SCRIPT; test 132: CONTINUES, TRACKLIST; test 131: menu rework, CHEATS; test 130: SCREEN COLOR OUTLINE = per-screen-pixel Sobel, white edges on black; test 129 (1.04): the release: logs off once, version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127 (1.04): record, frame log, network log on once for a check-up log; test 126 (1.04): menus unaffected by FILTER/SCREEN COLOR including BILINEAR, LOW LATENCY on OPTIONS page above LANGUAGE default ON, help text, INVINCIBLE gadget held; test 125 (1.04): menus unaffected by FILTER/SCREEN COLOR, per-player STICK DEADZONE on CONTROLS, FPS COUNTER ON DEBUG MENU; test 124 (1.04): LOW LATENCY, LT hides menus, FILTER, SCREEN COLOR, UPSIDE DOWN, STICK DEADZONE; test 123 (1.03): STAGE MAP boss art from ps2data.bin's gallery cut out, bg.boss right panel; test 122 (1.03): ATTRACT DEMO help (next power on), STAGE MAP box held at the boss + background + border; test 121 (1.03): IKUZE at full volume only in a run (the attract's demos follow the attract volume); the
+#define XEX_TEST "147"  /* test 147: MEDAL PENALTY DEFAULT/5 DOWN/3 DOWN (no LOWEST, saved 1->0), TRAINING HITBOX hidden all games (TR_HIT kept), PLAYER HITBOX SIZE/MEDAL MAGNET/ITEM MAGNET renames, ITEM MAGNET help+range gated to ALWAYS, FIXED RANK OFF/0-100% by 1% LB/RB 10% written every vblank, JA helps, logs on once; test 146: the 1.05 release (logs off once); test 145: BATTLE HISTORY RUNTIME SAVED ON QUIT, BOOK ZOOM SHOWS THE OTHER PAGE, QUIT TO ATTRACT COUNTS THE RUN, INITIALIZE HISTORY ROW; test 144: TEXT REFINEMENTS (LANGUAGE, ACHIEVEMENTS, LOW LATENCY, CONTINUES, SOUNDTRACK HELPS, AUTO FREQUENCY, JAPANESE HELPS), SOUND WINDOW FIXED; test 143: TRACKLIST HELP PER GAME, NO BULLET DESIGN ROW, NO LB RAM HASH, SHORTER HISTORY/OTHER SETTINGS HELPS, KURO BL BULLET COLORS PREVIEW; test 142: BULLET COLORS HELP IN THE DESCRIPTION BOX (sm_help on every row), WINDOW AT PITCH 10 CENTRED, LOAD STATE HELP WITHOUT THE COMMA; test 141: PS2 LAYOUT B ON HISTORY/PLAY/DIP/PAUSE, CHEATS +2, BULLET COLORS PER-TYPE PRESETS + FIXED WINDOW, NO PAUSE BULLET COLORS, LOAD STATE DELETE; test 140: BOOK ZOOM IN HALVES (memory), BULLET COLORS PREVIEW STRIP, GROUND ITEMS MAGNET (ibara/ARRANGE), JAPANESE HELPS 135-139, PS2 MENU SPACING B; test 139: MENU ORDER, BOOK IN OPTIONS, BULLET PRESETS, HISTORY FIT, BOOK ZOOM; test 138: BOOK, BULLET COLORS PER MODE, HISTORY RELATCH, OTHER SETTINGS VALUES; test 137: NO ITEM ZONES (M3 GADGETS row + sub-menu, drawing, logs); test 136: CHEATS ALL/CUSTOM, BOMB INVINCIBILITY, per-page value columns, ITEM MAGNETISM per program + MAGNET RANGE, ground items pulled, FEWER BULLETS whole bullets, MEDAL PENALTY fix; test 135: AUTOBOMB rewritten (full bombs, touch-now guard), ALL CHEATS, HITBOX SIZE 100%, CHEATS help; test 134: Kuro BL TRACKLIST ALTERNATIVE (ps2music told the chosen game); test 133: CONTINUES OFF = DIP DISABLE, TRACKLIST AT THE STAGE SCRIPT; test 132: CONTINUES, TRACKLIST; test 131: menu rework, CHEATS; test 130: SCREEN COLOR OUTLINE = per-screen-pixel Sobel, white edges on black; test 129 (1.04): the release: logs off once, version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127 (1.04): record, frame log, network log on once for a check-up log; test 126 (1.04): menus unaffected by FILTER/SCREEN COLOR including BILINEAR, LOW LATENCY on OPTIONS page above LANGUAGE default ON, help text, INVINCIBLE gadget held; test 125 (1.04): menus unaffected by FILTER/SCREEN COLOR, per-player STICK DEADZONE on CONTROLS, FPS COUNTER ON DEBUG MENU; test 124 (1.04): LOW LATENCY, LT hides menus, FILTER, SCREEN COLOR, UPSIDE DOWN, STICK DEADZONE; test 123 (1.03): STAGE MAP boss art from ps2data.bin's gallery cut out, bg.boss right panel; test 122 (1.03): ATTRACT DEMO help (next power on), STAGE MAP box held at the boss + background + border; test 121 (1.03): IKUZE at full volume only in a run (the attract's demos follow the attract volume); the
  * quit to the attract's logos held black until the title (no AMI logo flash); ATTRACT DEMO ON/OFF on the debug menu (ibara,
  * Kuro BL: the title held); test 120: release candidate; test 119: EX-DEBUG closed, ACHIEVEMENTS the debug menu's last row */
 #define XEX_VERSION "1.05" /* test 146: 1.05; test 129: 1.04; test 121: 1.03; test 120: PS2-only menus and the 1.02 presentation fixes */
@@ -1924,13 +1924,18 @@ enum { SM_ROW_PLAYER, SM_ROW_MODE, SM_ROW_TYPE, SM_ROW_DIP, SM_ROW_START, SM_ROW
  * weapons, bit w = weapon w; TR_OPT1 / TR_OPT2 ibara's RIGHT / BACK) and ibara's formation codes of the three slots
  * (TR_FRM0..2); the page shows OPTIONS (TR_OPT0) and FORMATION (TR_FRM0) rows, each a box (tr_box) */
 enum { TR_STAGE, TR_BOSS, TR_LIVES, TR_BOMBS, TR_GAUGE, TR_SHOT, TR_MEDAL, TR_RANK, TR_RPCT, TR_INV, TR_INFB, TR_SPEED,
-       TR_HITBOX, TR_OLD_N, TR_KSHIP = TR_OLD_N, TR_KBOMB, TR_OPT0, TR_OPT1, TR_OPT2, TR_FRM0, TR_FRM1, TR_FRM2, TR_N };
+       TR_HITBOX, TR_OLD_N, TR_KSHIP = TR_OLD_N, TR_KBOMB, TR_OPT0, TR_OPT1, TR_OPT2, TR_FRM0, TR_FRM1, TR_FRM2, TR_XTC, TR_N }; /* test 147: TR_XTC appended before TR_N */
 /* test 96 (user's todo list: "highlight rank, press the X button to lock rank in place, adding an * to the right of the
  * percentage"): TR_RANK's bit TRR_HELD = the rank held all the run (the "*"); its mode = TR_RANK & 3. Without it every
  * game's RANK is a start value, the game's own rise and falls after it (user: Kuro BL's and ARRANGE's lock was "not
  * supposed to behave that way"). HOST_N had no room for a row more (test 117 raised it), so a bit of the row's value */
 #define TRR_HELD 4
 #define TRR_MODE(v) ((v) & 3)
+/* test 147: TR_XTC (Kuro BL XTC START): value 0-9999, 0x7FFF = DEFAULT (no write), 0x8000 = held all run */
+#define TRX_HELD    0x8000
+#define TRX_DEFAULT 0x7FFF
+#define TRX_VAL(v)  ((v) & 0x7FFF)
+#define TRX_ISDEF(v) (TRX_VAL(v) == TRX_DEFAULT)
 /* test 96 (user's todo list: OPTIONS / FORMATION "a toggle that displays both <none> and <edit> in the same row"): the
  * row's bit TR_ROW_NONE (on TR_OPT0 / TR_FRM0) = NONE (no options, ibara's formations DEFAULT), the box's values kept
  * under it; clear = EDIT, A opens the box. A recording from before it (no bit) = EDIT, as it played */
@@ -1939,7 +1944,7 @@ enum { TR_STAGE, TR_BOSS, TR_LIVES, TR_BOMBS, TR_GAUGE, TR_SHOT, TR_MEDAL, TR_RA
 /* test 94 (user's todo list: each game's TRAINING rows in a new order): the rows before OPTIONS, those after */
 #define TR_ROWS_A SM_ROW_TR + TR_STAGE, SM_ROW_TR + TR_BOSS, SM_ROW_TR + TR_SHOT
 #define TR_ROWS_B SM_ROW_TR + TR_LIVES, SM_ROW_TR + TR_BOMBS, SM_ROW_TR + TR_GAUGE, SM_ROW_TR + TR_MEDAL, \
-	SM_ROW_TR + TR_RPCT, SM_ROW_TR + TR_SPEED, SM_ROW_TR + TR_HITBOX /* test 131: INVINCIBLE, INFINITE BOMBS on CHEATS */
+	SM_ROW_TR + TR_RPCT, SM_ROW_TR + TR_SPEED /* test 147: HITBOX hidden from TRAINING (CHEATS HITBOXES still works; TR_HIT kept) */
 /* test 82 (user: "swap mode and type's positions with each other"; ARRANGE: "delete mode > arrange, it's redundant",
  * its DIP SWITCHES removed with BULLET DESIGN gone to GENERAL SCREEN, the user's choice). Test 83 (user's todo list:
  * ""play" menu should have a "start run" at the top, by pressing A, eliminate being able to press start, inside any
@@ -1953,8 +1958,10 @@ static const unsigned char sm_rows_ib_tr[] = {SM_ROW_START, SM_ROW_PLAYER, SM_RO
 static const unsigned char sm_rows_arr_tr[] = {SM_ROW_START, SM_ROW_PLAYER, SM_ROW_TYPE, TR_ROWS_A, SM_ROW_TR + TR_OPT0,
                                                TR_ROWS_B, SM_ROWS};
 static const unsigned char sm_rows_blk_tr[] = {SM_ROW_START, SM_ROW_PLAYER, SM_ROW_TR + TR_KSHIP, SM_ROW_TR + TR_KBOMB,
-                                               TR_ROWS_A, SM_ROW_TR + TR_OPT0, TR_ROWS_B, SM_ROW_DIP,
-                                               SM_ROWS}; /* test 91: PLAYER TYPE, BOMB TYPE */
+                                               TR_ROWS_A, SM_ROW_TR + TR_OPT0,
+                                               SM_ROW_TR + TR_LIVES, SM_ROW_TR + TR_BOMBS, SM_ROW_TR + TR_GAUGE,
+                                               SM_ROW_TR + TR_MEDAL, SM_ROW_TR + TR_RPCT, SM_ROW_TR + TR_XTC,
+                                               SM_ROW_TR + TR_SPEED, SM_ROW_DIP, SM_ROWS}; /* test 91: PLAYER TYPE, BOMB TYPE; test 147: XTC START after RANK */
 static int tr_box;                 /* test 94: the TRAINING page's open box (TR_OPT0 OPTIONS, TR_FRM0 FORMATION; 0 none) */
 static int tr_box_sel;             /* and its row */
 static int sm_train;               /* test 89: the page is TRAINING's (play_open) */
@@ -2125,6 +2132,7 @@ enum { OPT_SPECIAL, OPT_PICTURE, OPT_TATE, OPT_ASPECT, OPT_SCANLINES, OPT_STRENG
        OPT_CONTINUES, /* test 132: CONTINUES ON/OFF (OTHER SETTINGS) */
        OPT_EXBOMBINV, OPT_EXAUTOBOMB, OPT_EXFIXRANK, OPT_EXHITSIZE, OPT_EXALL, /* test 134, 135 */
        OPT_EXFEWER, OPT_EXBSPEED, OPT_EXIFALL, OPT_EXSUCTION, OPT_EXMAGNET, OPT_EXMAGRANGE, OPT_EXMEDALPEN, /* test 135: batch 2; test 136: MAGNET RANGE */
+       OPT_EXXTCDECAY, /* test 147: XTC DECAY (Kuro BL CHEATS only) */
        OPT_BCOL, /* test 137 B2: BULLET COLOURS row on GENERAL SCREEN */
        OPT_HIST, /* test 137 C2: BATTLE HISTORY (the menu's row; A opens its pages) */
        OPT_BOOK, /* test 138 E: Insanity DVD book viewer (OPTIONS page row; A opens) */
@@ -2171,8 +2179,9 @@ static const char *const opt_names[OPT_N] = { /* "*" = from the next power-on */
 	"FPS COUNTER", /* test 125 */
 	"CHEATS", /* test 131 */
 	"CONTINUES", /* test 132 */
-	"BOMB INVINCIBILITY", "AUTOBOMB", "FIXED RANK", "HITBOX SIZE", "ALL CHEATS", /* test 134, 135 */
-	"FEWER BULLETS", "BULLET SPEED", "ITEM FALL SPEED", "MEDAL SUCTION", "ITEM MAGNETISM", "MAGNET RANGE", "MEDAL PENALTY", /* test 135: batch 2; test 136 */
+	"BOMB INVINCIBILITY", "AUTOBOMB", "FIXED RANK", "PLAYER HITBOX SIZE", "ALL CHEATS", /* test 134, 135, 147 */
+	"FEWER BULLETS", "BULLET SPEED", "ITEM FALL SPEED", "MEDAL MAGNET", "ITEM MAGNET", "MAGNET RANGE", "MEDAL PENALTY", /* test 135: batch 2; test 136; test 147 */
+	"XTC DECAY", /* test 147 */
 	"BULLET COLORS", /* test 137 B2: row on GENERAL SCREEN */
 	"BATTLE HISTORY", /* test 137 C2: the attract menu's row (A = its pages) */
 	"BOOK", /* test 138 E: Insanity DVD book viewer */
@@ -2244,16 +2253,17 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
 	"ENABLE/DISABLE CONTINUE\nCOUNTDOWN", /* test 144 */
 	"INVINCIBLE DURING BOMBS", /* test 138 B3 */
 	"AUTOMATIC BOMB WHEN HIT\nFULL BOMBS ONLY",
-	"LOCK THE RANK AT\nITS STARTING VALUE",
+	"LOCK THE RANK AT A PERCENTAGE\nLB/RB QUICK TOGGLE", /* test 147 */
 	"ADJUST PLAYER HITBOX SIZE",
 	"ENABLE/DISABLE ALL CHEATS", /* test 139: no CUSTOM sub-line */
 	"HALVE THE ENEMY BULLETS",
 	"ADJUST ENEMY BULLET SPEED",
 	"ADJUST ITEM FALL SPEED",
 	"ATTRACT MEDALS TO THE SHIP",
-	"ATTRACT ITEMS TO THE SHIP\nRELEASE = WHEN NOT SHOOTING",
-	"ADJUST ITEM MAGNET RANGE\nFULL = WHOLE SCREEN", /* test 136 */
+	"ATTRACT ITEMS TO THE SHIP", /* test 147: drop RELEASE line */
+	"ADJUST ITEM MAGNET RANGE\nNEEDS ITEM MAGNET ALWAYS", /* test 147: range only with ALWAYS */
 	"ADJUST MEDAL VALUE DROP\nWHEN A MEDAL IS LOST",
+	"XTC TIMER DECAY SPEED", /* test 147 */
 	"ENEMY BULLET COLORS", /* test 137 B2: BULLET COLOURS help */
 	"TOTALS OF ALL YOUR RUNS", /* test 143: BATTLE HISTORY help shortened */
 	"INSANITY DVD BOOK", /* test 138 E */
@@ -2340,7 +2350,7 @@ static const unsigned char opt_rows_blk[OPT_PAGES][18] = { /* test 60: GADGETS; 
 	{OPT_PAUSE_ROWS, OPT_N},
 	{OPT_N}, /* test 134: EX-DEBUG page removed */
 	{OPT_EXALL, OPT_EXLIVES, OPT_EXINFB, OPT_EXINV, OPT_EXBOMBINV, OPT_EXAUTOBOMB, OPT_EXFIXRANK, OPT_EXHITSIZE,
-	 OPT_EXFEWER, OPT_EXBSPEED, OPT_EXIFALL, OPT_EXSUCTION, OPT_EXMAGNET, OPT_EXMAGRANGE, OPT_EXMEDALPEN, OPT_EXHIT, OPT_N}, /* test 135: CHEATS; test 136 */
+	 OPT_EXFEWER, OPT_EXBSPEED, OPT_EXIFALL, OPT_EXSUCTION, OPT_EXMAGNET, OPT_EXMAGRANGE, OPT_EXMEDALPEN, OPT_EXXTCDECAY, OPT_EXHIT, OPT_N}, /* test 135: CHEATS; test 136; test 147: XTC DECAY BL only */
 };
 static int lay_quiet; /* test 88: the picture's rows rebuild the layouts as they go: no PICTURE line each time */
 static int opt_page;               /* test 67: 0 = the options, 1 = the debug menu; test 69: 2 = the pause's SCREEN;
@@ -2362,6 +2372,7 @@ static int ex_magnet =
 #endif
 static int ex_medalpen;
 static int ex_magrange;          /* test 136: 0 CLOSE, 1 FULL SCREEN */
+static int ex_xtcdecay;          /* test 147: 0 DEFAULT, 1 SLOW, 2 FAST (Kuro BL CHEATS) */
 static const unsigned ex_hitsize_pct[7] = {25, 50, 75, 100, 150, 200, 300}; /* test 134 */
 static int ex_program_ib(void)
 {
@@ -2383,20 +2394,25 @@ static int cheat_run;
 /* test 134: any CHEATS row away from its start value (HITBOXES counts: user) */
 static int cheats_on(void)
 {
+	/* test 147: LOWEST removed (1 -> 0 mapped at cfx_cfg; no side effects here) */
 	return ex_inv || ex_infb || ex_lives || ex_hit || ex_bombinv || ex_autobomb || ex_fixrank || ex_hitsize != 3 ||
-	       ex_fewer || ex_suction || ex_bspeed != 5 || ex_ifall != 2 || ex_magnet != magnet_start() || ex_medalpen; /* test 135, 136 */
+	       ex_fewer || ex_suction || ex_bspeed != 5 || ex_ifall != 2 || ex_magnet != magnet_start() || ex_medalpen || ex_xtcdecay; /* test 135, 136; test 147 */
 }
 /* test 135: ALL CHEATS: every OFF/ON cheat on (HITBOXES = ALL), or every cheat back to its start value */
 static int cheats_all_on(void)
 {
-	return ex_inv && ex_infb && ex_lives && ex_hit == HITBOX_ALL && ex_bombinv && ex_autobomb && ex_fixrank &&
-	       ex_fewer && ex_suction; /* test 135: batch 2 */
+	return ex_inv && ex_infb && ex_lives && ex_hit == HITBOX_ALL && ex_bombinv && ex_autobomb && ex_fixrank == 101 &&
+	       ex_fewer && ex_suction; /* test 135: batch 2; test 147: FIXED RANK 100% */
 }
 static void cheats_set_all(int on)
 {
-	ex_inv = ex_infb = ex_lives = ex_bombinv = ex_autobomb = ex_fixrank = on ? 1 : 0;
+	ex_inv = ex_infb = ex_lives = ex_bombinv = ex_autobomb = on ? 1 : 0;
+	ex_fixrank = on ? 101 : 0; /* test 147: ALL CHEATS ON = 100% */
 	ex_hit = on ? HITBOX_ALL : 0;
 	ex_fewer = ex_suction = on ? 1 : 0; /* test 135: batch 2 */
+	ex_xtcdecay = 0; /* test 147: ALL CHEATS leaves XTC DECAY DEFAULT */
+	if (on)
+		ex_magnet = 3; /* test 147: ALL CHEATS ON keeps MAGNET RANGE usable */
 	if (!on) {
 		ex_hitsize = 3;
 		ex_bspeed = 5;
@@ -2491,6 +2507,28 @@ static int opt_row(int k)
 			return r[i];
 	}
 	return OPT_N;
+}
+
+/* test 147: MAGNET RANGE only when ITEM MAGNET = ALWAYS; greyed and skipped in nav */
+static int opt_row_disabled(int r)
+{
+	return r == OPT_EXMAGRANGE && ex_magnet != 3;
+}
+static void opt_sel_skip(int d)
+{
+	const int n = opt_nrows();
+	int i;
+
+	for (i = 0; i < n; i++) {
+		opt_sels[opt_page] = (opt_sels[opt_page] + n + d) % n;
+		if (!opt_row_disabled(opt_row(opt_sels[opt_page])))
+			return;
+	}
+}
+static void opt_sel_fix(void)
+{
+	if (opt_nrows() > 0 && opt_row_disabled(opt_row(opt_sels[opt_page])))
+		opt_sel_skip(1);
 }
 
 /* test 55: AUTO SHOT's rate (ibara's ini; Kuro BL's 30 Hz of test 48) and its cycle in game frames:
@@ -2602,7 +2640,9 @@ static void opt_value(int i, char *s, size_t n)
 	case OPT_EXLIVES: snprintf(s, n, "%s", ex_lives ? "ON" : "OFF"); break; /* test 110 */
 	case OPT_EXBOMBINV: snprintf(s, n, "%s", ex_bombinv ? "ON" : "OFF"); break; /* test 134 */
 	case OPT_EXAUTOBOMB: snprintf(s, n, "%s", ex_autobomb ? "ON" : "OFF"); break; /* test 134 */
-	case OPT_EXFIXRANK: snprintf(s, n, "%s", ex_fixrank ? "ON" : "OFF"); break; /* test 134 */
+	case OPT_EXFIXRANK: /* test 147: OFF / 0%..100% */
+		snprintf(s, n, ex_fixrank == 0 ? "OFF" : "%d%%", ex_fixrank - 1);
+		break;
 	case OPT_EXHITSIZE: /* test 135: 100% */
 		snprintf(s, n, "%u%%", ex_hitsize_pct[ex_hitsize]);
 		break;
@@ -2621,7 +2661,11 @@ static void opt_value(int i, char *s, size_t n)
 		snprintf(s, n, "%s", ex_magrange ? "FULL" : "CLOSE");
 		break;
 	case OPT_EXMEDALPEN:
-		snprintf(s, n, "%s", ex_medalpen == 1 ? "LOWEST" : ex_medalpen == 2 ? "5 DOWN" : ex_medalpen == 3 ? "3 DOWN" : "DEFAULT");
+		/* test 147: LOWEST removed (saved 1 -> 0 mapped at cfx_cfg), list DEFAULT / 5 DOWN / 3 DOWN (0,2,3) */
+		snprintf(s, n, "%s", ex_medalpen == 2 ? "5 DOWN" : ex_medalpen == 3 ? "3 DOWN" : "DEFAULT");
+		break;
+	case OPT_EXXTCDECAY: /* test 147 */
+		snprintf(s, n, "%s", ex_xtcdecay == 1 ? "SLOW" : ex_xtcdecay == 2 ? "FAST" : "DEFAULT");
 		break;
 	case OPT_EXALL: /* test 135, 136 */
 		snprintf(s, n, "%s", cheats_all_on() ? "ON" : !cheats_on() ? "OFF" : "CUSTOM");
@@ -2664,6 +2708,7 @@ static int opt_value_maxw(int i)
 	case OPT_EXMAGNET: return 7; /* "RELEASE" */
 	case OPT_EXMAGRANGE: return 5; /* "CLOSE" */
 	case OPT_EXMEDALPEN: return 7; /* "DEFAULT" */
+	case OPT_EXXTCDECAY: return 7; /* test 147: "DEFAULT" */
 	case OPT_EXALL: return 6; /* "CUSTOM" */
 	case OPT_TOAST: { /* test 106: widest toast position name */
 		int m = 0, j;
@@ -2770,7 +2815,8 @@ static void opt_step(int i, int d)
 	case OPT_EXREPLAY: cfg.replay_save ^= 1; break; /* test 118: an ini setting (a run's end reads it) */
 	case OPT_EXINV: case OPT_EXINFB: case OPT_EXHIT: case OPT_EXLIVES:
 	case OPT_EXBOMBINV: case OPT_EXAUTOBOMB: case OPT_EXFIXRANK: case OPT_EXHITSIZE: case OPT_EXALL:
-	case OPT_EXFEWER: case OPT_EXBSPEED: case OPT_EXIFALL: case OPT_EXSUCTION: case OPT_EXMAGNET: case OPT_EXMAGRANGE: case OPT_EXMEDALPEN: /* test 135, 136 */
+	case OPT_EXFEWER: case OPT_EXBSPEED: case OPT_EXIFALL: case OPT_EXSUCTION: case OPT_EXMAGNET: case OPT_EXMAGRANGE: case OPT_EXMEDALPEN:
+	case OPT_EXXTCDECAY: /* test 135, 136; test 147 */
 		if (i == OPT_EXALL) { /* test 136: CUSTOM shown, never chosen */
 			if (cheats_all_on())
 				cheats_set_all(0);
@@ -2795,8 +2841,19 @@ static void opt_step(int i, int d)
 				ab_seen[0] = ab_seen[1] = 0;
 				ab_off[0] = ab_off[1] = 0;
 			}
-		} else if (i == OPT_EXFIXRANK)
-			ex_fixrank ^= 1;
+		} else if (i == OPT_EXFIXRANK) { /* test 147: OFF / 0%..100% (1..101), LEFT/RIGHT 1%, LB/RB 10% */
+			int p = ex_fixrank == 0 ? -1 : ex_fixrank - 1; /* -1 OFF, 0..100 */
+			if (p < 0) {
+				if (d > 0) p = 0;
+			} else if (d < 0 && p <= 0) {
+				p = -1; /* OFF below 0% */
+			} else {
+				p += d;
+				if (p < 0) p = 0;
+				if (p > 100) p = 100;
+			}
+			ex_fixrank = p < 0 ? 0 : p + 1;
+		}
 		else if (i == OPT_EXHITSIZE) {
 			int hs = ex_hitsize + d;
 			if (hs < 0) hs = 0;
@@ -2829,15 +2886,30 @@ static void opt_step(int i, int d)
 			if (k < 0) k = 0;
 			if (k > 2) k = 2;
 			ex_magnet = seq[k];
-		} else if (i == OPT_EXMAGRANGE) { /* test 136 */
+		} else if (i == OPT_EXMAGRANGE) { /* test 136; test 147: only when ITEM MAGNET ALWAYS */
+			if (ex_magnet != 3)
+				return;
 			ex_magrange ^= 1;
 		} else if (i == OPT_EXMEDALPEN) {
-			int v = ex_medalpen + d;
+			/* test 147: DEFAULT, 5 DOWN, 3 DOWN (0,2,3) - skip LOWEST (1); saved 1 -> 0 */
+			static const int mp_seq[3] = {0, 2, 3};
+			int k, v = ex_medalpen == 1 ? 0 : ex_medalpen;
+			for (k = 0; k < 3 && mp_seq[k] != v; k++)
+				;
+			if (k == 3) k = 0;
+			k += d > 0 ? 1 : -1;
+			if (k < 0) k = 0;
+			if (k > 2) k = 2;
+			ex_medalpen = mp_seq[k];
+		} else if (i == OPT_EXXTCDECAY) { /* test 147: DEFAULT / SLOW / FAST (Kuro BL only) */
+			int v = ex_xtcdecay + (d > 0 ? 1 : -1);
 			if (v < 0) v = 0;
-			if (v > 3) v = 3;
-			ex_medalpen = v;
+			if (v > 2) v = 2;
+			ex_xtcdecay = v;
 		} else
 			ex_hit = (ex_hit + 3 + d) % 3;
+		if (i == OPT_EXALL || i == OPT_EXMAGNET) /* test 147: range row disabled when magnet != ALWAYS */
+			opt_sel_fix();
 		opt_value(i, v, sizeof(v));
 		log_printf(C_YELLOW, "CHEATS: %s %s (EMU %u)", opt_names[i], v, (unsigned)frame_count); /* test 134 */
 		return;
@@ -3966,9 +4038,11 @@ static int sm_rowid(int k)
  * row i (the game's EEPROM word and its RAM copy, dip_write), HOST_BULLETS = ARRANGE's BULLET DESIGN (its byte in
  * ARRANGE's RAM, read by arrange/arrange.c; test 137 B2: written as NORMAL (0) while BULLET COLOURS is CUSTOM), host_val keeps the last of each: a save state's load puts the game's RAM back to its moment, so host_reapply writes them again after one */
 /* test 89: HOST_TR0 + TR_* = a training run's settings, HOST_TR_GO 1 = the next credit is a training run (0 = not);
- * test 91: the rows from TR_OLD_N on after HOST_TR_GO (HOST_TR_MORE + k - TR_OLD_N), test 89's numbers unchanged */
+ * test 91: the rows from TR_OLD_N on after HOST_TR_GO (HOST_TR_MORE + k - TR_OLD_N), test 89's numbers unchanged.
+ * test 147 FIX_3: HOST_TR_END/HOST_RANKS/HOST_JOIN keep their pre-TR_XTC numbers for replay compatibility; TR_XTC
+ * gets its own id after HOST_JOIN. */
 enum { HOST_DIP0 = 0, HOST_BULLETS = 8, HOST_TR0 = 9, HOST_TR_GO = HOST_TR0 + TR_OLD_N, HOST_TR_MORE = HOST_TR_GO + 1,
-       HOST_TR_END = HOST_TR_MORE + TR_N - TR_OLD_N, HOST_RANKS = HOST_TR_END,
+       HOST_TR_END = HOST_TR_MORE + TR_XTC - TR_OLD_N, HOST_RANKS = HOST_TR_END,
               HOST_N = 40 }; /* test 117: 40 */
 /* test 101: HOST_RANKS = the debug menu's INITIALIZE RANKINGS (rank_init, once: host_reapply leaves it, the EEPROM and
  * the attract slot's check keep it), recorded so a replay across it clears the tables at the same vblank */
@@ -3977,6 +4051,9 @@ _Static_assert(HOST_RANKS < HOST_N, "HOST_N has no room for HOST_RANKS");
  * before the box's Start (ct_frame), so its join and respawn take it */
 enum { HOST_JOIN = HOST_RANKS + 1 };
 _Static_assert((int)HOST_JOIN < (int)HOST_N, "HOST_N has no room for HOST_JOIN");
+/* test 147 FIX_3: XTC START after HOST_JOIN (replay-compat: HOST_TR_END/RANKS/JOIN unchanged) */
+enum { HOST_TR_XTC = HOST_JOIN + 1 };
+_Static_assert((int)HOST_TR_XTC < (int)HOST_N, "HOST_N has no room for HOST_TR_XTC");
 static int host_val[HOST_N], host_seen[HOST_N];
 static int rk_result = -1; /* test 101: rank_init's last return */
 static void dip_write(int i, int v);
@@ -4003,6 +4080,8 @@ static void host_set(int what, int value, int menu)
 	} else if (what < HOST_BULLETS) {
 		dip_write(what - HOST_DIP0, value);
 	} else if (what >= HOST_TR0 && what < HOST_TR_END) { /* test 89; test 91: Kuro BL's ship rows after HOST_TR_GO */
+		tr_host(what, value);
+	} else if (what == HOST_TR_XTC) { /* test 147 FIX_3: XTC START (replay-compat id after HOST_JOIN) */
 		tr_host(what, value);
 	} else if (what == HOST_RANKS) { /* test 101 */
 		rk_result = rank_init(game_set, ARR);
@@ -4540,6 +4619,8 @@ static void sm_frame(uint32_t w[2])
 				sm_play();
 			} else if ((press & A_MX) && sm_train && id == SM_ROW_TR + TR_RPCT) { /* test 96: X = the rank held */
 				tr_cfg[TR_RANK] ^= TRR_HELD;
+			} else if ((press & A_MX) && sm_train && id == SM_ROW_TR + TR_XTC) { /* test 147: X = XTC held all run */
+				tr_cfg[TR_XTC] ^= TRX_HELD;
 			} else if ((press & A_MA) && sm_train && (id == SM_ROW_TR + TR_OPT0 || id == SM_ROW_TR + TR_FRM0) &&
 			           !(tr_cfg[id - SM_ROW_TR] & TR_ROW_NONE)) { /* test 96: on EDIT only */
 				tr_box = id - SM_ROW_TR; /* test 94: OPTIONS / FORMATION open their box over the page */
@@ -4571,9 +4652,9 @@ static void sm_frame(uint32_t w[2])
 			const int n = opt_nrows();
 			int id, unarm = 0;
 			if (press & A_UP)
-				opt_sels[opt_page] = (opt_sels[opt_page] + n - 1) % n;
+				opt_sel_skip(-1); /* test 147: skip disabled rows */
 			if (press & A_DOWN)
-				opt_sels[opt_page] = (opt_sels[opt_page] + 1) % n;
+				opt_sel_skip(1);
 			if ((press & (A_UP | A_DOWN)) || ((gsel_armed || svc_armed || rk_armed || ac_armed || hi_armed) &&
 			                                  (press & (A_MB | A_COIN)))) {
 				/* test 72: B = no; test 101: INITIALIZE RANKINGS' too; test 106: ACHIEVEMENTS'; test 145: INITIALIZE HISTORY' */
@@ -4714,6 +4795,7 @@ static void sm_frame(uint32_t w[2])
 					opt_page = OPT_PAGE_CHEATS;
 					if (opt_sels[opt_page] >= opt_nrows())
 						opt_sels[opt_page] = 0;
+					opt_sel_fix(); /* test 147 */
 					log_printf(C_WHITE, "CHEATS: OPEN (EMU %u)", (unsigned)frame_count);
 				} else if (press & A_MA) { /* test 67: the debug menu; test 70: GENERAL SCREEN */
 					opt_page = id == OPT_DEBUG ? OPT_PAGE_DEBUG : OPT_PAGE_GENERAL;
@@ -4722,6 +4804,8 @@ static void sm_frame(uint32_t w[2])
 					log_printf(C_WHITE, "%s: OPEN (EMU %u)", opt_names[id], (unsigned)frame_count);
 				}
 			} else {
+				if (id == OPT_EXFIXRANK && (press & (A_MLB | A_MRB))) /* test 147: LB/RB 10% */
+					opt_step(id, press & A_MRB ? 10 : -10);
 				if (press & A_LEFT)
 					opt_step(id, -1);
 				if (press & (A_RIGHT | A_MA))
@@ -6229,17 +6313,15 @@ static struct vb make_quad(float x0, float y0, float x1, float y1, const float u
 
 static unsigned book_vq_bank, book_vq_slot; /* test 138 E: transient book quad bank (frames_queued & 1) / slot this frame */
 
-static void book_quad(const XsdkTexture *t, float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1)
+static void book_quad(const XsdkTexture *t, float x0, float y0, float x1, float y1, const float uv[4][2])
 {
 	/* test 138 E: draw one textured quad for book_draw (card path). Shaders/constants set by caller. */
-	static const float (*order_uv)[2] = uv_plain; /* unused; uv passed explicitly */
+	/* test 147 FIX_2: per-corner UVs in TL,TR,BL,BR screen-rect order (bk_rot_quad can rotate 90 degrees) */
 	float q[1][QUAD_VERTS][VERT_FLOATS];
-	const float uv[4][2] = {{u0, v0}, {u1, v0}, {u0, v1}, {u1, v1}};
 	volatile uint32_t *dst;
 	const uint32_t *src = (const uint32_t *)q;
 	unsigned i, words = QUAD_BYTES / 4, base;
 
-	(void)order_uv;
 	if (!vmem || book_vq_slot >= BOOK_VQUADS_PER)
 		return;
 	quad_vertices(q[0], x0, y0, x1, y1, uv);
@@ -6354,12 +6436,14 @@ static int gadgets_view(void)
 {
 	if (cfg.tate == TATE_OFF)
 		return aspect_wide ? GV_WIDE : GV_43;
+	/* test 147 FIX_2: revert double swap - gadgets.c xf bodies kept swapped, so GV_TATE_L = CCW (top at left edge) */
 	return !aspect_wide ? GV_NONE : cfg.tate == TATE_LEFT ? GV_TATE_L : GV_TATE_R;
 }
 
 static void alone_layout(void)
 {
-	const float (*uv)[2] = cfg.tate == TATE_LEFT ? uv_plain : cfg.tate == TATE_RIGHT ? uv_half : uv_rot;
+	/* test 147: LEFT/RIGHT swapped so LEFT = CCW (game top at screen left), RIGHT = CW */
+	const float (*uv)[2] = cfg.tate == TATE_LEFT ? uv_half : cfg.tate == TATE_RIGHT ? uv_plain : uv_rot;
 	const int pw = cfg.tate ? GAME_W : GAME_H, ph = cfg.tate ? GAME_H : GAME_W; /* the picture */
 	const float sw = fb_w * par;
 	const int kw = (int)(sw / pw);
@@ -6379,11 +6463,12 @@ static void alone_layout(void)
 	centred(rf, w / par, h);
 	{ /* test 88: PICTURE SIZE CUSTOM = FULL's picture at the shape's size, its centre moved (720ths of the height);
 	   * test 89: X / Y SIZE and X / Y POSITION as the player sees the game (tate LEFT: the player's right is the
-	   * screen's down and the player's down its left, uv_plain; RIGHT: up and right, uv_half) */
+	   * screen's up and the player's down its right, uv_half; RIGHT: down and left, uv_plain) */
 		const int sh = pic_shape(), rot = cfg.tate != TATE_OFF;
 		const int px = cfg.pic_x[sh], py = cfg.pic_y[sh];
-		const int dx = cfg.tate == TATE_LEFT ? -py : cfg.tate == TATE_RIGHT ? py : px;
-		const int dy = cfg.tate == TATE_LEFT ? px : cfg.tate == TATE_RIGHT ? -px : py;
+		/* test 147: LEFT/RIGHT swapped so LEFT = CCW (game top at screen left), RIGHT = CW */
+		const int dx = cfg.tate == TATE_LEFT ? py : cfg.tate == TATE_RIGHT ? -py : px;
+		const int dy = cfg.tate == TATE_LEFT ? -px : cfg.tate == TATE_RIGHT ? px : py;
 		const float k = cfg.pic_size[sh] / 1000.0f, u = fb_h / 720.0f;
 		const float kx = k * (rot ? cfg.pic_sy[sh] : cfg.pic_sx[sh]) / 1000.0f;
 		const float ky = k * (rot ? cfg.pic_sx[sh] : cfg.pic_sy[sh]) / 1000.0f;
@@ -7149,12 +7234,13 @@ static void pic_box_at(int w, int h, int *bx, int *by)
 	float fx = 0.5f, fy = 0.5f;
 
 	if (cfg.picture == PIC_CUSTOM && pw > 0 && ph > 0) {
-		if (cfg.tate == TATE_LEFT) { /* the player's right = the screen's down, down = left */
-			fx = (fb_h / 2.0f - pic_rc[1]) / ph;
-			fy = (pic_rc[2] - fb_w / 2.0f) / pw;
-		} else if (cfg.tate == TATE_RIGHT) { /* right = up, down = right */
+		/* test 147: LEFT/RIGHT swapped so LEFT = CCW (game top at screen left), RIGHT = CW */
+		if (cfg.tate == TATE_LEFT) { /* the player's right = the screen's up, down = right */
 			fx = (pic_rc[3] - fb_h / 2.0f) / ph;
 			fy = (fb_w / 2.0f - pic_rc[0]) / pw;
+		} else if (cfg.tate == TATE_RIGHT) { /* right = down, down = left */
+			fx = (fb_h / 2.0f - pic_rc[1]) / ph;
+			fy = (pic_rc[2] - fb_w / 2.0f) / pw;
 		} else {
 			fx = (fb_w / 2.0f - pic_rc[0]) / pw;
 			fy = (fb_h / 2.0f - pic_rc[1]) / ph;
@@ -7350,10 +7436,11 @@ static int sm_pages(volatile uint32_t *t)
 		 * value centred between arrows at fixed columns (10 and 21, the value's 8 columns between), yellow on the
 		 * highlighted row; TYPE before MODE (sm_rows_*); the helps the user's */
 		/* test 89: TRAINING the same page, wider (its rows' names), a help in two lines */
-		const int n = sm_nrows(), id = sm_rowid(sm_row), hy = OPT_HELP_Y(n), h2 = sm_train ? HELP2 : 0;
+		const int n = sm_nrows(), id = sm_rowid(sm_row), h2 = sm_train ? 0 : 0; /* test 147: TRAINING help window 1 line */
+		const int hy = OPT_HELP_Y(n);
 		const int play_b = ps2m_rec && !sm_train; /* test 141 A: PLAY B (arrows at 11/22, fitted pitch) */
 		/* test 94: the value column two further right on TRAINING ("BOMB FRAGMENTS") */
-		const int h = BOX_H(hy + h2 + (sm_train ? 42 : 32)), bw = sm_train ? OPT_W : SM_W, ca = sm_train ? 17 : play_b ? 11 : 10;
+		const int h = BOX_H(hy + h2 + (sm_train ? 52 : 32)), bw = sm_train ? OPT_W : SM_W, ca = sm_train ? 17 : play_b ? 11 : 10; /* test 147: +10 for 4th green line */
 		const int bx = (GAME_H - bw) / 2, by = (GAME_W - h) / 2, x0 = bx + 8, y0 = by + 6;
 		uint32_t vc;
 		char s[24];
@@ -7363,7 +7450,7 @@ static int sm_pages(volatile uint32_t *t)
 		                             !ib ? "BLACK LABEL  PLAY" : ARR ? "IBARA ARRANGE  PLAY" : "IBARA  PLAY");
 		for (i = 0; i < n; i++) {
 			const int r = sm_rowid(i), sel = i == sm_row, ly = y0 + 14 + PS2M_PITCH * i;
-			sm_text(t, x0 + 6, ly, sel ? C_YELLOW : C_WHITE, r >= SM_ROW_TR ? tr_names[r - SM_ROW_TR] : label[r]);
+			sm_text(t, x0 + 6, ly, sel ? C_YELLOW : C_WHITE, r >= SM_ROW_TR ? tr_names[r - SM_ROW_TR] : label[r]); /* test 147 FIX_3: row names unchanged */
 			if (sel)
 				sm_text(t, x0, ly, C_YELLOW, ">");
 			if (r == SM_ROW_DIP) {
@@ -7388,10 +7475,16 @@ static int sm_pages(volatile uint32_t *t)
 			sm_text(t, x0 + 6 * (ca + 2) + (48 - 6 * (int)strlen(s)) / 2, ly, sel ? C_YELLOW : vc, s);
 			sm_text(t, x0 + 6 * (ca + 11), ly, sel ? C_YELLOW : C_DIM, ">");
 		}
-		sm_help(t, x0, y0 + hy, C_CYAN, id >= SM_ROW_TR ? tr_help(id - SM_ROW_TR) : id == SM_ROW_START ?
-		        (sm_train ? "PLAY WITH THE SETTINGS BELOW\nNO SCORES, INITIALS OR REPLAYS" : "PLAY WITH THE SETTINGS BELOW") :
-		        id == SM_ROW_DIP ? "SERVICE MENU GAME OPTIONS" : id == SM_ROW_TYPE ? "SELECT SHIP TYPE" : id == SM_ROW_MODE ?
-		        "SELECT GAME MODE" : "1P OR 2P SIDE", 28); /* 28 letters a line */
+		{
+			const char *hstr = id >= SM_ROW_TR ? tr_help(id - SM_ROW_TR) : id == SM_ROW_START ?
+			        (sm_train ? "PLAY, NO SCORES OR REPLAYS" : "PLAY WITH THE SETTINGS BELOW") : /* test 147 FIX_3 */
+			        id == SM_ROW_DIP ? "SERVICE MENU GAME OPTIONS" : id == SM_ROW_TYPE ? "SELECT SHIP TYPE" : id == SM_ROW_MODE ?
+			        "SELECT GAME MODE" : "1P OR 2P SIDE";
+			if (sm_train) /* test 147 FIX_3: 1-line help window, no cutting (full key for JA lookup) */
+				sm_help1(t, x0, y0 + hy, C_CYAN, hstr);
+			else
+				sm_help(t, x0, y0 + hy, C_CYAN, hstr, 28); /* 28 letters a line */
+		}
 		/* test 101 (user): OPTIONS / FORMATION are EDIT only since test 100, LEFT / RIGHT do nothing there. Test 102
 		 * (user: "keep it all in english like the other games"): the green lines English in JAPANESE too */
 		ps2m_lines_en = 1;
@@ -7399,9 +7492,12 @@ static int sm_pages(volatile uint32_t *t)
 		        "UP/DOWN ROW" : "UP/DOWN ROW, LEFT/RIGHT SET");
 		if (sm_train) {
 			/* test 92: LB/RB on the quick steps' rows (user); test 91 (user's todo list): no "A = NEXT VALUE". Test 93
-			 * (user's todo list: "add "start = play" as a green line across all training selections") */
-			const char *l[4];
+			 * (user's todo list: "add "start = play" as a green line across all training selections"); test 147: X = LOCK */
+			const char *l[5];
 			int m = 0, j;
+			const int trk = id >= SM_ROW_TR ? id - SM_ROW_TR : -1;
+			if (trk == TR_RPCT || trk == TR_XTC)
+				l[m++] = "X = LOCK";
 			if (id >= SM_ROW_TR && tr_quick_row(id - SM_ROW_TR))
 				l[m++] = "LB/RB = QUICK TOGGLE";
 			else if (id == SM_ROW_START || id == SM_ROW_DIP || ((id == SM_ROW_TR + TR_OPT0 || id == SM_ROW_TR + TR_FRM0) &&
@@ -7410,12 +7506,10 @@ static int sm_pages(volatile uint32_t *t)
 				         "A = EDIT"; /* test 94: the boxes' rows (user: "rename to "edit"") */
 			l[m++] = "START = PLAY";
 			l[m++] = "B / BACK = MENU";
-			/* test 103 (user: "flipping between three and four green lines, making the window move ... make it so
-			 * that it doesn't move at all"): always three lines here, the missing one empty at the end (the PS2 look
-			 * sizes and centres its panel from what it records: an empty text keeps the fourth line's room) */
-			if (m < 3)
+			/* test 147: up to 4 green lines (X = LOCK + LB/RB) */
+			while (m < 4)
 				l[m++] = "";
-			for (j = 0; j < m; j++)
+			for (j = 0; j < 4; j++)
 				sm_text(t, x0, y0 + hy + h2 + 22 + 10 * j, C_GREEN, l[j]);
 			if (tr_box) /* test 94 */
 				tr_box_draw(t, bx, bw);
@@ -7544,17 +7638,18 @@ static int sm_pages(volatile uint32_t *t)
 		                                               "IBARA  MENU")); /* test 81: the one menu */
 		for (i = 0; i < n; i++) {
 			const int y = y0 + 14 + PS2M_PITCH * i, sel = i == opt_sels[opt_page], r = opt_row(i);
+			const int dis = opt_row_disabled(r); /* test 147 */
 			opt_value(r, v, sizeof(v));
 			if (sel)
 				sm_text(t, x0, y, C_YELLOW, ">");
 			sm_text(t, x0 + 6, y, sel && ((gsel_armed && r == OPT_GSEL) || (svc_armed && r == OPT_SERVICE) ||
 			                              (rk_armed && r == OPT_RANKS) || (hi_armed && r == OPT_HIST_INIT) || (ac_armed && r == OPT_ACH)) ? C_RED :
-			                      sel ? C_YELLOW : (r == OPT_GSEL && !launcher_ok) || (r == OPT_STYLE && !ps2menu_ok()) ||
+			                      sel ? C_YELLOW : dis || (r == OPT_GSEL && !launcher_ok) || (r == OPT_STYLE && !ps2menu_ok()) ||
 			                      (r == OPT_LANG && !menu_ps2()) || (r == OPT_LOAD && cheats_on()) || (r == OPT_BCOL && !bulletcol_ok()) ||
-			                      (r == OPT_BOOK && !book_avail()) ? C_DIM : C_WHITE, opt_names[r]); /* test 98, 134; test 137 B2; test 138 E */
+			                      (r == OPT_BOOK && !book_avail()) ? C_DIM : C_WHITE, opt_names[r]); /* test 98, 134; test 137 B2; test 138 E; test 147 */
 			/* test 91 (user's todo list: the picture rows "shouldn't be greyed out when full or integer are selected") */
 			/* test 136: value at the per-page column (widest name + one gap), not a fixed offset */
-			sm_text(t, x0 + 6 * val_chars, y, sel ? C_YELLOW : C_GREEN, v);
+			sm_text(t, x0 + 6 * val_chars, y, sel ? C_YELLOW : dis ? C_DIM : C_GREEN, v); /* test 147 */
 		}
 		ps2m_val_col = 0; /* test 136 */
 		ps2m_val_maxw = 0; /* test 138 D */
@@ -8710,6 +8805,7 @@ static void present(void)
 			xsdk_built_shader_set_literals(&quad_frag);
 			/* test 139 F2: spread when menus are drawn upright (TATE off) */
 			book_set_spread(cfg.tate == TATE_OFF);
+			book_set_rotation(cfg.tate); /* test 147: book follows rotation (LEFT/RIGHT = one page, turned) */
 			book_draw((unsigned)fb_w, (unsigned)fb_h, par, book_quad);
 		} else if (show) {
 			xsdk_gpu_set_shaders(&vs, &ps); /* gadgets_draw leaves other shaders; test 124 */
@@ -9043,9 +9139,9 @@ static int pause_input(uint32_t press, int *done)
 		const int n = opt_nrows();
 		int id;
 		if (press & A_UP)
-			opt_sels[opt_page] = (opt_sels[opt_page] + n - 1) % n;
+			opt_sel_skip(-1); /* test 147 */
 		if (press & A_DOWN)
-			opt_sels[opt_page] = (opt_sels[opt_page] + 1) % n;
+			opt_sel_skip(1);
 		id = opt_row(opt_sels[opt_page]);
 		if (back) {
 			sm_state = SM_PAUSE;
@@ -9075,9 +9171,9 @@ static int pause_input(uint32_t press, int *done)
 		const int n = opt_nrows();
 		int id;
 		if (press & A_UP)
-			opt_sels[opt_page] = (opt_sels[opt_page] + n - 1) % n;
+			opt_sel_skip(-1); /* test 147 */
 		if (press & A_DOWN)
-			opt_sels[opt_page] = (opt_sels[opt_page] + 1) % n;
+			opt_sel_skip(1);
 		id = opt_row(opt_sels[opt_page]);
 		if (pic_row(id)) {
 			/* test 89: pause_loop's pic_input */
@@ -11790,12 +11886,12 @@ enum { TRR_GAME, TRR_MIN, TRR_MAX, TRR_LOCK }; /* test 91: TRR_GAME shown as DEF
 static const char *const tr_names[TR_N] = {"STAGE", "START AT BOSS", "LIVES", "BOMBS", "BOMB FRAGMENTS", "SHOT POWER",
                                            "MEDAL", "RANK MODE", "RANK", "INVINCIBLE", "INFINITE BOMBS", "GAME SPEED", "HITBOX",
                                            "TYPE", "BOMB TYPE", "OPTIONS", "OPTION 2", "OPTION 3", "FORMATION",
-                                           "FORMATION 2", "FORMATION 3"}; /* test 92: "RANK LOCK" -> "RANK %" (user);
+                                           "FORMATION 2", "FORMATION 3", "XTC START"}; /* test 92: "RANK LOCK" -> "RANK %" (user);
                                                                        * test 93: no RANK row, RANK % named RANK
                                                                        * (user: "keep rank% and rename it rank"), the
-                                                                       * old RANK's value only in the log */
-static int tr_cfg[TR_N] = {0, 0, 2, 0, 20, 0, 0, TRR_GAME, 50, 0, 0, 0, 0, 0, 0}; /* the page's (tr_defaults); test 100:
-                                                                                 * OPTIONS / FORMATION always EDIT */
+                                                                       * old RANK's value only in the log; test 147: XTC START */
+static int tr_cfg[TR_N] = {0, 0, 2, 0, 20, 0, 0, TRR_GAME, 50, 0, 0, 0, 0, 0, 0, [TR_XTC] = TRX_DEFAULT}; /* the page's (tr_defaults); test 100:
+                                                                                 * OPTIONS / FORMATION always EDIT; test 147: XTC DEFAULT */
 /* test 94: the weapons in the boxes' order (Kuro BL's HUD and pickup order, the PS2 ARRANGE's offer order: gadgets.c's
  * draw_stock), their names (gadgets.c's opt_name; ARRANGE's the PS2's), ibara's formation codes per slot (the game's
  * own: work/g61/re/REPORT.md A2, WIDE and ROLLING leave the rear slot 0) */
@@ -11816,7 +11912,7 @@ static const unsigned short tr_medals[19] = {100, 200, 300, 400, 500, 600, 700, 
                                              6000, 7000, 8000, 9000, 10000}; /* gadgets.c's medal_value */
 #define TRI_MEDAL 0x0C392D78u  /* u8: ibara's (and ARRANGE's) next medal, 0-18 */
 #define TRB_MEDAL 0x0C3C53E0u  /* u8: Kuro BL's */
-static int tr_val[TR_N] = {[TR_KSHIP] = TR_NONE, [TR_KBOMB] = TR_NONE}; /* the run's (host_set) */
+static int tr_val[TR_N] = {[TR_KSHIP] = TR_NONE, [TR_KBOMB] = TR_NONE, [TR_XTC] = TRX_DEFAULT}; /* the run's (host_set); test 147 */
 static int tr_armed;           /* HOST_TR_GO: the next credit is a training run */
 static int tr_stage_done;      /* the stage's redirect written (or not needed) */
 static int tr_loop2;           /* ibara: the FF12 entry written, the second loop's stage next */
@@ -11883,6 +11979,29 @@ static void tr_step(int k, int d)
 		tr_rank_step(d);
 		return;
 	}
+	if (k == TR_XTC) { /* test 147: DEFAULT, 0..9999 by 100 (LEFT/RIGHT) */
+		int held = tr_cfg[k] & TRX_HELD;
+		int v = TRX_VAL(tr_cfg[k]);
+		if (TRX_ISDEF(tr_cfg[k])) {
+			v = d > 0 ? 0 : TRX_DEFAULT;
+		} else if (d < 0) {
+			if (v <= 0)
+				v = TRX_DEFAULT;
+			else {
+				int n = ((v - 1) / 100) * 100; /* down to previous 100 */
+				v = n < 0 ? 0 : n;
+			}
+		} else {
+			if (v >= 9999)
+				v = 9999;
+			else {
+				int n = (v / 100) * 100 + 100;
+				v = n > 9999 ? 9999 : n;
+			}
+		}
+		tr_cfg[k] = (v & 0x7FFF) | held;
+		return;
+	}
 	if (k == TR_SPEED) /* test 92 (user's todo list: "invert game speed left/right toggle"): RIGHT 50 -> 75 -> 100% */
 		d = -d;
 	tr_cfg[k] = l[((i < n ? i : 0) + n + d) % n];
@@ -11913,7 +12032,7 @@ static void tr_rank_step(int d)
  * GAUGE 4 of 0-40, MEDAL 2 of its 19 values, RANK % 10 of 0-100; RANK % a change makes RANK LOCK, as LEFT / RIGHT) */
 static int tr_quick_row(int k)
 {
-	return k == TR_GAUGE || k == TR_MEDAL || k == TR_RPCT;
+	return k == TR_GAUGE || k == TR_MEDAL || k == TR_RPCT || k == TR_XTC; /* test 147 */
 }
 
 static void tr_quick(int k, int d)
@@ -11927,6 +12046,21 @@ static void tr_quick(int k, int d)
 		tr_rank_step(TRR_MODE(tr_cfg[TR_RANK]) != TRR_LOCK || (d < 0 && tr_cfg[TR_RPCT] == 0) ? d : d * 10);
 		return;
 	}
+	if (k == TR_XTC) { /* test 147: DEFAULT, 0..9999 by 1000 (LB/RB) */
+		int held = tr_cfg[k] & TRX_HELD;
+		int v = TRX_VAL(tr_cfg[k]);
+		if (TRX_ISDEF(tr_cfg[k])) {
+			v = d > 0 ? 0 : TRX_DEFAULT;
+		} else if (d < 0) {
+			v = v <= 0 ? TRX_DEFAULT : v - 1000 < 0 ? 0 : (v / 1000) * 1000 - 1000;
+			if (v < 0) v = 0;
+		} else {
+			v = v >= 9999 ? 9999 : (v / 1000) * 1000 + 1000;
+			if (v > 9999) v = 9999;
+		}
+		tr_cfg[k] = (v & 0x7FFF) | held;
+		return;
+	}
 	d *= k == TR_GAUGE ? 4 : 2;
 	tr_cfg[k] = tr_cfg[k] + d < 0 ? 0 : tr_cfg[k] + d > n - 1 ? n - 1 : tr_cfg[k] + d;
 }
@@ -11938,6 +12072,7 @@ static void tr_defaults(void)
 		tr_cfg[TR_BOMBS] = 1;
 		tr_cfg[TR_GAUGE] = 0;
 	}
+	tr_cfg[TR_XTC] = TRX_DEFAULT; /* test 147 */
 }
 
 static int tr_text_log; /* test 94: tr_text for the log (each slot) */
@@ -11952,6 +12087,8 @@ static int tr_slots_game(void)
 static int tr_row_used(int k)
 {
 	if (k == TR_KSHIP || k == TR_KBOMB)
+		return game_set != SET_IBARA;
+	if (k == TR_XTC) /* test 147: Kuro BL only */
 		return game_set != SET_IBARA;
 	if (k > TR_OPT0)
 		return tr_slots_game();
@@ -12037,6 +12174,16 @@ static uint32_t tr_text(int k, char *s, size_t n)
 		}
 		snprintf(s, n, "%d%%%s", v, tr_cfg[TR_RANK] & TRR_HELD ? "*" : "");
 		break;
+	case TR_XTC: { /* test 147: DEFAULT (no write) or 0..9999, "*" when held */
+		int held = tr_cfg[TR_XTC] & TRX_HELD;
+		int xv = TRX_VAL(tr_cfg[TR_XTC]);
+		if (TRX_ISDEF(tr_cfg[TR_XTC])) {
+			snprintf(s, n, "DEFAULT%s", held ? "*" : "");
+			return held ? C_GREEN : C_DIM;
+		}
+		snprintf(s, n, "%d%s", xv, held ? "*" : "");
+		return C_GREEN;
+	}
 	case TR_SPEED: snprintf(s, n, "%d%%", spd_steps[v % 3]); return v ? C_GREEN : C_DIM;
 	case TR_BOSS: case TR_INV: case TR_INFB:
 		snprintf(s, n, "%s", v ? "ON" : "OFF");
@@ -12051,30 +12198,31 @@ static uint32_t tr_text(int k, char *s, size_t n)
 	return C_GREEN;
 }
 
-/* test 91: the user's helps (35 letters a line) */
+/* test 91: the user's helps; test 147 FIX_3: TRAINING page shows 1 line (sm_help1), so every help here is 1 line */
 static const char *tr_help(int k)
 {
 	switch (k) {
 	case TR_STAGE:
-		return game_set == SET_IBARA && !ARR && sm_mode == 2 ? "CHANGE STAGE\n2-1 TO 2-6 = THE SECOND LOOP" : "CHANGE STAGE";
-	case TR_BOSS: return "SKIP TO STAGE'S BOSS\n(MAY TAKE A FEW SECONDS)";
+		return game_set == SET_IBARA && !ARR && sm_mode == 2 ? "CHANGE STAGE, 2-X = LOOP 2" : "CHANGE STAGE"; /* test 147 FIX_3 */
+	case TR_BOSS: return "SKIP TO THE STAGE'S BOSS"; /* test 147 FIX_3 */
 	case TR_LIVES: return "STARTING LIVES";
 	case TR_BOMBS: return "STARTING FULL BOMBS";
 	case TR_GAUGE: return "STARTING BOMB FRAGMENTS";
 	case TR_SHOT: return "STARTING SHOT POWER LEVEL";
 	case TR_MEDAL: return "STARTING MEDAL VALUE";
-	case TR_RANK: return "DEFAULT = NATURAL RANK INCREASE,\nMIN/MAX = LOCKED";
-	case TR_RPCT: /* test 93: "delete the blue line "default = the game's own start"" (user). Test 96 (user's todo list):
-	               * every game's a start value, "modify the cyan line to say "change starting rank"", X's lock a line */
-		return "CHANGE STARTING RANK\nX = LOCK RANK IN PLACE";
+	case TR_RANK: return "DEFAULT, MIN, OR MAX RANK"; /* test 147 FIX_3: was 2 lines */
+	case TR_RPCT: /* test 147: STARTING RANK + green X = LOCK hint */
+		return "STARTING RANK";
+	case TR_XTC: /* test 147: Kuro BL only */
+		return "STARTING XTC VALUE";
 	case TR_INV: return "TOGGLE INVINCIBILITY";
-	case TR_INFB: return "TOGGLE INFINITE BOMBS\n(MAY OVERLOAD THE SPRITE LIMIT)";
+	case TR_INFB: return "INFINITE BOMBS (MAY LAG)"; /* test 147 FIX_3: was 2 lines */
 	case TR_SPEED: return "TOGGLE GAME SPEED";
 	case TR_KSHIP: return "CHANGE PLAYER TYPE";
 	case TR_KBOMB: return "CHANGE BOMB TYPE";
-	case TR_OPT0: return tr_slots_game() ? "STARTING OPTIONS\n(LEFT, RIGHT AND BACK)" : "STARTING OPTIONS"; /* test 94 */
+	case TR_OPT0: return tr_slots_game() ? "STARTING OPTIONS L,R,BACK" : "STARTING OPTIONS"; /* test 147 FIX_3 */
 	case TR_FRM0: return "STARTING FORMATION OF EACH OPTION";
-	default: return "PLAYER = THE SHIP'S HITBOX\nALL = ENEMIES, BULLETS, SHOTS TOO"; /* test 98 */
+	default: return "HITBOX: PLAYER OR ALL"; /* test 147 FIX_3: was 2 lines */
 	}
 }
 
@@ -12197,7 +12345,7 @@ static void tr_box_draw(volatile uint32_t *t, int pbx, int pbw)
 		sm_text(t, x0 + 6 * 18, ly, sel ? C_YELLOW : C_DIM, ">");
 	}
 	if (help)
-		sm_help(t, x0, y0 + hy, C_CYAN, "EACH OPTION'S FORMATION\nX = QUICK SWAP", (bw - 16) / 6);
+		sm_help1(t, x0, y0 + hy, C_CYAN, "FORMATION: X = QUICK SWAP"); /* test 147 FIX_3: 1 line */
 	sm_text(t, x0, y0 + base + 12, C_GREEN, slots ? "LEFT/RIGHT SET" : "A = ON/OFF");
 	if (al)
 		sm_text(t, x0, y0 + base + 22, C_GREEN, "A = ON/OFF");
@@ -12207,9 +12355,12 @@ static void tr_box_draw(volatile uint32_t *t, int pbx, int pbw)
 	sm_text(t, x0, y0 + base + 32 + al + xl, C_GREEN, "B / BACK = CLOSE");
 }
 
-/* test 91: TR_* row k's "# host" number (test 89's rows before HOST_TR_GO, the later ones after it) */
+/* test 91: TR_* row k's "# host" number (test 89's rows before HOST_TR_GO, the later ones after it).
+ * test 147 FIX_3: TR_XTC has its own replay-compat id after HOST_JOIN. */
 static int tr_host_id(int k)
 {
+	if (k == TR_XTC) /* test 147 FIX_3 */
+		return HOST_TR_XTC;
 	return k < TR_OLD_N ? HOST_TR0 + k : HOST_TR_MORE + k - TR_OLD_N;
 }
 
@@ -12254,7 +12405,11 @@ static void tr_host(int what, int value)
 		tr_val[what - HOST_TR0] = value;
 		return;
 	}
-	if (what >= HOST_TR_MORE) { /* test 91: Kuro BL's ship rows */
+	if (what == HOST_TR_XTC) { /* test 147 FIX_3: replay-compat id after HOST_JOIN */
+		tr_val[TR_XTC] = value;
+		return;
+	}
+	if (what >= HOST_TR_MORE && what < HOST_TR_END) { /* test 91: Kuro BL's ship rows */
 		tr_val[TR_OLD_N + what - HOST_TR_MORE] = value;
 		return;
 	}
@@ -12673,6 +12828,9 @@ static void tr_ship_blk(void)
  * plays the opening) */
 #define TRB_OPEN0 0x0C20498Eu  /* the opening's commands after its select spawn (FF08) */
 #define TRB_OPENRET 0x0C2049C4u /* and its FF03 */
+#define TRB_PARTS 0x0C286578u  /* 0xC0 enemy parts of 0xB4 */
+#define TRB_BULLETS 0x0C297B40u /* 0x100 bullets of 0x54 */
+#define TRB_ITEMS 0x0C3BC7CCu   /* test 147: 0x140 items of 0x60 (cheatfx.c Kuro item table) */
 static int tr_open_said;
 
 static void tr_open_blk(void)
@@ -12727,6 +12885,13 @@ static void tr_boss_blk(void)
 			d += blk_boss_regs[i].len;
 		}
 	}
+	/* test 147: Kuro BL boss warp clears live enemy parts, bullets and items like tr_boss_ib (all stages) */
+	for (i = 0; i < 0xC0; i++)
+		wr32(TRB_PARTS + i * 0xB4u, 0);
+	for (i = 0; i < 0x100; i++)
+		wr32(TRB_BULLETS + i * 0x54u, 0);
+	for (i = 0; i < 0x140; i++)
+		wr32(TRB_ITEMS + i * 0x60u, 0);
 	wr32(TRB_WAIT, 0);
 	RAMP(TRB_FF11)[0] = RAMP(TRB_FF11)[1] = 0;
 	tr_turbo = 1;
@@ -12964,11 +13129,25 @@ static void tr_vblank(void)
 			if (tr_val[TR_MEDAL] != TR_GAME) /* the sides' one chain */
 				*RAMP(ib ? TRI_MEDAL : TRB_MEDAL) = (u8)(tr_val[TR_MEDAL] % 19);
 			tr_give_options(s, r); /* test 94 */
+			/* test 147: Kuro BL XTC START (DEFAULT = no write) */
+			if (!ib && !TRX_ISDEF(tr_val[TR_XTC])) {
+				int xv = TRX_VAL(tr_val[TR_XTC]);
+				wr32(r.base + 0x280, (uint32_t)(xv * 4));
+				RAMP(r.base + 0x284)[0] = 0;
+				RAMP(r.base + 0x284)[1] = 128;
+			}
 			if (*st == 1) /* out of the ranking */
 				*st = 2;
 			tr_starts[s] = *st;
 			tr_pend[s] = 0;
 			log_printf(C_WHITE, "TRAINING: %dP'S START VALUES (EMU %u, STARTS %u)", s + 1, (unsigned)frame_count, *st);
+		}
+		/* test 147: XTC START held all run (X = lock) - rewrite counter every vblank, timer kept 128 */
+		if (!ib && alive && !TRX_ISDEF(tr_val[TR_XTC]) && (tr_val[TR_XTC] & TRX_HELD)) {
+			int xv = TRX_VAL(tr_val[TR_XTC]);
+			wr32(r.base + 0x280, (uint32_t)(xv * 4));
+			RAMP(r.base + 0x284)[0] = 0;
+			RAMP(r.base + 0x284)[1] = 128;
 		}
 		{
 			const int inv_held = alive && (tr_val[TR_INV] || tr_turbo) &&
@@ -13135,24 +13314,30 @@ static void ex_vblank(void)
 			rp_cancel(RPB_EXDBG);
 	}
 
-	/* test 134: FIXED RANK (not when tr_run: TRAINING has its own RANK MODE) */
+	/* test 134/147: FIXED RANK (not when tr_run: TRAINING has its own RANK MODE).
+	 * test 147: OFF or 0%..100% (ex_fixrank 0 / 1..101), written every vblank from the
+	 * percentage using TRAINING's TRR_LOCK conversion. */
 	if (!tr_run) {
 		if (ex_fixrank) {
 			const uint32_t ra = ib ? TRI_RANK : TRB_RANK;
+			const unsigned p = (unsigned)(ex_fixrank - 1);
+			uint32_t v = (uint32_t)(((uint64_t)(100 - p) << 24) / 100);
 			int in_run = 0;
 			for (int s = 0; s < 2; s++) {
 				const struct tr_rec r = tr_rec_of(s);
 				if (BE32(RAMP(r.base)) == 0xDC000000u) { in_run = 1; break; }
 			}
+			if (v > 0xFFFFFFu) v = 0xFFFFFFu;
 			if (in_run) {
 				if (!fr_have) {
-					fr_rank = BE32(RAMP(ra));
+					fr_rank = v;
 					fr_have = 1;
-					log_printf(C_YELLOW, "CHEATS: FIXED RANK AT %06X (EMU %u)", (unsigned)fr_rank, (unsigned)frame_count);
+					log_printf(C_YELLOW, "CHEATS: FIXED RANK %u%% (%06X, EMU %u)", p, (unsigned)v, (unsigned)frame_count);
 				}
-				wr32(ra, fr_rank);
+				fr_rank = v;
+				wr32(ra, v);
 				if (!ib)
-					wr32(TRB_CEIL, fr_rank);
+					wr32(TRB_CEIL, v);
 			}
 		} else if (fr_have) {
 			if (!ib)
@@ -13230,9 +13415,10 @@ static void ex_vblank(void)
 	{ /* test 135: CHEATS batch 2; test 136: MAGNET RANGE */
 		static const unsigned ifall_pct[6] = {50, 75, 100, 125, 150, 200};
 		struct cfx_cfg cc = {!ib, ARR, 50u + 10u * (unsigned)ex_bspeed, ex_fewer, ifall_pct[ex_ifall], ex_suction,
-		                     ex_magnet, ex_medalpen, ex_magrange, {shot_age[0] < 8, shot_age[1] < 8}};
+		                     ex_magnet, ex_medalpen == 1 ? 0 : ex_medalpen, ex_magrange, ex_xtcdecay,
+		                     {shot_age[0] < 8, shot_age[1] < 8}}; /* test 147: 1 LOWEST -> 0, XTC DECAY */
 		int mag_act = (ex_magnet != magnet_start()); /* test 136 */
-		if (cc.fewer || cc.bspeed != 100 || cc.ifall != 100 || cc.suction || mag_act || cc.medalpen)
+		if (cc.fewer || cc.bspeed != 100 || cc.ifall != 100 || cc.suction || mag_act || cc.medalpen || cc.xtcdecay)
 			cfx_vblank(&cc);
 		else
 			cfx_reset();
@@ -13277,7 +13463,8 @@ static void tr_hitbox(void)
 {
 	const int ib = game_set == SET_IBARA;
 
-	const int mode = tr_run ? tr_val[TR_HITBOX] : ex_hit; /* test 108: EX-DEBUG's in any other run */
+	/* test 147: TRAINING HITBOX row hidden; CHEATS HITBOXES (ex_hit) works in any run, including training */
+	const int mode = ex_hit;
 
 	if (!mode || !tex_fresh || *RAMP(ib ? IB_DEMO : BLK_DEMO) == 1)
 		return;
@@ -13316,8 +13503,6 @@ static unsigned tr_cleared_parts, tr_cleared_bullets; /* test 92: what the skip 
  * (the log: "0 PARTS, 0 BULLETS CLEARED"); Kuro BL's the same rule on its tables (work/card/blk/REPORT.md: the enemy
  * table 0C286578, ibara's layout; gadgets.c map_blk .bullets; the boss groups the same in both programs:
  * work/g91/bossskip/REPORT.md) */
-#define TRB_PARTS 0x0C286578u  /* 0xC0 enemy parts of 0xB4 */
-#define TRB_BULLETS 0x0C297B40u /* 0x100 bullets of 0x54 */
 static void turbo_clear(void)
 {
 	const uint32_t group = tr_boss_group[tr_val[TR_STAGE] % 6];
@@ -14467,7 +14652,7 @@ static uint32_t game_task(void *u)
 		else
 			log_printf(C_YELLOW, "PS2 MENUS: %s: MENU STYLE STAYS ARCADE", ps2menu_why());
 	}
-	log_printf(C_WHITE, "IBARA360 " XEX_VERSION XEX_GAME " XEX (TEST " XEX_TEST "; TEST 145: BATTLE HISTORY RUNTIME SAVED ON QUIT, BOOK ZOOM SHOWS THE OTHER PAGE, QUIT TO ATTRACT COUNTS THE RUN, INITIALIZE HISTORY ROW; TEST 144: TEXT REFINEMENTS (LANGUAGE, ACHIEVEMENTS, LOW LATENCY, CONTINUES, SOUNDTRACK HELPS, AUTO FREQUENCY, JAPANESE HELPS), SOUND WINDOW FIXED; TEST 143: TRACKLIST HELP PER GAME, NO BULLET DESIGN ROW, NO LB RAM HASH, SHORTER HISTORY/OTHER SETTINGS HELPS, KURO BL BULLET COLORS PREVIEW; TEST 101 XEX; TEST 102: LANGUAGE ON OPTIONS, TRAINING GREEN LINES ENGLISH, "
+	log_printf(C_WHITE, "IBARA360 " XEX_VERSION XEX_GAME " XEX (TEST " XEX_TEST "; TEST 147: MEDAL PENALTY NO LOWEST, TRAINING HITBOX HIDDEN, PLAYER HITBOX SIZE/MAGNET RENAMES, ITEM MAGNET RANGE GATED TO ALWAYS, FIXED RANK 0-100%% LB/RB; TEST 145: BATTLE HISTORY RUNTIME SAVED ON QUIT, BOOK ZOOM SHOWS THE OTHER PAGE, QUIT TO ATTRACT COUNTS THE RUN, INITIALIZE HISTORY ROW; TEST 144: TEXT REFINEMENTS (LANGUAGE, ACHIEVEMENTS, LOW LATENCY, CONTINUES, SOUNDTRACK HELPS, AUTO FREQUENCY, JAPANESE HELPS), SOUND WINDOW FIXED; TEST 143: TRACKLIST HELP PER GAME, NO BULLET DESIGN ROW, NO LB RAM HASH, SHORTER HISTORY/OTHER SETTINGS HELPS, KURO BL BULLET COLORS PREVIEW; TEST 101 XEX; TEST 102: LANGUAGE ON OPTIONS, TRAINING GREEN LINES ENGLISH, "
 	           "BLACK LABEL TITLES, MUSIC TEST NAMES AT ONE COLUMN, 4:3 GADGETS SPREAD + XTC FULL, ARRANGE: NO SERVICE "
 	           "MENU, ARRANGE VER + TAITO ON THE TITLE; TEST 111: THE TOAST FIX AT THE START, EX-DEBUG VALUES IN ONE COLUMN, "
 	           "START KEPT FROM THE RANKING UNTIL THE CAVE LOGO; TEST 112: AUDIO MONO/STEREO, EX-DEBUG BY LB+RB+A WITH THE INI'S "

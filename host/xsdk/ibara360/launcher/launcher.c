@@ -55,14 +55,15 @@
  * - 4:3: MODE SELECT's painting full screen with the menu over it (no rose-lattice column over its left: the user's
  *   43_launcher_left_border.png); the title, the GALLERY and NOW LOADING were full screen already;
  * - TATE, an easter egg: LB / RB on the title or MODE SELECT turn the launcher for a monitor stood on its side, as the
- *   games' ROTATION LEFT / RIGHT (LB = LEFT: the player's right is the screen's down; RB = RIGHT: the screen's up; the
- *   same button again = upright). The picture is drawn on a 720-wide portrait canvas (as tall as the landscape one is
- *   wide), every quad turned as it is put down (quad). Its own art, official only: the title = the PS2 GALLERY's
- *   picture 15 whole (the arcade flyer the landscape title is the top of; ps2data.bin's la.title_v, ps2extract 2;
- *   without it, an older ps2data.bin: the landscape title across the lattice); MODE SELECT = the Insanity DVD booklet's
- *   page 5, the whole painting the landscape MODE SELECT is a faded crop of (gen/launcher/tate_art.h, mktate.py). The
- *   menu as the landscape one (header, plates, rose, leaf frame), the frame at the foot; 16:9 = the art across the
- *   width, the lattice above and below. The GALLERY stays upright, as the PS2 port's (its NOW LOADING gate too). */
+ *   games' ROTATION LEFT / RIGHT (LB = LEFT: CCW, the game's top at the screen's left; RB = RIGHT: CW; test 147: swapped
+ *   to match the games; the same button again = upright). The picture is drawn on a 720-wide portrait canvas (as tall as
+ *   the landscape one is wide), every quad turned as it is put down (quad). Its own art, official only: the title = the
+ *   PS2 GALLERY's picture 15 whole (the arcade flyer the landscape title is the top of; ps2data.bin's la.title_v,
+ *   ps2extract 2; without it, an older ps2data.bin: the landscape title across the lattice); MODE SELECT = the Insanity
+ *   DVD booklet's page 5, the whole painting the landscape MODE SELECT is a faded crop of (gen/launcher/tate_art.h,
+ *   mktate.py). The menu as the landscape one (header, plates, rose, leaf frame), the frame at the foot; 16:9 = the art
+ *   across the width, the lattice above and below. The GALLERY stays upright, as the PS2 port's (its NOW LOADING gate
+ *   too). */
 /* Test 121 (1.03, user's list, item 4): STORY, a MODE SELECT row above EXIT (only with ibaraweb.dat beside the .xex):
  * the site's slides in English / Japanese (X on the row swaps; the label says which), the gallery's controls
  * (LB / RB, A zoom x2, the d-pad pans zoomed, Y the label window, B back), UP / DOWN scroll the tall slides, the
@@ -106,7 +107,7 @@
 
 /* test 97: the music in the .xex, the PS2 data from ps2data.bin (the plain screen without it) */
 #define XEX_VERSION "1.05" /* test 146: 1.05; test 129: 1.04; test 120: release version; test 121: 1.03 */
-#define XEX_TEST "146" /* test 146: version 1.05; test 129: version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127: version; test 126: version; test 125: version; test 124: card.vert turn constant; test 123: STORY plate as GALLERY / EXIT, no EN/JP tag; test 120: release version; test 122: STORY sign, label window, UNLISTED level, 鋳薔薇 */
+#define XEX_TEST "147" /* test 147: MEDAL PENALTY no LOWEST, TRAINING HITBOX hidden, PLAYER HITBOX SIZE/MAGNET renames, ITEM MAGNET RANGE gated to ALWAYS, FIXED RANK 0-100% LB/RB, logs on once; test 146: version 1.05; test 129: version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127: version; test 126: version; test 125: version; test 124: card.vert turn constant; test 123: STORY plate as GALLERY / EXIT, no EN/JP tag; test 120: release version; test 122: STORY sign, label window, UNLISTED level, 鋳薔薇 */
 #define NPADS 4
 #define STICK_DEAD 16000
 
@@ -378,11 +379,12 @@ static void quad(float x0, float y0, float x1, float y1, float u0, float v0, flo
 	k[2][0] = x0, k[2][1] = y1, k[2][2] = u0, k[2][3] = v1;
 	k[3][0] = x1, k[3][1] = y1, k[3][2] = u1, k[3][3] = v1;
 	if (rot) /* backlog 2e: the portrait canvas turned onto the screen, as main.c's ROTATION: LEFT = the player's right
-	          * the screen's down, the player's down its left; RIGHT = right up, down right */
+	          * the screen's up, the player's down its right (CCW); RIGHT = down and left (CW) */
 		for (i = 0; i < 4; i++) {
 			const float px = k[i][0], py = k[i][1];
-			k[i][0] = rot == TT_LEFT ? canvas_w - py : py;
-			k[i][1] = rot == TT_LEFT ? px : 720 - px;
+			/* test 147: LEFT/RIGHT swapped so LB = CCW, RB = CW, consistent with the games */
+			k[i][0] = rot == TT_LEFT ? py : canvas_w - py;
+			k[i][1] = rot == TT_LEFT ? 720 - px : px;
 		}
 	for (i = 0; i < 6; i++) {
 		float *v = qv[nq][i];
