@@ -104,7 +104,7 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
 
 ### Games
 - **Ibara**, The original game. Normal, Harder and Extended modes.
-- **Ibara Kuro: Black Label**, as on its arcade board.
+- **Ibara Kuro: Black Label**, The updated re-release, which is still officially arcade exclusive.
 - **Ibara Arrange**, the PS2 port's arrange mode: a prototype version of Black Label with it's own twists and turns.
 
 ### Picture
