@@ -2305,7 +2305,7 @@ static const char *const opt_helps[OPT_N] = { /* a line's 35 characters at most 
  * choice: both; GENERAL SCREEN without M3 GADGETS, ARRANGE's BULLET DESIGN last).
  * test 124: OPT_GENERAL_ROWS = PICTURE/SIZE rows, ROTATION, SCANLINES, STRENGTH, BRIGHTNESS, FILTER, SCREEN COLOR, LOW
  * LATENCY, ASPECT RATIO (and the pause's SCREEN / GENERAL SCREEN pages use it) */
-#define OPT_GENERAL_ROWS OPT_PIC_ROWS, OPT_TATE, OPT_SCANLINES, OPT_STRENGTH, OPT_BRIGHT, OPT_SMOOTH, OPT_COLOR, OPT_ASPECT, OPT_BCOL, OPT_POPUPS
+#define OPT_GENERAL_ROWS OPT_PIC_ROWS, OPT_TATE, OPT_SCANLINES, OPT_STRENGTH, OPT_BRIGHT, OPT_SMOOTH, OPT_COLOR, OPT_ASPECT, OPT_POPUPS, OPT_BCOL
 /* test 98: MENU STYLE, LANGUAGE after ASPECT RATIO (the screen's look; the ini keeps them for all four .xex); test 102
  * (user: "language option should be at the bottom of the options page, below debug menu, instead of general screen"):
  * GENERAL SCREEN without LANGUAGE, OPTIONS' last row; the pause's SCREEN page keeps it (the pause has no other place).
