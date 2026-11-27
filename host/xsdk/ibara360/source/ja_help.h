@@ -1,8 +1,8 @@
 /* Test 148: rank/bombs/magnet/co-op/stage map helps, MAGNET RANGE with RELEASE, rotated BOOK zoom fit,
  * LANGUAGE: JAPANESE: 208 lines. Do not edit; see mkja.py for the glyph codes. Test 121: the last entry (ENABLE/DISABLE
  * THE ATTRACT DEMOS) was added by hand with mkja.py's glyphs() (the research TSV is not in the repo). Test 1.03 item 5
- * (STAGE MAP): the last two, the same way. Test 126: the last entries, the same way. Test 136: MAGNET RANGE, the same way. Test 140: 11 keys re-keyed (texts as TASK_4 A), 19 new entries added by hand the same way (mkja.glyphs). Test 141 FIX_2: removed 4 split BULLET COLORS keys. Test 144: re-keyed/added entries (work/g144/ja_missing.tsv). Test 145: INITIALIZE HISTORY's two entries added by hand the same way (mkja.glyphs). Test 155: SCORE POPUPS help, the same way. */
-#define JA_N 262
+ * (STAGE MAP): the last two, the same way. Test 126: the last entries, the same way. Test 136: MAGNET RANGE, the same way. Test 140: 11 keys re-keyed (texts as TASK_4 A), 19 new entries added by hand the same way (mkja.glyphs). Test 141 FIX_2: removed 4 split BULLET COLORS keys. Test 144: re-keyed/added entries (work/g144/ja_missing.tsv). Test 145: INITIALIZE HISTORY's two entries added by hand the same way (mkja.glyphs). Test 155: SCORE POPUPS help, the same way. Test 156: XTC START's Y help, the same way. */
+#define JA_N 263
 #define JA_ASCII 0x8000
 #define JA_FIELD 0x9000
 #define JA_BREAK 0xFFFE
@@ -270,6 +270,7 @@ static const char *const ja_en[JA_N] = {
 	"ATTRACT ITEMS TO THE SHIP\nRELEASE = RELEASE SHOT\nTO PULL ITEMS IN",
 	"ADJUST ITEM MAGNET RANGE\nNEEDS RELEASE OR ALWAYS",
 	"ROSE SCORE POPUPS\nSEE-THROUGH = HALF VISIBLE", /* test 155 */
+	"PRESS Y TO FREEZE THE TIMER DURING A RUN", /* test 156 */
 };
 static const unsigned short ja_at[JA_N] = {
 	0, 23, 50, 63, 91, 115, 125, 140, 157, 179, 204, 226,
@@ -293,9 +294,9 @@ static const unsigned short ja_at[JA_N] = {
 	3320, 3346, 3361, 3374, 3391, 3403, 3424, 3436, 3448, 3471, 3498, 3516,
 	3537, 3549, 3557, 3576, 3600, 3611, 3616, 3623, 3634, 3655, 3673, 3683,
 	3696, 3713, 3726, 3738, 3751, 3763, 3791, 3819, 3844, 3868, 3881, 3894,
-	3904, 3923, 3936, 3953, 3965, 3978, 3985, 4006, 4033, 4053,
+	3904, 3923, 3936, 3953, 3965, 3978, 3985, 4006, 4033, 4053, 4079,
 };
-static const unsigned short ja_gl[4079] = {
+static const unsigned short ja_gl[4093] = {
 	/* IBARA'S SPECIAL VER. (PCB DIP S2-2) */ 0x0CA3, 0x0CCF, 0x0CE9, 0x0C6D, 0x0CB8, 0x0CD9, 0x0CB6, 0x0CE3, 0x0CEB, 0x0926, 0xFFFE, 0x01CF, 0x0923, 0x0C04, 0x0C09, 0x0C10, 0x0BD6, 0x0C13, 0x0BE8, 0x0C6D, 0x0BE8, 0x0935, 0xFFFF,
 	/* INTEGER = SHARP, FULL = FULL HEIGHT\nCUSTOM = MANUALLY ADJUST */ 0x0107, 0x0AAB, 0x0CB4, 0x0CA3, 0x0CB9, 0x0BDC, 0x060F, 0x05F5, 0x08DC, 0x0BD9, 0x0674, 0x03A3, 0x0BD9, 0xFFFE, 0x04C9, 0x084F, 0x0793, 0x060F, 0x0BE2, 0x0C03, 0x0C15, 0x0C13, 0x0C14, 0x0C0F, 0x0C0D, 0x0BE3, 0xFFFF,
 	/* ROTATE THE GAME WINDOW */ 0x0CB1, 0x0BE1, 0x0CE0, 0x0107, 0x0AAB, 0x0C91, 0x0112, 0x07FE, 0x0C56, 0x0C7D, 0x0C58, 0x0BD8, 0xFFFF,
@@ -558,4 +559,5 @@ static const unsigned short ja_gl[4079] = {
 	/* ATTRACT ITEMS TO THE SHIP\nRELEASE = RELEASE SHOT\nTO PULL ITEMS IN */ 0x0CA1, 0x0CA3, 0x0CC5, 0x0CE0, 0x0C91, 0x048A, 0x01E1, 0x0C6A, 0x0059, 0x0C4C, 0x01D2, 0x0C5A, 0xFFFE, 0x0CEA, 0x0CEA, 0x0BE1, 0x0CB8, 0x0BDC, 0x0B44, 0x0C58, 0x0C67, 0x0059, 0x0C4C, 0x01D2, 0x0C5A, 0x0C8A, 0xFFFF,
 	/* ADJUST ITEM MAGNET RANGE\nNEEDS RELEASE OR ALWAYS */ 0x0CDD, 0x0CAF, 0x0CCC, 0x0CC2, 0x0CC7, 0x0C6D, 0x092E, 0x002E, 0xFFFE, 0x0CEA, 0x0CEA, 0x0BE1, 0x0CB8, 0x0C4A, 0x058E, 0x047F, 0x0C4B, 0x096C, 0x0B17, 0xFFFF,
 	/* ROSE SCORE POPUPS\nSEE-THROUGH = HALF VISIBLE */ 0x0CCF, 0x0CE9, 0x0C6D, 0x085F, 0x0800, 0x097D, 0x0487, 0xFFFE, 0x8053, 0x8045, 0x8045, 0x802D, 0x8054, 0x8048, 0x8052, 0x804F, 0x8055, 0x8047, 0x8048, 0x8020, 0x803D, 0x8020, 0x091D, 0x0848, 0x0A9F, 0xFFFF,
+	/* PRESS Y TO FREEZE THE TIMER DURING A RUN */ 0x0CE9, 0x0CF3, 0x0767, 0x0C6A, 0x8059, 0x0C66, 0x0CBE, 0x0CA3, 0x0CDD, 0x0BE1, 0x0C91, 0x07C3, 0x045F, 0xFFFF,
 };
