@@ -1,5 +1,32 @@
 # ibara360 patch notes
 
+## 1.06 (November 2026)
+
+### New
+- **Black Label TRAINING XTC START**: set the XTC counter a training run starts with (0-9999, wrapping round).
+  X = LOCK keeps it fixed for the whole run, grazes included. In a training run, Y freezes / unfreezes XTC: frozen
+  it never drops, grazes still raise it.
+- **Black Label XTC gadget** redrawn: thick gradient timer gauge with the frame count inside (horizontal in SMALL,
+  vertical in FULL), the number clear of the red border. SMALL / FULL / OFF no longer move the other gadgets.
+- **XTC DECAY** cheat (Black Label): slow or fast XTC drain.
+- **FIXED RANK** in 1% steps from 0 to 100%, LB/RB for 10% steps.
+
+### Changes
+- MEDAL PENALTY is DEFAULT / 5 DOWN / 3 DOWN (LOWEST removed).
+- The HITBOX row left TRAINING in all games (it is on the CHEATS page).
+- Renamed PLAYER HITBOX SIZE, MEDAL MAGNET and ITEM MAGNET. ITEM MAGNET RELEASE also enables MAGNET RANGE.
+- TRAINING RANK % and XTC START have no DEFAULT entry; their values wrap round.
+- Clearer help texts (rank, bombs, magnets, co-op, stage map, training); Japanese help for the new rows.
+- 16:9 WEAPON gadget keeps its RAPID row, so CONTROLS changes no longer make the screen jump.
+- TRAINING menu window no longer jumps on the XTC START row.
+
+### Fixes
+- ROTATION LEFT and RIGHT were swapped.
+- Black Label ground items follow the item magnet again.
+- Black Label TRAINING START AT BOSS: the stage 2 boss always shoots.
+- BOOK: rotated pages zoom without broken borders; the left stick no longer turns pages while zoomed.
+- Logging (record, frame log, network log) is turned off once when 1.06 first starts.
+
 ## 1.05 (November 2026)
 
 ### New

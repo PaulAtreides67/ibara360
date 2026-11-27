@@ -49,7 +49,7 @@ struct settings cfg = {.card = 0, .picture = PIC_INTEGER, .save = 1, .record = 0
 /* test 112 (user: "keep achievements off as the default, make bottom right toast the default"; EX-DEBUG's "record
  * (default off), frame log (default off), network log (default off)"): netlog 0 and toast_pos 6 (bottom_right) above;
  * an ini from before test 112 (no "defaults = 112") gets those five once (defaults_seen, settings_load) */
-#define DEFAULTS_VER 147 /* test 147: RECORD, FRAME LOG, NETWORK LOG ON once; test 146: RECORD, FRAME LOG, NETWORK LOG OFF once (the 1.05 release); test 131: RECORD, FRAME LOG, NETWORK LOG ON once; test 129: RECORD, FRAME LOG, NETWORK LOG OFF once (the 1.04 release); test 127: RECORD, FRAME LOG, NETWORK LOG ON once (final check-up log); test 126: LOW LATENCY ON once; test 119: the release defaults (EX-DEBUG closed), once */
+#define DEFAULTS_VER 154 /* test 154: RECORD, FRAME LOG, NETWORK LOG OFF once (the 1.06 release); test 147: RECORD, FRAME LOG, NETWORK LOG ON once; test 146: RECORD, FRAME LOG, NETWORK LOG OFF once (the 1.05 release); test 131: RECORD, FRAME LOG, NETWORK LOG ON once; test 129: RECORD, FRAME LOG, NETWORK LOG OFF once (the 1.04 release); test 127: RECORD, FRAME LOG, NETWORK LOG ON once (final check-up log); test 126: LOW LATENCY ON once; test 119: the release defaults (EX-DEBUG closed), once */
 static int defaults_seen;
 const int autofire_rates[AUTOFIRE_RATES] = {30, 20, 15, 12, 10, 7}; /* test 129: 7 = 7.5 Hz, every 8 frames */
 
@@ -1230,6 +1230,10 @@ void settings_load(const char *dev)
 		if (defaults_seen < 147) { /* test 147: logs on once */
 			cfg.record = cfg.framelog = cfg.netlog = 1;
 			log_printf(C_WHITE, "INI: FROM BEFORE TEST 147: RECORD, FRAME LOG, NETWORK LOG ON (ONCE)");
+		}
+		if (defaults_seen < 154) { /* test 154: the 1.06 release, logs off once again (after 147 turned them on) */
+			cfg.record = cfg.framelog = cfg.netlog = 0;
+			log_printf(C_WHITE, "INI: FROM BEFORE 1.06: RECORD, FRAME LOG, NETWORK LOG OFF (ONCE)");
 		}
 		if (!af2_seen) {
 			cfg.autofire_hz[1] = cfg.autofire_hz[0];
