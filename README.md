@@ -51,7 +51,7 @@ All taken on a real Xbox 360.
 <p align="center">
   <img src="docs/screenshots/ibara_boss_intro.jpg" width="49%" alt="Boss intro">
   <img src="docs/screenshots/arrange_title.jpg" width="49%" alt="ARRANGE title screen">
-  <br><sub>The arcade's own presentation, with the PS2 port's artwork around it</sub>
+  <br><sub>The arcade's own presentation, with the PS2 port's artwork and higher quality soundtrack</sub>
 </p>
 
 ## The game
