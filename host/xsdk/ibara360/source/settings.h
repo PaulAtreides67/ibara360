@@ -114,6 +114,7 @@ struct settings {
 	int mute;              /* test 68: no sound at all */
 	int coop;              /* test 71: GADGETS' co-op layout while both players play (M3 GADGETS' CO-OP row) */
 	int arr_bullets;       /* test 81: ARRANGE's BULLET DESIGN (test 82: GENERAL SCREEN's): 0 NORMAL, 1 COLOR, 2 COLORLESS */
+	int popups_half;       /* test 155: 0 = SOLID, 1 = SEE-THROUGH (half visible) */
 	int pic_size[PIC_SHAPES]; /* test 88: PICTURE SIZE CUSTOM's size, thousandths of FULL's (PIC_SIZE_MIN .. MAX) */
 	int pic_x[PIC_SHAPES], pic_y[PIC_SHAPES]; /* and its centre's offset from the screen's centre, in 720ths of the
 	                                           * screen's height (right, down) */

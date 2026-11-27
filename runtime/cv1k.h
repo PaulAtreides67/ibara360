@@ -95,6 +95,7 @@ extern int blitter_firmware;       /* -1, or 0..3 = A..D once the FPGA is config
 extern u64 blitter_busy_cycles;    /* sum of busy time, for stats */
 extern double blitx_scale;         /* goal 16 experiments (PC host), see blitter.c */
 extern int blitx_noclip;
+extern int blk_popups_half; /* test 155: Kuro BL's score popups half visible (host sets) */
 extern u32 blitx_bus_cyc, blitx_bus_upl_cyc, blitx_upl_gap_ns;
 
 /* YMZ770 (ymz770.c). CPU side: register writes stamped with the cycle, and a mark at

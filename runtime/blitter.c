@@ -201,6 +201,44 @@ static const fast_t *fast_tables(int band, int kind, int s_mode, int d_mode, int
  * the blitter fetches (BREQ/BACK, buffi), owed by the CPU's next bus accesses (pcb.c). */
 double blitx_scale = 1.0;
 int blitx_noclip;
+
+/* test 155: Kuro BL's score popups drawn half visible (blk_popups_half, set by the host).
+ * A popup blit is one reading the popup glyph pages 880/881 (the page cache at
+ * 0x0C29D93C, page*4: s16 VRAM x, s16 y), with tint 0x808080 and no scaling. Its op is
+ * patched in the job's copy only (do_draw reads that copy; the timing reads no op or
+ * alpha word): solid popups become a blend at alpha 16/31 (s*16/31 + d*15/31, the
+ * arrhud 128), fading ones have their alpha capped at 16. */
+int blk_popups_half;
+
+static int blk_popup_src(u16 src_x, u16 src_y)
+{
+	int p;
+	for (p = 880; p <= 881; p++) {
+		const u32 e = 0x0C29D93Cu + (u32)p * 4u;
+		if (BE32(cv1k_ram + (e & (RAM_SIZE - 1))) == 0) /* not loaded: skip (test 155 replay guard) */
+			continue;
+		const int cx = (s16)BE16(cv1k_ram + (e & (RAM_SIZE - 1)));
+		const int cy = (s16)BE16(cv1k_ram + ((e + 2) & (RAM_SIZE - 1)));
+		if (src_x >= cx && src_x < cx + 256 && src_y >= cy && src_y < cy + 256)
+			return 1;
+	}
+	return 0;
+}
+
+static void blk_popup_patch(u32 at, u16 src_x, u16 src_y, u16 wm1, u16 hm1, u16 tint_r, u16 tint_gb)
+{
+	u16 *op = &job_w[at], *al = &job_w[at + 1];
+	if (tint_r != 0x0080 || tint_gb != 0x8080) return;
+	if ((*op & 0x1000) == 0 || (*op & 0x0100) == 0) return;
+	if ((*op & 0x0070) != 0 || ((*op & 7) != 0 && (*op & 7) != 4)) return;
+	if (wm1 > 31 || hm1 > 23) return;
+	if (!blk_popup_src(src_x & 0x1fff, src_y & 0x0fff)) return;
+	if (!(*op & 0x0200)) {          /* solid: 50% as arrhud's 128 */
+		*op |= 0x0204;
+		*al = 0x8080;
+	} else if (((*al & 0xFF) >> 3) > 16)
+		*al = 0x8080;           /* fade capped at 50% */
+}
 u32 blitx_bus_cyc;
 u32 blitx_bus_upl_cyc = ~0u;   /* per 64 bytes of upload ops (~0u: same as blitx_bus_cyc) */
 u32 blitx_upl_gap_ns;          /* blitter busy time per 64 upload bytes on top of MAME's */
@@ -469,6 +507,8 @@ static void timing_draw(u32 *addr, const rect_t *clip)
 	u16 src_dimy = (u16)((h & 0x0fff) + 1);
 	list_word(addr);
 	list_word(addr);
+	if (UNLIKELY(blk_popups_half))
+		blk_popup_patch(at, src_x, src_y, (u16)(w & 0x1fff), (u16)(h & 0x0fff), job_w[at + 8], job_w[at + 9]);
 	hz_draw(at, clip, src_x, src_y, dst_x_start, dst_y_start, w, h);
 
 	u16 dst_x_end = (u16)(dst_x_start + src_dimx - 1);

@@ -19,6 +19,41 @@ Cave's arcade shooters **Ibara** (2005) and **Ibara Kuro: Black Label** (2006), 
 **Arrange mode**, running natively on the Xbox 360, with the arcade board's slowdown, a full menu system, save states,
 replays, a training mode, info panels beside the game, the PS2 port's front end and soundtrack, and optional XBOX Live style achievements.
 
+## Screenshots
+
+All taken on a real Xbox 360.
+
+<p align="center">
+  <img src="docs/screenshots/launcher.jpg" width="49%" alt="The launcher: PS2 port front end">
+  <img src="docs/screenshots/gallery.jpg" width="49%" alt="GALLERY: the PS2 port artwork, zoomed">
+  <br><sub>The PS2 port's front end as the launcher: all three games, GALLERY and STORY</sub>
+</p>
+<p align="center">
+  <img src="docs/screenshots/ibara_gadgets.jpg" width="49%" alt="Ibara with the M3 GADGETS beside it">
+  <img src="docs/screenshots/ibara_valley.jpg" width="49%" alt="Ibara: rank, medals, score breakdown, music">
+  <br><sub>M3 GADGETS fill the 16:9 sides: rank to four decimals, next drop, medals, bullets, boss HP and timer, score breakdown, music, controls</sub>
+</p>
+<p align="center">
+  <img src="docs/screenshots/arrange.jpg" width="49%" alt="ARRANGE mode with its rose popups">
+  <img src="docs/screenshots/black_label_xtc.jpg" width="49%" alt="Black Label with its XTC gadget">
+  <br><sub>The PS2 Arrange mode running from the arcade program, and Black Label's XTC gauge</sub>
+</p>
+<p align="center">
+  <img src="docs/screenshots/training.jpg" width="49%" alt="TRAINING page">
+  <img src="docs/screenshots/cheats.jpg" width="49%" alt="CHEATS page">
+  <br><sub>TRAINING (any stage, the boss, rank, game speed) and CHEATS (a cheated run keeps no score or replay)</sub>
+</p>
+<p align="center">
+  <img src="docs/screenshots/battle_history.jpg" width="49%" alt="BATTLE HISTORY">
+  <img src="docs/screenshots/book.jpg" width="49%" alt="The Lunatic Ibara Book">
+  <br><sub>BATTLE HISTORY of all your runs, and the Insanity DVD booklet readable in game</sub>
+</p>
+<p align="center">
+  <img src="docs/screenshots/ibara_boss_intro.jpg" width="49%" alt="Boss intro">
+  <img src="docs/screenshots/arrange_title.jpg" width="49%" alt="ARRANGE title screen">
+  <br><sub>The arcade's own presentation, with the PS2 port's artwork around it</sub>
+</p>
+
 ## The game
 
 **Ibara** (鋳薔薇, "cast-iron rose") came out in Japanese arcades on July 15, 2005, on Cave's CV1000-B board,

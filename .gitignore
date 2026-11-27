@@ -8,6 +8,7 @@
 /ref/
 !/.gitignore
 !/README.md
+!/docs/screenshots/*.jpg
 !/host/xsdk/ibara360/CMakeLists.txt
 !/host/xsdk/ibara360/build.sh
 !/host/xsdk/ibara360/launcher/minimp3_LICENSE.txt

@@ -76,6 +76,11 @@ int arrhud_popups(void)
 	return 0;
 }
 
+void arrhud_set_half(int on)
+{
+	(void)on;
+}
+
 int arrhud_init(void)
 {
 	return 0;
@@ -460,6 +465,13 @@ static int hud_on(void)
 	return on && on < 3 && !*RAMP(A_DEMO) && !svc;
 }
 
+static int popups_half;
+
+void arrhud_set_half(int on)
+{
+	popups_half = on ? 1 : 0;
+}
+
 void arrhud_reset(void)
 {
 	memset(pop, 0, sizeof(pop));
@@ -642,7 +654,12 @@ static void list_popups(void)
 	pre_used = 0;
 	for (k = 0; k < POPUPS; k++) {
 		const struct popup *q = &pop[k];
-		const int f = (q->age >> 1) & 7, alpha = q->state == 1 ? OPAQUE : q->life * 8;
+		const int f = (q->age >> 1) & 7;
+		int alpha;
+		if (popups_half)
+			alpha = q->state == 1 ? 128 : (q->life * 8 < 128 ? q->life * 8 : 128);
+		else
+			alpha = q->state == 1 ? OPAQUE : q->life * 8;
 		const int a5 = alpha < 0 ? 31 : (alpha & 0xFF) >> 3; /* blit()'s */
 		const int tier = q->value == 300 ? 3 : q->value >= 200 ? 2 : q->value >= 100 ? 1 : 0;
 		int n = 0, i, d, step;

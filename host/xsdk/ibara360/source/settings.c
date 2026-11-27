@@ -36,7 +36,7 @@ struct settings cfg = {.card = 0, .picture = PIC_INTEGER, .save = 1, .record = 0
                                                        [CTL_SET_ARR] = CTL_DEFAULTS_ARR}},
                        .autofire_hz = {[0 ... CTL_PADS - 1] = 30}, .back_pause = 1, .gadgets = 1,
                        .gadget = {[0 ... GD_N - 1] = 1}, .vol_music = 100, .vol_sfx = 100, .vol_voice = 100,
-                       .vol_attract = 100, .mute = 0, .coop = 1, .arr_bullets = 0,
+                       .vol_attract = 100, .mute = 0, .coop = 1, .arr_bullets = 0, .popups_half = 0,
                        .pic_size = {[0 ... PIC_SHAPES - 1] = 1000}, .xtc_full = 0,
                        .pic_sx = {[0 ... PIC_SHAPES - 1] = 1000}, .pic_sy = {[0 ... PIC_SHAPES - 1] = 1000}, .smooth = FILTER_NEAREST,
                        .brightness = 100, .menu_style = MENU_PS2, .language = LANG_ENGLISH,
@@ -222,6 +222,8 @@ static unsigned ini_text_more(char *b, unsigned size)
 		"# arrange_bullet_design: ARRANGE's (ibaraarr.xex, its DIP SWITCHES) enemy bullets: normal, color or\n"
 		"#                        colorless (the PS2 port's BULLET DESIGN)\n"
 		"arrange_bullet_design = %s\n"
+		"# score_popups: rose score popups in ARRANGE and Black Label: solid or see-through (half visible)\n"
+		"score_popups = %s\n"
 		"\n"
 		"# picture_custom_16_9, _4_3, _tate_16_9, _tate_4_3: picture = custom's size and place on each display shape\n"
 		"#   (GENERAL SCREEN's SIZE, X / Y POSITION, X / Y SIZE): the size in thousandths of full's (300 to 3000),\n"
@@ -303,6 +305,7 @@ static unsigned ini_text_more(char *b, unsigned size)
 		autofire_label(cfg.autofire_hz[0]), autofire_label(cfg.autofire_hz[1]), gadget_lines(), cfg.vol_music, cfg.vol_sfx,
 		cfg.vol_voice, cfg.vol_attract, cfg.mute, cfg.soundtrack == TRACK_PS2 ? "ps2" : "arcade",
 		cfg.tracklist ? "alternative" : "original", cfg.mono ? "mono" : "stereo", arr_bullet_words[cfg.arr_bullets >= 0 && cfg.arr_bullets < 3 ? cfg.arr_bullets : 0],
+		cfg.popups_half ? "see-through" : "solid",
 		pic_lines(), filter_words[cfg.smooth >= 0 && cfg.smooth < 4 ? cfg.smooth : 0],
 		color_words[cfg.color >= 0 && cfg.color < 6 ? cfg.color : 0], cfg.low_lag, cfg.flip, cfg.brightness,
 		cfg.deadzone[0], cfg.deadzone[1],
@@ -1000,6 +1003,17 @@ static void ini_line(char *line, unsigned n)
 		else {
 			ini_bad++;
 			log_printf(C_YELLOW, "INI LINE %u: ARRANGE_BULLET_DESIGN = %.20s? (NORMAL, COLOR OR COLORLESS)", n, v);
+		}
+		return;
+	}
+	if (!strcasecmp(k, "score_popups")) { /* test 155 */
+		if (!strcasecmp(v, "solid"))
+			cfg.popups_half = 0;
+		else if (!strcasecmp(v, "see-through") || !strcasecmp(v, "seethrough"))
+			cfg.popups_half = 1;
+		else {
+			ini_bad++;
+			log_printf(C_YELLOW, "INI LINE %u: SCORE_POPUPS = %.20s? (SOLID OR SEE-THROUGH)", n, v);
 		}
 		return;
 	}

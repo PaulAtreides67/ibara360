@@ -33,4 +33,7 @@ void arrhud_reset(void);
 /* Test 80: the rose value popups alive (the log's HUD line) */
 int arrhud_popups(void);
 
+/* test 155: score popups half-visible (see-through) */
+void arrhud_set_half(int on);
+
 #endif

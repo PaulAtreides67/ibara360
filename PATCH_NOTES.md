@@ -10,6 +10,8 @@
   vertical in FULL), the number clear of the red border. SMALL / FULL / OFF no longer move the other gadgets.
 - **XTC DECAY** cheat (Black Label): slow or fast XTC drain.
 - **FIXED RANK** in 1% steps from 0 to 100%, LB/RB for 10% steps.
+- **SCORE POPUPS** (GENERAL SCREEN): SOLID or SEE-THROUGH (half visible) rose score popups in Arrange and
+  Black Label. In Black Label a change applies from the next run, and replays keep the setting they were recorded with.
 
 ### Changes
 - MEDAL PENALTY is DEFAULT / 5 DOWN / 3 DOWN (LOWEST removed).
@@ -22,6 +24,7 @@
 
 ### Fixes
 - ROTATION LEFT and RIGHT were swapped.
+- Turning cheats on and off again outside a run no longer leaves the SCORE red.
 - Black Label ground items follow the item magnet again.
 - Black Label TRAINING START AT BOSS: the stage 2 boss always shoots.
 - BOOK: rotated pages zoom without broken borders; the left stick no longer turns pages while zoomed.
