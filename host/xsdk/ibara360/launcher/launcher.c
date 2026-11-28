@@ -54,10 +54,10 @@
  * Backlog 2d / 2e (user, approved 2026-10-31):
  * - 4:3: MODE SELECT's painting full screen with the menu over it (no rose-lattice column over its left: the user's
  *   43_launcher_left_border.png); the title, the GALLERY and NOW LOADING were full screen already;
- * - TATE, an easter egg: LB / RB on the title or MODE SELECT turn the launcher for a monitor stood on its side, as the
- *   games' ROTATION LEFT / RIGHT (LB = LEFT: CCW, the game's top at the screen's left; RB = RIGHT: CW; test 147: swapped
- *   to match the games; the same button again = upright). The picture is drawn on a 720-wide portrait canvas (as tall as
- *   the landscape one is wide), every quad turned as it is put down (quad). Its own art, official only: the title = the
+ * - TATE: the launcher follows the games' ROTATION only (test 157: ibara360.ini's tate = left / right / 0, as the games
+ *   keep it; no LB / RB). LEFT = CCW, the game's top at the screen's left; RIGHT = CW. The picture is drawn on a
+ *   720-wide portrait canvas (as tall as the landscape one is wide), every quad turned as it is put down (quad). Its own
+ *   art, official only: the title = the
  *   PS2 GALLERY's picture 15 whole (the arcade flyer the landscape title is the top of; ps2data.bin's la.title_v,
  *   ps2extract 2; without it, an older ps2data.bin: the landscape title across the lattice); MODE SELECT = the Insanity
  *   DVD booklet's page 5, the whole painting the landscape MODE SELECT is a faded crop of (gen/launcher/tate_art.h,
@@ -74,6 +74,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "xsdk/gpu.h"
 #include "xsdk/kernel.h"
@@ -107,7 +108,7 @@
 
 /* test 97: the music in the .xex, the PS2 data from ps2data.bin (the plain screen without it) */
 #define XEX_VERSION "1.06" /* test 154: 1.06; test 146: 1.05; test 129: 1.04; test 120: release version; test 121: 1.03 */
-#define XEX_TEST "154" /* test 154: version 1.06; test 147: MEDAL PENALTY no LOWEST, TRAINING HITBOX hidden, PLAYER HITBOX SIZE/MAGNET renames, ITEM MAGNET RANGE gated to ALWAYS, FIXED RANK 0-100% LB/RB, logs on once; test 146: version 1.05; test 129: version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127: version; test 126: version; test 125: version; test 124: card.vert turn constant; test 123: STORY plate as GALLERY / EXIT, no EN/JP tag; test 120: release version; test 122: STORY sign, label window, UNLISTED level, 鋳薔薇 */
+#define XEX_TEST "157" /* test 157: the launcher follows the games' ROTATION (ini tate), LB / RB no longer turn it; test 154: version 1.06; test 147: MEDAL PENALTY no LOWEST, TRAINING HITBOX hidden, PLAYER HITBOX SIZE/MAGNET renames, ITEM MAGNET RANGE gated to ALWAYS, FIXED RANK 0-100% LB/RB, logs on once; test 146: version 1.05; test 129: version 1.04; test 128 (1.04): log buffers as rings (frame log 1.2 MB, recording 1.3 MB, network 6 MB), the frame log's buffer only when it is on: the save states' pool back to 8192 blocks with the logs on; test 127: version; test 126: version; test 125: version; test 124: card.vert turn constant; test 123: STORY plate as GALLERY / EXIT, no EN/JP tag; test 120: release version; test 122: STORY sign, label window, UNLISTED level, 鋳薔薇 */
 #define NPADS 4
 #define STICK_DEAD 16000
 
@@ -314,8 +315,9 @@ static int nb;
 static float canvas_w = 1280; /* the design's width: 1280 (16:9) or 960 (4:3), its height 720 */
 static int wide = 1;
 static float clip_x0, clip_x1 = 1e9f; /* test 75: quads cut to these columns (the gallery's picture, the ticker) */
-/* backlog 2e: TATE. tate = the user's (LB / RB), rot = how this quad is turned (tate, but the gallery stays upright):
- * rot's canvas is portrait, 720 wide and canvas_w tall (dw x dh); quad turns its corners onto the landscape one */
+/* backlog 2e: TATE. tate = the games' ROTATION (ibara360.ini), rot = how this quad is turned (tate, but the gallery stays
+ * upright): rot's canvas is portrait, 720 wide and canvas_w tall (dw x dh); quad turns its corners onto the landscape
+ * one */
 enum { TT_OFF, TT_LEFT, TT_RIGHT };
 static int tate, rot;
 static XsdkTexture t_title_v, t_mode_v;
@@ -1632,6 +1634,133 @@ static uint32_t load_task(void *u)
 	return 0;
 }
 
+/* test 157: the games' ROTATION from ibara360.ini (source/settings.c writes it, source/romload.c gives the data root):
+ * <device>/ibara360/ibara360.ini, else game:/ibara360/ibara360.ini. tate = left / right / 0 (OFF); no file/line = OFF. */
+static size_t ini_device_len(const char *p)
+{
+	static const char hdd[] = "/Device/Harddisk0/Partition1";
+	const char *e;
+
+	if (strncasecmp(p, "/Device/", 8))
+		return 0;
+	if (!strncasecmp(p, hdd, sizeof(hdd) - 1) && (p[sizeof(hdd) - 1] == '/' || !p[sizeof(hdd) - 1]))
+		return sizeof(hdd) - 1;
+	e = strchr(p + 8, '/');
+	return e ? (size_t)(e - p) : strlen(p);
+}
+
+/* 1 / 0 for on / off words, -1 for anything else (a copy of settings.c's boolean()) */
+static int ini_bool(const char *v)
+{
+	if (!strcmp(v, "1") || !strcasecmp(v, "on") || !strcasecmp(v, "yes") || !strcasecmp(v, "true"))
+		return 1;
+	if (!strcmp(v, "0") || !strcasecmp(v, "off") || !strcasecmp(v, "no") || !strcasecmp(v, "false"))
+		return 0;
+	return -1;
+}
+
+/* read ibara360.ini's last tate line: -1 = no file, TT_OFF/TT_LEFT/TT_RIGHT = the rotation */
+static int ini_read_tate(const char *path)
+{
+	FILE *f = fopen(path, "r");
+	char line[256];
+	int t = TT_OFF, seen = 0;
+
+	if (!f)
+		return -1;
+	while (fgets(line, sizeof(line), f)) {
+		char *k, *v, *e;
+		size_t n = strlen(line);
+
+		if (n == sizeof(line) - 1 && line[n - 1] != '\n') { /* a line longer than the buffer: skip it safely */
+			int c;
+			while ((c = fgetc(f)) != '\n' && c != EOF)
+				;
+			continue;
+		}
+		while (n > 0 && (line[n - 1] == '\r' || line[n - 1] == '\n' || line[n - 1] == ' ' || line[n - 1] == '\t'))
+			line[--n] = 0;
+		k = line;
+		while (*k == ' ' || *k == '\t')
+			k++;
+		if (!*k || *k == '#')
+			continue;
+		v = strchr(k, '=');
+		if (!v)
+			continue;
+		*v++ = 0;
+		e = k + strlen(k);
+		while (e > k && (e[-1] == ' ' || e[-1] == '\t'))
+			*--e = 0;
+		while (*v == ' ' || *v == '\t')
+			v++;
+		e = v + strlen(v);
+		while (e > v && (e[-1] == ' ' || e[-1] == '\t' || e[-1] == '\r' || e[-1] == '\n'))
+			*--e = 0;
+		for (e = v; *e; e++) { /* a trailing # comment (none in the games' ini, but be safe) */
+			if (*e == '#') {
+				*e = 0;
+				while (e > v && (e[-1] == ' ' || e[-1] == '\t'))
+					*--e = 0;
+				break;
+			}
+		}
+		if (strcasecmp(k, "tate"))
+			continue;
+		{
+			int b = ini_bool(v);
+
+			if (b == 0)
+				t = TT_OFF, seen = 1;
+			else if (b == 1 || !strcasecmp(v, "left"))
+				t = TT_LEFT, seen = 1;
+			else if (!strcasecmp(v, "right"))
+				t = TT_RIGHT, seen = 1;
+			/* anything else: ignored, t/seen unchanged */
+		}
+	}
+	fclose(f);
+	return seen ? t : TT_OFF;
+}
+
+static void ini_apply_tate(void)
+{
+	char p[256], dev[128];
+	const char *img = ExLoadedImageName ? ExLoadedImageName : "";
+	size_t dl, i;
+	int t;
+
+	snprintf(p, sizeof(p), "%s", img);
+	for (i = 0; p[i]; i++)
+		if (p[i] == '\\')
+			p[i] = '/';
+	dl = ini_device_len(p);
+	t = -1;
+	if (dl && dl < sizeof(dev)) {
+		memcpy(dev, p, dl);
+		dev[dl] = 0;
+		snprintf(p, sizeof(p), "%s/ibara360/ibara360.ini", dev);
+		t = ini_read_tate(p);
+		if (t >= 0) {
+			tate = t;
+			turn_t = 99;
+			log_printf(C_WHITE, "LAUNCHER: INI %s TATE %s (THE GAMES' ROTATION)", p,
+			           tate == TT_LEFT ? "LEFT" : tate == TT_RIGHT ? "RIGHT" : "OFF");
+			return;
+		}
+	}
+	snprintf(p, sizeof(p), "game:/ibara360/ibara360.ini");
+	t = ini_read_tate(p);
+	if (t >= 0) {
+		tate = t;
+		turn_t = 99;
+		log_printf(C_WHITE, "LAUNCHER: INI %s TATE %s (THE GAMES' ROTATION)", p,
+		           tate == TT_LEFT ? "LEFT" : tate == TT_RIGHT ? "RIGHT" : "OFF");
+		return;
+	}
+	log_printf(C_WHITE, "LAUNCHER: NO INI (%s), UPRIGHT", p);
+}
+
 static uint32_t fb_w, fb_h;
 
 static int video_init(void)
@@ -1717,11 +1846,13 @@ static int video_init(void)
 			xsdk_gpu_invalidate(t_title_v.address, t_title_v.size_bytes);
 		if (mode_v_ok)
 			xsdk_gpu_invalidate(t_mode_v.address, t_mode_v.size_bytes);
-		log_printf(mode_v_ok ? C_WHITE : C_RED, "LAUNCHER: TATE (LB / RB): %s, %s, IN %u MS",
+		log_printf(mode_v_ok ? C_WHITE : C_RED, "LAUNCHER: TATE: %s, %s, IN %u MS",
 		           title_v_ok ? "ITS TITLE FROM PS2DATA.BIN" : "NO TATE TITLE IN PS2DATA.BIN (AN OLDER PS2EXTRACT: THE "
 		                                                       "WIDE ONE)",
 		           mode_v_ok ? "ITS MODE SELECT PAINTING UNPACKED" : "ITS MODE SELECT PAINTING DID NOT UNPACK (NO TATE)",
 		           tb_us(t0, tb_read()) / 1000);
+		if (mode_v_ok) /* test 157: start in the games' ini ROTATION */
+			ini_apply_tate();
 	}
 	for (i = 0; i < LSND_COUNT; i++) { /* test 97: the sounds (ps2data.bin's); none: silent */
 		char name[32];
@@ -2864,29 +2995,12 @@ static void launch(int g)
 	XamLoaderTerminateTitle();
 }
 
-/* backlog 2e: LB = TATE LEFT, RB = TATE RIGHT (the games' ROTATION names), the same one again = upright; on the title
- * and MODE SELECT with the PS2 pictures (the plain screen stays upright), LB first if both */
-static void tate_turn(unsigned press)
-{
-	const int want = press & K_LB ? TT_LEFT : TT_RIGHT;
-
-	if (!ps2 || !mode_v_ok)
-		return;
-	tate = tate == want ? TT_OFF : want;
-	turn_t = 0;
-	lsound_play(LSND_CURSOR);
-	log_printf(C_WHITE, "LAUNCHER: %s (%s)", tate == TT_LEFT ? "TATE LEFT" : tate == TT_RIGHT ? "TATE RIGHT" : "UPRIGHT",
-	           press & K_LB ? "LB" : "RB");
-}
-
 static void step(unsigned press)
 {
 	const unsigned rep = pads_repeat(press);
 
 	state_t++;
 	turn_t++;
-	if ((press & (K_LB | K_RB)) && state <= ST_FAIL && state != ST_GO && state != ST_EXIT)
-		tate_turn(press);
 	switch (state) {
 	case ST_TITLE:
 		if (state_t == 1)

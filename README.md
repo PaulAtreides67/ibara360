@@ -136,8 +136,8 @@ graphics, sound and slowdown. one could technically even run it as it's own MAME
 - The attract volume controls title and demo sound; the start-of-run character call still follows the voice volume.
 
 ### Launcher
-- Uses the PS2 port's front end: its title, mode select and NOW LOADING screen, in 16:9, 4:3 and TATE (LB / RB on the
-  launcher screen).
+- Uses the PS2 port's front end: its title, mode select and NOW LOADING screen, in 16:9, 4:3 and TATE (the launcher
+  follows the games' ROTATION setting).
 - PS2 port's GALLERY mode (horizontal orientation only), fully restored: 78 pictures and 5 sheets, with "Endress Train" from "Ibara Remix Tracks" playing in the background.
 - **STORY**: the story, system, stages and characters from Cave's official Ibara website, in English or Japanese.
 - Each game is its own .xex; the launcher and the games hand over to each other directly.

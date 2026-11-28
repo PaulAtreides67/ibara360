@@ -21,6 +21,7 @@
 - Clearer help texts (rank, bombs, magnets, co-op, stage map, training); Japanese help for the new rows.
 - 16:9 WEAPON gadget keeps its RAPID row, so CONTROLS changes no longer make the screen jump.
 - TRAINING menu window no longer jumps on the XTC START row.
+- The launcher follows the games' ROTATION setting (LEFT / RIGHT / OFF); LB / RB no longer turn it.
 
 ### Fixes
 - ROTATION LEFT and RIGHT were swapped.
